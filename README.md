@@ -11,13 +11,9 @@
 - **Backend**: [PHP (Native)](https://www.php.net/)
 - **Database**: [MySQL (Sequelize ORM)](https://www.mysql.com/)
 
-Dibuat dengan bantuan [Google AI Studio App](https://aistudio.google.com/apps),[Google Antigravity](https://antigravity.google/), Agent model: Gemini 3 Pro dan Claude Sonnet 4.5
+> Untuk perubahan terbaru bisa dicek di repo **Cemilan-KasirPOS-test** https://github.com/dotslashgabut/Cemilan-KasirPOS-test (Frontend: React, Backend: Node.js)
 
-Untuk menambahkan Gemini API, buat file `env.local` isi dengan Gemini API anda.
-```
-GEMINI_API_KEY=PLACEHOLDER_API_KEY
-```
-_Kami belum sempat mencobanya sih._
+Dibuat dengan bantuan [Google AI Studio App](https://aistudio.google.com/apps), [Google Antigravity](https://antigravity.google/), Agent model: Gemini 3 Pro dan Claude Sonnet 4.5
 
 > Untuk versi lainnya dengan pendekatan database yang berbeda, seperti localStorage, IndexedDB-Dexie, hybrid database (IndexedDB-Dexie + MySQL), dapat dicek di laman rilis repo Cemilan KasirPOS Nusantara - Testing https://github.com/dotslashgabut/cemilan-kasirpos-test/releases
 
