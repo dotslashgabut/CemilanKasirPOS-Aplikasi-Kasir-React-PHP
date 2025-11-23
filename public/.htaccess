@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # 1. Handle API Requests (Backend)
+    # Redirect all requests starting with /php_server/ to the index.php inside php_server folder
+    RewriteCond %{REQUEST_URI} ^/php_server/ [NC]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^php_server/(.*)$ php_server/index.php [L,QSA]
+
+    # 2. Handle React Routes (Frontend)
+    # If the request is NOT for a real file or directory, serve index.html
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/php_server/ [NC]
+    RewriteRule ^ index.html [L]
+</IfModule>
