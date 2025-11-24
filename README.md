@@ -2,6 +2,8 @@
 
 ![Static Badge](https://img.shields.io/badge/build-ERROR-red?style=for-the-badge)
 
+> Untuk perubahan terbaru bisa dicek di repo **Cemilan-KasirPOS-test** https://github.com/dotslashgabut/Cemilan-KasirPOS-test (Frontend: React, Backend: Node.js)
+
 **🍬 Cemilan KasirPOS Nusantara**
 
 - **Frontend Framework**: [React 19](https://react.dev/)
@@ -12,8 +14,6 @@
 - **Charts**: [Recharts](https://recharts.org/)
 - **Backend**: [PHP (Native)](https://www.php.net/)
 - **Database**: [MySQL (Sequelize ORM)](https://www.mysql.com/)
-
-> Untuk perubahan terbaru bisa dicek di repo **Cemilan-KasirPOS-test** https://github.com/dotslashgabut/Cemilan-KasirPOS-test (Frontend: React, Backend: Node.js)
 
 Dibuat dengan bantuan [Google AI Studio App](https://aistudio.google.com/apps), [Google Antigravity](https://antigravity.google/), Agent model: Gemini 3 Pro dan Claude Sonnet 4.5
 
