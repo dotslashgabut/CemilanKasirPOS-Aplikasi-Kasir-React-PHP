@@ -1,0 +1,186 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                   FILE .ENV - VISUAL PRIORITY DIAGRAM                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           NPM RUN DEV (Development)                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    📄 .env                                    Priority: ⭐ (Low)
+    │  VITE_API_URL=http://localhost:8000/... 
+    │  ✅ LOADED
+    │  
+    ├──❯ 📄 .env.local                        Priority: ⭐⭐ (Medium)
+    │     VITE_API_URL=http://localhost:8000/...
+    │     ✅ LOADED
+    │     ⚡ OVERRIDES .env
+    │  
+    ├──❯ 📄 .env.development                  Priority: ⭐⭐⭐ (High)
+    │     (tidak ada di project)
+    │     ❌ NOT LOADED
+    │  
+    └──❯ 📄 .env.production
+          (mode tidak cocok)
+          ❌ IGNORED
+    
+    ═══════════════════════════════════════════════════════════════════
+    
+    ✅ FINAL RESULT (Development):
+    
+    MODE: development
+    VITE_API_URL: http://localhost:8000/cemilan-app/php_server/index.php/api
+                  ↑ Dari .env.local (prioritas tertinggi yang ada)
+
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         NPM RUN BUILD (Production)                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    📄 .env                                    Priority: ⭐ (Low)
+    │  VITE_API_URL=http://localhost:8000/... 
+    │  ✅ LOADED
+    │  
+    ├──❯ 📄 .env.local                        Priority: ⭐⭐ (Medium)
+    │     VITE_API_URL=http://localhost:8000/...
+    │     ✅ LOADED
+    │     ⚡ OVERRIDES .env
+    │  
+    ├──❯ 📄 .env.production                   Priority: ⭐⭐⭐ (High)
+    │     VITE_API_URL=http://cemilan-app.test/...
+    │     ✅✅✅ LOADED (MODE MATCH!)
+    │     ⚡⚡⚡ OVERRIDES semua file lain!
+    │  
+    └──❯ 📄 .env.development
+          (mode tidak cocok)
+          ❌ IGNORED
+    
+    ═══════════════════════════════════════════════════════════════════
+    
+    ✅ FINAL RESULT (Production):
+    
+    MODE: production
+    VITE_API_URL: http://cemilan-app.test/php_server/index.php/api
+                  ↑ Dari .env.production (prioritas tertinggi!)
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                            QUICK REFERENCE                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────┬──────────────┬──────────────┬────────────┬────────────┐
+│ File                │  npm run dev │ npm run build│ Commit Git │  Priority  │
+├─────────────────────┼──────────────┼──────────────┼────────────┼────────────┤
+│ .env                │      ✅      │      ✅      │     ✅     │  ⭐ Low    │
+│ .env.local          │      ✅      │      ✅      │     ❌     │  ⭐⭐ Med  │
+│ .env.development    │      ✅      │      ❌      │     ✅     │  ⭐⭐⭐ Hi  │
+│ .env.production     │      ❌      │      ✅      │     ✅     │  ⭐⭐⭐ Hi  │
+└─────────────────────┴──────────────┴──────────────┴────────────┴────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                          YOUR PROJECT STATUS                                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Current Files in Project:
+✅ .env                   → http://localhost:8000/cemilan-app/php_server/...
+✅ .env.local             → http://localhost:8000/cemilan-app/php_server/...
+✅ .env.production        → http://cemilan-app.test/php_server/...
+
+Recommendation:
+🗑️  DELETE .env.local (karena sama dengan .env, tidak perlu duplikasi)
+
+After Deletion:
+✅ .env                   → Default untuk semua mode
+✅ .env.production        → Override untuk production build
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           TESTING GUIDE                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1️⃣  TEST DEVELOPMENT:
+    
+    $ npm run dev
+    
+    Expected in Console:
+    - Mode: development
+    - API URL: http://localhost:8000/cemilan-app/php_server/index.php/api
+    
+    ✅ Frontend should connect to localhost PHP server
+
+
+2️⃣  TEST PRODUCTION BUILD:
+    
+    $ npm run build
+    
+    Expected:
+    - Mode: production
+    - Build output in 'dist' folder
+    - API URL embedded in bundle: http://cemilan-app.test/php_server/...
+    
+    ✅ Build should be deployable to Laragon virtual host
+
+
+3️⃣  VERIFY EMBEDDED URL:
+    
+    After build, search in dist/assets/index-*.js:
+    
+    $ grep -r "VITE_API_URL" dist/
+    
+    Should find: http://cemilan-app.test/php_server/index.php/api
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         COMMON MISTAKES                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+❌ MISTAKE #1: Mengira .env.production digunakan saat npm run dev
+   ✅ FACT: Production mode hanya aktif saat npm run build
+
+❌ MISTAKE #2: Lupa rebuild setelah ubah .env.production
+   ✅ FIX: Selalu npm run build ulang setelah ubah .env.production
+
+❌ MISTAKE #3: Deploy dist tanpa build ulang dengan .env.production yang benar
+   ✅ FIX: Pastikan .env.production benar → build → deploy
+
+❌ MISTAKE #4: Mengira file .env ini untuk backend PHP
+   ✅ FACT: Ini untuk frontend Vite! Backend PHP pakai config.php
+
+❌ MISTAKE #5: .env.local dan .env isinya sama
+   ✅ FIX: Hapus salah satu untuk menghindari confusion
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           BACKEND PHP                                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+⚠️  IMPORTANT: Backend PHP TIDAK menggunakan file .env ini!
+
+Backend PHP Configuration:
+📁 php_server/config.php
+   ├─ Database credentials (host, name, user, password)
+   ├─ CORS allowed origins
+   └─ Security headers
+
+Frontend .env files:
+📁 .env, .env.local, .env.production
+   └─ Hanya untuk konfigurasi frontend Vite/React
+   └─ Memberitahu frontend di mana backend API berada
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                          NEXT STEPS                                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. ✅ Verifikasi virtual host Laragon Anda
+2. ✅ Update .env.production jika virtual host berbeda
+3. ✅ Hapus .env.local (optional, untuk simplify)
+4. ✅ npm run build
+5. ✅ Deploy dist/ ke virtual host
+6. ✅ Test di browser
+
+──────────────────────────────────────────────────────────────────────────────
+
+📚 Dokumentasi Lengkap: ENV_FILES_EXPLANATION.md
+🚀 Panduan Deploy: LARAGON_DEPLOY_GUIDE.md
+
+──────────────────────────────────────────────────────────────────────────────

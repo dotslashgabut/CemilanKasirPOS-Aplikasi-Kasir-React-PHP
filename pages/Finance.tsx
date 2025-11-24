@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
-import { Transaction, PaymentStatus, CashFlow, CashFlowType, Purchase, Supplier, PaymentMethod, CashFlow as CashFlowTypeInterface, StoreSettings, BankAccount, User, UserRole, TransactionType, PurchaseType } from '../types';
+import { Transaction, PaymentStatus, CashFlow, CashFlowType, Purchase, Supplier, PaymentMethod, CashFlow as CashFlowTypeInterface, StoreSettings, BankAccount, User, UserRole } from '../types';
 import { formatIDR, formatDate, exportToCSV, generateId } from '../utils';
 import { generatePrintInvoice, generatePrintGoodsNote, generatePrintSuratJalan, generatePrintTransactionDetail, generatePrintPurchaseDetail } from '../utils/printHelpers';
 import { ArrowDownLeft, ArrowUpRight, Download, Plus, Printer, FileText, Filter, RotateCcw, X, Eye, ShoppingBag, Calendar, Clock, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
@@ -92,130 +92,15 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
     const [cfBankId, setCfBankId] = useState('');
 
     // Return State
-    const [isReturnTxModalOpen, setIsReturnTxModalOpen] = useState(false);
-    const [returnTxItems, setReturnTxItems] = useState<{ id: string, qty: number, maxQty: number, price: number, name: string }[]>([]);
 
-    const [isReturnPurchaseModalOpen, setIsReturnPurchaseModalOpen] = useState(false);
-    const [returnPurchaseItems, setReturnPurchaseItems] = useState<{ id: string, qty: number, price: number, name: string }[]>([]);
-    const products = useData(() => StorageService.getProducts()) || [];
-    const [productSearch, setProductSearch] = useState('');
 
     useEffect(() => {
         StorageService.getStoreSettings().then(setStoreSettings);
     }, []);
 
-    // Return Logic
-    const openReturnTxModal = (tx: Transaction) => {
-        setReturnTxItems(tx.items.map(i => ({
-            id: i.id,
-            qty: 0,
-            maxQty: i.qty,
-            price: i.finalPrice,
-            name: i.name
-        })));
-        setIsReturnTxModalOpen(true);
-    };
 
-    const submitReturnTx = async () => {
-        if (!detailTransaction) return;
-        const itemsToReturn = returnTxItems.filter(i => i.qty > 0);
-        if (itemsToReturn.length === 0) return;
 
-        const totalRefund = itemsToReturn.reduce((sum, i) => sum + (i.qty * i.price), 0);
 
-        const returnTx: Transaction = {
-            id: generateId(),
-            type: TransactionType.RETURN,
-            originalTransactionId: detailTransaction.id,
-            date: new Date().toISOString(),
-            items: itemsToReturn.map(i => {
-                const originalItem = detailTransaction.items.find(oi => oi.id === i.id);
-                return {
-                    ...originalItem!,
-                    qty: i.qty,
-                    finalPrice: i.price
-                };
-            }),
-            totalAmount: -totalRefund, // Negative for return
-            amountPaid: -totalRefund,
-            change: 0,
-            paymentStatus: PaymentStatus.PAID,
-            paymentMethod: PaymentMethod.CASH, // Assume cash refund for now
-            paymentNote: `Retur dari Transaksi #${detailTransaction.id.substring(0, 6)}`,
-            customerName: detailTransaction.customerName,
-            cashierId: currentUser?.id || 'SYSTEM',
-            cashierName: currentUser?.name || 'System'
-        };
-
-        await StorageService.addTransaction(returnTx);
-
-        // Record Cash Out (Refund)
-        await StorageService.addCashFlow({
-            id: '',
-            date: new Date().toISOString(),
-            type: CashFlowType.OUT,
-            amount: totalRefund,
-            category: 'Retur Penjualan',
-            description: `Refund Retur Transaksi #${detailTransaction.id.substring(0, 6)}`,
-            paymentMethod: PaymentMethod.CASH,
-            userId: currentUser?.id,
-            userName: currentUser?.name
-        });
-
-        setIsReturnTxModalOpen(false);
-        setDetailTransaction(null);
-        alert('Retur berhasil diproses.');
-    };
-
-    const submitReturnPurchase = async () => {
-        if (!detailPurchase) return;
-        const itemsToReturn = returnPurchaseItems.filter(i => i.qty > 0);
-        if (itemsToReturn.length === 0) return;
-
-        const totalRefund = itemsToReturn.reduce((sum, i) => sum + (i.qty * i.price), 0);
-
-        const returnPurchase: Purchase = {
-            id: generateId(),
-            type: PurchaseType.RETURN,
-            date: new Date().toISOString(),
-            supplierId: detailPurchase.supplierId,
-            supplierName: detailPurchase.supplierName,
-            description: `Retur Barang: ${itemsToReturn.map(i => i.name).join(', ')}`,
-            items: itemsToReturn.map(i => {
-                const product = products.find(p => p.id === i.id);
-                return {
-                    ...product,
-                    qty: i.qty,
-                    finalPrice: i.price,
-                    selectedPriceType: 'UMUM'
-                } as any;
-            }),
-            totalAmount: -totalRefund,
-            amountPaid: -totalRefund,
-            paymentStatus: PaymentStatus.PAID,
-            paymentMethod: PaymentMethod.CASH,
-            paymentHistory: []
-        };
-
-        await StorageService.addPurchase(returnPurchase);
-
-        // Record Cash In (Refund from Supplier)
-        await StorageService.addCashFlow({
-            id: '',
-            date: new Date().toISOString(),
-            type: CashFlowType.IN,
-            amount: totalRefund,
-            category: 'Retur Pembelian',
-            description: `Refund Retur Pembelian dari ${detailPurchase.supplierName}`,
-            paymentMethod: PaymentMethod.CASH,
-            userId: currentUser?.id,
-            userName: currentUser?.name
-        });
-
-        setIsReturnPurchaseModalOpen(false);
-        setDetailPurchase(null);
-        alert('Retur pembelian berhasil diproses.');
-    };
 
     // Filter Logic
     const applyDateFilter = (items: any[]) => {
@@ -365,7 +250,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         await StorageService.updateTransaction(updatedTx);
 
         await StorageService.addCashFlow({
-            id: '',
+            id: generateId(),
             date: now,
             type: CashFlowType.IN,
             amount: pay,
@@ -420,7 +305,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         await StorageService.updatePurchase(updatedPurchase);
 
         await StorageService.addCashFlow({
-            id: '',
+            id: generateId(),
             date: now,
             type: CashFlowType.OUT,
             amount: pay,
@@ -506,7 +391,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
             // If paid amount > 0, record cash out
             if (paid > 0) {
                 const cashFlowData = {
-                    id: '',
+                    id: generateId(),
                     date: now,
                     type: CashFlowType.OUT,
                     amount: paid,
@@ -550,24 +435,33 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
 
         const selectedBank = banks.find(b => b.id === cfBankId);
 
-        await StorageService.addCashFlow({
-            id: '',
-            date: new Date().toISOString(),
-            type: cfType,
-            amount,
-            category: cfCategory, // Use selected category
-            description: `${cfDesc} (via ${cfPaymentMethod}${selectedBank ? ` - ${selectedBank.bankName}` : ''})`,
-            paymentMethod: cfPaymentMethod,
-            bankId: cfBankId,
-            bankName: selectedBank?.bankName,
-            userId: currentUser?.id,
-            userName: currentUser?.name
-        });
-        setCfAmount('');
-        setCfDesc('');
-        setCfCategory(''); // Reset category
-        setCfPaymentMethod(PaymentMethod.CASH);
-        setCfBankId('');
+        try {
+            await StorageService.addCashFlow({
+                id: generateId(),
+                date: new Date().toISOString(),
+                type: cfType,
+                amount,
+                category: cfCategory, // Use selected category
+                description: `${cfDesc} (via ${cfPaymentMethod}${selectedBank ? ` - ${selectedBank.bankName}` : ''})`,
+                paymentMethod: cfPaymentMethod,
+                bankId: cfBankId,
+                bankName: selectedBank?.bankName,
+                userId: currentUser?.id,
+                userName: currentUser?.name
+            });
+
+            // Reset form only if successful
+            setCfAmount('');
+            setCfDesc('');
+            setCfCategory(''); // Reset category
+            setCfPaymentMethod(PaymentMethod.CASH);
+            setCfBankId('');
+
+            alert('✅ Data arus kas berhasil disimpan!');
+        } catch (error) {
+            console.error('Error saving cashflow:', error);
+            alert(`❌ Gagal menyimpan data arus kas!\n\nError: ${error instanceof Error ? error.message : 'Koneksi ke server gagal. Pastikan backend PHP sudah berjalan.'}\n\nSilakan cek:\n1. Backend PHP server sudah running\n2. Database terhubung dengan benar\n3. Token autentikasi masih valid`);
+        }
     };
 
     // Profit Loss Calculation
@@ -1614,9 +1508,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                             </div>
                         </div>
                         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
-                            <button onClick={() => openReturnTxModal(detailTransaction)} className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-red-100">
-                                <RotateCcw size={16} /> Retur
-                            </button>
+
                             <button onClick={() => printTransactionDetail(detailTransaction)} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-slate-50">
                                 <Printer size={16} /> Cetak Detail
                             </button>
@@ -1699,9 +1591,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                             </div>
                         </div>
                         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
-                            <button onClick={() => setIsReturnPurchaseModalOpen(true)} className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-red-100">
-                                <RotateCcw size={16} /> Retur
-                            </button>
+
                             <button onClick={() => printPurchaseDetail(detailPurchase)} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-slate-50">
                                 <Printer size={16} /> Cetak Detail
                             </button>
@@ -1797,159 +1687,9 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                 document.body
             )}
 
-            {/* RETURN TRANSACTION MODAL */}
-            {isReturnTxModalOpen && createPortal(
-                <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
-                    <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
-                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="font-bold text-slate-800">Retur Penjualan</h3>
-                            <button onClick={() => setIsReturnTxModalOpen(false)}><X size={20} className="text-slate-400" /></button>
-                        </div>
-                        <div className="p-6 max-h-[70vh] overflow-y-auto">
-                            <p className="text-sm text-slate-600 mb-4">Pilih barang dan jumlah yang ingin diretur dari transaksi ini.</p>
-                            <div className="space-y-3">
-                                {returnTxItems.map((item, idx) => (
-                                    <div key={item.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
-                                        <div className="flex-1">
-                                            <div className="font-medium text-slate-800">{item.name}</div>
-                                            <div className="text-xs text-slate-500">Maks: {item.maxQty} | Harga: {formatIDR(item.price)}</div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={() => {
-                                                    const newItems = [...returnTxItems];
-                                                    if (newItems[idx].qty > 0) newItems[idx].qty--;
-                                                    setReturnTxItems(newItems);
-                                                }}
-                                                className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200"
-                                            >-</button>
-                                            <span className="w-8 text-center font-bold">{item.qty}</span>
-                                            <button
-                                                onClick={() => {
-                                                    const newItems = [...returnTxItems];
-                                                    if (newItems[idx].qty < item.maxQty) newItems[idx].qty++;
-                                                    setReturnTxItems(newItems);
-                                                }}
-                                                className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200"
-                                            >+</button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="mt-6 p-4 bg-red-50 rounded-xl flex justify-between items-center">
-                                <span className="text-red-800 font-medium">Total Refund</span>
-                                <span className="text-red-800 font-bold text-xl">
-                                    {formatIDR(returnTxItems.reduce((sum, i) => sum + (i.qty * i.price), 0))}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
-                            <button onClick={() => setIsReturnTxModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Batal</button>
-                            <button onClick={submitReturnTx} className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 shadow-lg shadow-red-200">
-                                Proses Retur
-                            </button>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
 
-            {/* RETURN PURCHASE MODAL */}
-            {isReturnPurchaseModalOpen && createPortal(
-                <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
-                    <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
-                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="font-bold text-slate-800">Retur Pembelian (Ke Supplier)</h3>
-                            <button onClick={() => setIsReturnPurchaseModalOpen(false)}><X size={20} className="text-slate-400" /></button>
-                        </div>
-                        <div className="p-6 max-h-[70vh] overflow-y-auto">
-                            <p className="text-sm text-slate-600 mb-4">Pilih barang dari stok yang ingin dikembalikan ke supplier <b>{detailPurchase?.supplierName}</b>.</p>
 
-                            {/* Product Search */}
-                            <div className="mb-4 relative">
-                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Cari barang untuk diretur..."
-                                    className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={productSearch}
-                                    onChange={e => setProductSearch(e.target.value)}
-                                />
-                                {productSearch && (
-                                    <div className="absolute z-10 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
-                                        {products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())).map(p => (
-                                            <div
-                                                key={p.id}
-                                                className="p-2 hover:bg-slate-50 cursor-pointer text-sm flex justify-between"
-                                                onClick={() => {
-                                                    if (!returnPurchaseItems.find(i => i.id === p.id)) {
-                                                        setReturnPurchaseItems([...returnPurchaseItems, { id: p.id, qty: 1, price: p.hpp, name: p.name }]);
-                                                    }
-                                                    setProductSearch('');
-                                                }}
-                                            >
-                                                <span>{p.name}</span>
-                                                <span className="text-slate-400 text-xs">Stok: {p.stock}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
 
-                            <div className="space-y-3">
-                                {returnPurchaseItems.map((item, idx) => (
-                                    <div key={item.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
-                                        <div className="flex-1">
-                                            <div className="font-medium text-slate-800">{item.name}</div>
-                                            <div className="text-xs text-slate-500">Refund/Item: {formatIDR(item.price)}</div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={() => {
-                                                    const newItems = [...returnPurchaseItems];
-                                                    if (newItems[idx].qty > 0) newItems[idx].qty--;
-                                                    if (newItems[idx].qty === 0) {
-                                                        setReturnPurchaseItems(newItems.filter((_, i) => i !== idx));
-                                                    } else {
-                                                        setReturnPurchaseItems(newItems);
-                                                    }
-                                                }}
-                                                className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200"
-                                            >-</button>
-                                            <span className="w-8 text-center font-bold">{item.qty}</span>
-                                            <button
-                                                onClick={() => {
-                                                    const newItems = [...returnPurchaseItems];
-                                                    newItems[idx].qty++;
-                                                    setReturnPurchaseItems(newItems);
-                                                }}
-                                                className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200"
-                                            >+</button>
-                                            <button onClick={() => setReturnPurchaseItems(returnPurchaseItems.filter((_, i) => i !== idx))} className="text-red-500 ml-2"><X size={16} /></button>
-                                        </div>
-                                    </div>
-                                ))}
-                                {returnPurchaseItems.length === 0 && (
-                                    <div className="text-center text-slate-400 py-4 text-sm">Belum ada barang dipilih.</div>
-                                )}
-                            </div>
-                            <div className="mt-6 p-4 bg-green-50 rounded-xl flex justify-between items-center">
-                                <span className="text-green-800 font-medium">Total Refund (Masuk)</span>
-                                <span className="text-green-800 font-bold text-xl">
-                                    {formatIDR(returnPurchaseItems.reduce((sum, i) => sum + (i.qty * i.price), 0))}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
-                            <button onClick={() => setIsReturnPurchaseModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Batal</button>
-                            <button onClick={submitReturnPurchase} className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 shadow-lg shadow-red-200">
-                                Proses Retur
-                            </button>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
         </div>
     );
 };

@@ -64,6 +64,8 @@ CREATE TABLE `cashflows` (
   `paymentMethod` varchar(255) DEFAULT NULL,
   `bankId` varchar(255) DEFAULT NULL,
   `bankName` varchar(255) DEFAULT NULL,
+  `userId` varchar(255) DEFAULT NULL,
+  `userName` varchar(255) DEFAULT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

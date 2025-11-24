@@ -6,29 +6,22 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 
 // CORS Settings
-$allowed_origins = [
-    'https://cemilan-app.test',
-    'http://cemilan-app.test',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost',
-    'http://127.0.0.1'
-];
-
+// CORS Settings
+// Allow all origins for flexibility (Dev/Prod/Hosting)
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (isset($_SERVER['REQUEST_METHOD'])) {
-    if (in_array($origin, $allowed_origins)) {
-        header("Access-Control-Allow-Origin: $origin");
-    } else {
-        // Default for tools like Postman or direct browser access if not in list (optional, or strict block)
-        // header("Access-Control-Allow-Origin: *"); // Keep commented out for security
-    }
-    header("Content-Type: application/json; charset=UTF-8");
-    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-    header("Access-Control-Max-Age: 3600");
-    header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
+// Always set CORS headers
+header("Access-Control-Allow-Origin: " . ($origin ? $origin : '*'));
+header("Access-Control-Allow-Credentials: true");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
+// Handle Preflight Options Request immediately
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
 
 // Security Headers

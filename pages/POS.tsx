@@ -163,7 +163,7 @@ export const POS: React.FC = () => {
               : 'Tempo';
 
           await StorageService.addCashFlow({
-            id: '',
+            id: generateId(),
             date: transaction.date,
             type: CashFlowType.IN,
             amount: paid,

@@ -480,6 +480,25 @@ switch ($method) {
         }
         
         if (!$id) sendJson(['error' => 'ID required'], 400);
+
+        // Handle RESET (Delete All)
+        if ($id === 'reset') {
+            // DOUBLE CHECK: Only SUPERADMIN can reset data
+            requireRole([ROLE_SUPERADMIN]);
+
+            try {
+                // Use DELETE FROM instead of TRUNCATE to avoid foreign key issues (unless we want to force it)
+                // DELETE FROM is safer for integrity, though slower than TRUNCATE.
+                // For a "Reset" feature, we might want to disable FK checks temporarily if we really want to wipe it,
+                // but let's stick to standard DELETE for safety first.
+                $stmt = $pdo->prepare("DELETE FROM $tableName");
+                $stmt->execute();
+                sendJson(['message' => "All data in $resource has been reset successfully."]);
+            } catch (Exception $e) {
+                sendJson(['error' => $e->getMessage()], 500);
+            }
+            exit();
+        }
         
         try {
             $stmt = $pdo->prepare("DELETE FROM $tableName WHERE id = ?");
