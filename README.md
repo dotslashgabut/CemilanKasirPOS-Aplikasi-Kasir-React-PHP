@@ -1,5 +1,7 @@
 # Cemilan KasirPOS Nusantara
 
+https://img.shields.io/badge/build-ERROR-red?style=for-the-badge
+
 **🍬 Cemilan KasirPOS Nusantara**
 
 - **Frontend Framework**: [React 19](https://react.dev/)
