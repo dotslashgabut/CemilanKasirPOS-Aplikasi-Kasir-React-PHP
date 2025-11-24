@@ -1,6 +1,6 @@
 # Cemilan KasirPOS Nusantara
 
-https://img.shields.io/badge/build-ERROR-red?style=for-the-badge
+![Static Badge](https://img.shields.io/badge/build-ERROR-red?style=for-the-badge)
 
 **🍬 Cemilan KasirPOS Nusantara**
 
