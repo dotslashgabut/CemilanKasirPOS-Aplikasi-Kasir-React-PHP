@@ -1,6 +1,6 @@
 # Logs
 logs
-# *.log
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -10,7 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-# *.local
+*.local
 
 # Editor directories and files
 .vscode/*
@@ -26,6 +26,7 @@ dist-ssr
 # Environment Variables
 # .env
 # .env.*
+# !.env.example
 
 # PHP
 # php_server/config.php

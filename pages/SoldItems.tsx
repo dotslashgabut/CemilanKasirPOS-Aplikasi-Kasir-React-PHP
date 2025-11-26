@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
 import { TransactionType, UserRole, User } from '../types';
@@ -10,7 +10,7 @@ interface SoldItemsProps {
 }
 
 export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
-    const transactions = useData(() => StorageService.getTransactions()) || [];
+    const transactions = useData(() => StorageService.getTransactions(), [], 'transactions') || [];
 
     // Filter State
     const [startDate, setStartDate] = useState('');
@@ -19,6 +19,15 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
 
     // Sort State
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
+
+    // Pagination State
+    const [visibleCount, setVisibleCount] = useState(20);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Reset pagination on filter change
+    useEffect(() => {
+        setVisibleCount(20);
+    }, [startDate, endDate, searchQuery, sortConfig]);
 
     // Helper for Jakarta Date
     const getJakartaDateStr = (dateStr: string) => {
@@ -50,13 +59,14 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
 
     const soldItems = useMemo(() => {
         let items = filteredTransactions
-            .filter(t => t.type !== TransactionType.RETURN)
             .flatMap(t => t.items.map(item => ({
                 ...item,
                 transactionId: t.id,
+                transactionType: t.type,
                 date: t.date,
                 cashierName: t.cashierName,
-                customerName: t.customerName
+                customerName: t.customerName,
+                isReturned: t.isReturned
             })))
             .filter(item => {
                 if (!searchQuery) return true;
@@ -71,12 +81,19 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
         // Sorting
         if (sortConfig) {
             items.sort((a, b) => {
+                if (sortConfig.key === 'date') {
+                    const aTime = new Date(a.date).getTime();
+                    const bTime = new Date(b.date).getTime();
+                    return sortConfig.direction === 'asc' ? aTime - bTime : bTime - aTime;
+                }
+
                 let aVal = a[sortConfig.key as keyof typeof a];
                 let bVal = b[sortConfig.key as keyof typeof b];
 
-                if (sortConfig.key === 'date') {
-                    aVal = new Date(a.date).getTime();
-                    bVal = new Date(b.date).getTime();
+                // Handle string comparison (case-insensitive)
+                if (typeof aVal === 'string' && typeof bVal === 'string') {
+                    aVal = aVal.toLowerCase() as any;
+                    bVal = bVal.toLowerCase() as any;
                 }
 
                 if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -87,6 +104,30 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
 
         return items;
     }, [filteredTransactions, searchQuery, sortConfig]);
+
+    const visibleSoldItems = useMemo(() => soldItems.slice(0, visibleCount), [soldItems, visibleCount]);
+
+    // Infinite Scroll Observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount((prev) => prev + 20);
+                }
+            },
+            { threshold: 0.5 }
+        );
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current);
+        }
+
+        return () => {
+            if (loadMoreRef.current) {
+                observer.unobserve(loadMoreRef.current);
+            }
+        };
+    }, [loadMoreRef.current, soldItems]);
 
     const handleSort = (key: string) => {
         setSortConfig(current => ({
@@ -120,6 +161,7 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                 <td>${i.selectedPriceType}</td>
                 <td>${i.customerName}</td>
                 <td>${i.cashierName}</td>
+                <td>${i.transactionType === TransactionType.RETURN ? 'RETUR' : i.isReturned ? 'Retur Sebagian' : 'Normal'}</td>
             </tr>
         `).join('');
 
@@ -152,6 +194,7 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                                 <th>Kategori</th>
                                 <th>Pembeli</th>
                                 <th>Kasir</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -160,8 +203,8 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                         <tfoot>
                             <tr>
                                 <td colspan="4" style="text-align:right; font-weight:bold;">Total</td>
-                                <td style="font-weight:bold;">${soldItems.reduce((s, i) => s + i.qty, 0)}</td>
-                                <td colspan="${showHPP ? 5 : 4}"></td>
+                                <td style="font-weight:bold;">${soldItems.reduce((s, i) => s + (i.transactionType === TransactionType.RETURN ? -i.qty : i.qty), 0)}</td>
+                                <td colspan="${showHPP ? 6 : 5}"></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -176,7 +219,7 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
 
     const handleExport = () => {
         const showHPP = currentUser?.role !== UserRole.CASHIER;
-        let headers = ['ID Transaksi', 'Tanggal', 'Waktu', 'Item', 'Qty', 'Harga Jual', 'Kategori', 'Pembeli', 'Kasir'];
+        let headers = ['ID Transaksi', 'Tanggal', 'Waktu', 'Item', 'Qty', 'Harga Jual', 'Kategori', 'Pembeli', 'Kasir', 'Status'];
         if (showHPP) {
             headers.splice(5, 0, 'HPP');
         }
@@ -192,7 +235,8 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                 i.finalPrice,
                 i.selectedPriceType,
                 i.customerName,
-                i.cashierName
+                i.cashierName,
+                i.transactionType === TransactionType.RETURN ? 'RETUR' : i.isReturned ? 'Retur Sebagian' : 'Normal'
             ];
             if (showHPP) {
                 row.splice(5, 0, i.hpp || 0);
@@ -270,7 +314,7 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
                 <div className="p-4 bg-slate-50 border-b border-slate-100 font-semibold text-slate-700 flex justify-between">
                     <span>Daftar Barang Terjual</span>
-                    <span className="text-blue-600">Total Item: {soldItems.reduce((s, i) => s + i.qty, 0)}</span>
+                    <span className="text-blue-600">Total Item: {soldItems.reduce((s, i) => s + (i.transactionType === TransactionType.RETURN ? -i.qty : i.qty), 0)}</span>
                 </div>
                 <table className="w-full text-left text-sm">
                     <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
@@ -304,15 +348,16 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                             <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('cashierName')}>
                                 <div className="flex items-center">Kasir <SortIcon column="cashierName" /></div>
                             </th>
+                            <th className="p-4 font-medium">Status</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {soldItems.length === 0 && (
                             <tr>
-                                <td colSpan={9} className="p-8 text-center text-slate-400">Tidak ada data barang terjual.</td>
+                                <td colSpan={10} className="p-8 text-center text-slate-400">Tidak ada data barang terjual.</td>
                             </tr>
                         )}
-                        {soldItems.map((item, idx) => (
+                        {visibleSoldItems.map((item, idx) => (
                             <tr key={`${item.transactionId}-${idx}`} className="hover:bg-slate-50">
                                 <td className="p-4 text-slate-600">
                                     <div className="flex flex-col">
@@ -334,8 +379,25 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                                 </td>
                                 <td className="p-4 text-slate-600">{item.customerName}</td>
                                 <td className="p-4 text-slate-600">{item.cashierName}</td>
+                                <td className="p-4">
+                                    <span className={`px-2 py-1 rounded text-xs font-bold ${item.transactionType === TransactionType.RETURN
+                                        ? 'bg-purple-100 text-purple-600'
+                                        : item.isReturned
+                                            ? 'bg-orange-100 text-orange-600'
+                                            : 'bg-green-100 text-green-600'
+                                        }`}>
+                                        {item.transactionType === TransactionType.RETURN ? 'RETUR' : item.isReturned ? 'Retur Sebagian' : 'Normal'}
+                                    </span>
+                                </td>
                             </tr>
                         ))}
+                        {visibleSoldItems.length < soldItems.length && (
+                            <tr>
+                                <td colSpan={10} className="p-4 text-center text-slate-400">
+                                    <div ref={loadMoreRef}>Loading more...</div>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>

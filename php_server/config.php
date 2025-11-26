@@ -1,7 +1,9 @@
 <?php
 // Database Configuration
+// Set to true only for development debugging
+define('SHOW_DEBUG_ERRORS', false);
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'cemilan_app_db');
+define('DB_NAME', 'cemilankasirpos');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 
@@ -52,10 +54,14 @@ try {
     $errorMsg = "DB Connection Error: " . $exception->getMessage();
     file_put_contents('php_error.log', date('[Y-m-d H:i:s] ') . $errorMsg . "\n", FILE_APPEND);
     http_response_code(500);
-    echo json_encode([
-        "error" => "Database connection failed.",
-        "details" => $exception->getMessage()
-    ]);
+    
+    // Hide detailed errors in production
+    $response = ["error" => "Database connection failed."];
+    if (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) {
+        $response['details'] = $exception->getMessage();
+    }
+    
+    echo json_encode($response);
     exit();
 }
 ?>

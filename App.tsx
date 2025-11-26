@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
-import { Dashboard } from './pages/Dashboard';
-import { POS } from './pages/POS';
-import { Products } from './pages/Products';
-import { Finance } from './pages/Finance';
-import { Settings } from './pages/Settings';
-import { People } from './pages/People';
-import { BarcodeGenerator } from './pages/BarcodeGenerator';
-import { SoldItems } from './pages/SoldItems';
-import { CustomerHistory } from './pages/CustomerHistory';
-import { SupplierHistory } from './pages/SupplierHistory';
+import { Loading } from './components/Loading';
 import { StorageService } from './services/storage';
 import { ApiService } from './services/api';
+
+// Lazy load pages for better performance
+const Dashboard = React.lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
+const POS = React.lazy(() => import('./pages/POS').then(module => ({ default: module.POS })));
+const Products = React.lazy(() => import('./pages/Products').then(module => ({ default: module.Products })));
+const Finance = React.lazy(() => import('./pages/Finance').then(module => ({ default: module.Finance })));
+const Settings = React.lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
+const People = React.lazy(() => import('./pages/People').then(module => ({ default: module.People })));
+const BarcodeGenerator = React.lazy(() => import('./pages/BarcodeGenerator').then(module => ({ default: module.BarcodeGenerator })));
+const SoldItems = React.lazy(() => import('./pages/SoldItems').then(module => ({ default: module.SoldItems })));
+const CustomerHistory = React.lazy(() => import('./pages/CustomerHistory').then(module => ({ default: module.CustomerHistory })));
+const SupplierHistory = React.lazy(() => import('./pages/SupplierHistory').then(module => ({ default: module.SupplierHistory })));
 
 import { UserRole, User } from './types';
 import { Lock, User as UserIcon, Eye, EyeOff } from 'lucide-react';
@@ -183,7 +186,9 @@ const App: React.FC = () => {
          userRole={currentUser.role}
          onLogout={handleLogout}
       >
-         {renderPage()}
+         <React.Suspense fallback={<Loading />}>
+            {renderPage()}
+         </React.Suspense>
       </Layout>
    );
 };

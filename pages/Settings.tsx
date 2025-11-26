@@ -7,14 +7,14 @@ import { Trash2, Plus, User as UserIcon, Shield, ShieldAlert, Edit2, Save, X, St
 // Default store settings - defined outside component to avoid recreation
 const DEFAULT_STORE_SETTINGS: StoreSettings = {
     name: '', jargon: '', address: '', phone: '', bankAccount: '', footerMessage: '', notes: '',
-    showAddress: true, showJargon: true, showBank: true, showPhone: true, printerType: '58mm'
+    showAddress: true, showJargon: true, showBank: true, printerType: '58mm'
 };
 
 export const Settings: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'store' | 'users' | 'payments' | 'data'>('store');
 
     // User State with useData
-    const users = useData(() => StorageService.getUsers()) || [];
+    const users = useData(() => StorageService.getUsers(), [], 'users') || [];
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export const Settings: React.FC = () => {
     });
 
     // Store State
-    const loadedSettings = useData(() => StorageService.getStoreSettings());
+    const loadedSettings = useData(() => StorageService.getStoreSettings(), [], 'storeSettings');
     const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
 
     useEffect(() => {
@@ -36,7 +36,7 @@ export const Settings: React.FC = () => {
     }, [loadedSettings]);
 
     // Bank State
-    const banks = useData(() => StorageService.getBanks()) || [];
+    const banks = useData(() => StorageService.getBanks(), [], 'banks') || [];
     const [bankForm, setBankForm] = useState<Partial<BankAccount>>({ bankName: '', accountNumber: '', holderName: '' });
     const [isBankModalOpen, setIsBankModalOpen] = useState(false);
     const [editingBankId, setEditingBankId] = useState<string | null>(null);
@@ -85,7 +85,7 @@ export const Settings: React.FC = () => {
     const handleOpenModal = (user?: User) => {
         if (user) {
             setEditingId(user.id);
-            setUserForm({ name: user.name, username: user.username, password: user.password, role: user.role, image: user.image });
+            setUserForm({ name: user.name, username: user.username, password: '', role: user.role, image: user.image });
         } else {
             setEditingId(null);
             setUserForm({ name: '', username: '', password: '', role: UserRole.CASHIER, image: '' });
@@ -94,12 +94,27 @@ export const Settings: React.FC = () => {
     };
 
     const handleSaveUser = async () => {
-        if (!userForm.username || !userForm.password || !userForm.name) return;
+        // Validation: Name and Username are always required
+        if (!userForm.username || !userForm.name) {
+            alert('Nama dan Username wajib diisi');
+            return;
+        }
+
+        // Validation: Password is required ONLY for new users
+        if (!editingId && !userForm.password) {
+            alert('Password wajib diisi untuk user baru');
+            return;
+        }
 
         const payload = {
             ...userForm,
             id: editingId || undefined
         } as User;
+
+        // If editing and password is empty, remove it from payload to keep existing password
+        if (editingId && !userForm.password) {
+            delete (payload as any).password;
+        }
 
         try {
             await StorageService.saveUser(payload);
@@ -153,31 +168,7 @@ export const Settings: React.FC = () => {
     };
 
     // --- DATA MANAGEMENT HANDLERS (SUPERADMIN ONLY) ---
-
-    // Helper: Check if in production mode
-    const isProduction = () => import.meta.env.PROD;
-
-    // Helper: Show production warning
-    const showProductionWarning = (actionName: string): boolean => {
-        if (isProduction()) {
-            const prodWarning = confirm(
-                `⚠️ ANDA SEDANG DI MODE PRODUCTION ⚠️\n\n` +
-                `Tindakan: ${actionName}\n` +
-                `Ini akan mempengaruhi DATA LIVE!\n\n` +
-                `Apakah Anda yakin ingin melanjutkan?`
-            );
-            if (!prodWarning) {
-                alert('❌ Operasi dibatalkan.');
-                return false;
-            }
-        }
-        return true;
-    };
-
     const handleResetProducts = async () => {
-        // Production warning
-        if (!showProductionWarning('Hapus Semua Produk')) return;
-
         const confirmation = prompt('PERINGATAN: Ini akan menghapus SEMUA data produk!\n\nSemua produk yang Anda input akan HILANG PERMANEN!\nStock akan kembali ke 0.\n\nKetik "HAPUS PRODUK" untuk konfirmasi:');
         if (confirmation === 'HAPUS PRODUK') {
             await StorageService.resetProducts();
@@ -189,8 +180,6 @@ export const Settings: React.FC = () => {
     };
 
     const handleResetTransactions = async () => {
-        if (!showProductionWarning('Hapus Semua Transaksi')) return;
-
         const confirmation = prompt('PERINGATAN: Ini akan menghapus SEMUA data transaksi penjualan!\n\nKetik "HAPUS TRANSAKSI" untuk konfirmasi:');
         if (confirmation === 'HAPUS TRANSAKSI') {
             await StorageService.resetTransactions();
@@ -201,8 +190,6 @@ export const Settings: React.FC = () => {
     };
 
     const handleResetPurchases = async () => {
-        if (!showProductionWarning('Hapus Semua Pembelian')) return;
-
         const confirmation = prompt('PERINGATAN: Ini akan menghapus SEMUA data pembelian/stok masuk!\n\nKetik "HAPUS PEMBELIAN" untuk konfirmasi:');
         if (confirmation === 'HAPUS PEMBELIAN') {
             await StorageService.resetPurchases();
@@ -213,8 +200,6 @@ export const Settings: React.FC = () => {
     };
 
     const handleResetCashFlow = async () => {
-        if (!showProductionWarning('Hapus Semua Arus Kas')) return;
-
         const confirmation = prompt('PERINGATAN: Ini akan menghapus SEMUA data arus kas!\n\nKetik "HAPUS ARUS KAS" untuk konfirmasi:');
         if (confirmation === 'HAPUS ARUS KAS') {
             await StorageService.resetCashFlow();
@@ -225,8 +210,6 @@ export const Settings: React.FC = () => {
     };
 
     const handleResetAllFinancial = async () => {
-        if (!showProductionWarning('RESET SEMUA DATA KEUANGAN')) return;
-
         const confirmation = prompt('⚠️ BAHAYA: Ini akan menghapus SEMUA data keuangan (Transaksi, Pembelian, Arus Kas)!\n\nTindakan ini TIDAK DAPAT DIBATALKAN!\n\nKetik "RESET SEMUA" untuk konfirmasi:');
         if (confirmation === 'RESET SEMUA') {
             const doubleConfirm = confirm('Apakah Anda BENAR-BENAR YAKIN ingin menghapus semua data keuangan?');
@@ -243,8 +226,6 @@ export const Settings: React.FC = () => {
     };
 
     const handleResetMasterData = async () => {
-        if (!showProductionWarning('RESET SEMUA MASTER DATA')) return;
-
         const confirmation = prompt('⚠️ BAHAYA: Ini akan me-reset SEMUA Master Data (Produk, Kategori, Pelanggan, Supplier) ke default awal!\n\nData yang Anda input akan HILANG PERMANEN!\n\nKetik "RESET MASTER DATA" untuk konfirmasi:');
         if (confirmation === 'RESET MASTER DATA') {
             const doubleConfirm = confirm('Apakah Anda BENAR-BENAR YAKIN ingin me-reset Master Data ke default?');
@@ -261,8 +242,6 @@ export const Settings: React.FC = () => {
     };
 
     const handleResetAllData = async () => {
-        if (!showProductionWarning('🚨 HAPUS SELURUH DATA 🚨')) return;
-
         const confirmation = prompt('🚨 PERINGATAN EKSTRIM 🚨\n\nIni akan menghapus SELURUH DATA dari database:\n• Transaksi Penjualan\n• Pembelian\n• Arus Kas\n• Produk\n• Kategori\n• Pelanggan\n• Supplier\n\nSEMUA DATA AKAN HILANG PERMANEN!\n\nKetik "HAPUS SEMUA DATA" untuk konfirmasi:');
         if (confirmation === 'HAPUS SEMUA DATA') {
             const doubleConfirm = confirm('⚠️ KONFIRMASI KEDUA ⚠️\n\nAnda akan menghapus SELURUH DATA di aplikasi!\nTindakan ini TIDAK DAPAT DIBATALKAN!\n\nLanjutkan?');
@@ -775,7 +754,7 @@ export const Settings: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                                    <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} />
+                                    <input type="password" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} placeholder={editingId ? "Kosongkan jika tidak ingin mengubah password" : ""} />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Level Akses</label>

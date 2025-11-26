@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { subscribeToChanges } from '../services/storage';
 
-export function useData<T>(fetcher: () => Promise<T>, deps: any[] = []): T | undefined {
+export function useData<T>(fetcher: () => Promise<T>, deps: any[] = [], relevantEntities?: string | string[]): T | undefined {
     const [data, setData] = useState<T | undefined>(undefined);
 
     useEffect(() => {
@@ -18,8 +18,18 @@ export function useData<T>(fetcher: () => Promise<T>, deps: any[] = []): T | und
 
         fetchData();
 
-        const unsubscribe = subscribeToChanges(() => {
-            fetchData();
+        const unsubscribe = subscribeToChanges((changedEntity?: string) => {
+            // If no specific entity changed (global reset) OR 
+            // if we don't care about specific entities (legacy behavior) OR
+            // if the changed entity is one we care about
+            if (!changedEntity || !relevantEntities) {
+                fetchData();
+            } else {
+                const entities = Array.isArray(relevantEntities) ? relevantEntities : [relevantEntities];
+                if (entities.includes(changedEntity)) {
+                    fetchData();
+                }
+            }
         });
 
         return () => {

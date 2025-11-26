@@ -2,11 +2,12 @@ import { Product, Transaction, User, CashFlow, Category, Customer, Supplier, Pur
 import { ApiService } from "./api";
 
 // Simple Event Bus for Data Changes
-type ChangeListener = () => void;
+// Simple Event Bus for Data Changes
+type ChangeListener = (entity?: string) => void;
 const listeners: ChangeListener[] = [];
 
-const notifyListeners = () => {
-  listeners.forEach(l => l());
+const notifyListeners = (entity?: string) => {
+  listeners.forEach(l => l(entity));
 };
 
 export const subscribeToChanges = (listener: ChangeListener) => {
@@ -34,7 +35,7 @@ export const StorageService = {
   },
   saveStoreSettings: async (settings: StoreSettings) => {
     await ApiService.saveStoreSettings(settings);
-    notifyListeners();
+    notifyListeners('settings');
   },
 
   // Banks
@@ -44,11 +45,11 @@ export const StorageService = {
   saveBank: async (bank: BankAccount) => {
     if (!bank.id) await ApiService.saveBank(bank);
     else await ApiService.updateBank(bank);
-    notifyListeners();
+    notifyListeners('banks');
   },
   deleteBank: async (id: string) => {
     await ApiService.deleteBank(id);
-    notifyListeners();
+    notifyListeners('banks');
   },
 
   // Categories
@@ -58,11 +59,11 @@ export const StorageService = {
   saveCategory: async (category: Category) => {
     if (!category.id) await ApiService.saveCategory(category);
     else await ApiService.updateCategory(category);
-    notifyListeners();
+    notifyListeners('categories');
   },
   deleteCategory: async (id: string) => {
     await ApiService.deleteCategory(id);
-    notifyListeners();
+    notifyListeners('categories');
   },
 
   // Products
@@ -72,15 +73,15 @@ export const StorageService = {
   saveProduct: async (product: Product) => {
     if (!product.id) await ApiService.saveProduct(product);
     else await ApiService.updateProduct(product);
-    notifyListeners();
+    notifyListeners('products');
   },
   deleteProduct: async (id: string) => {
     await ApiService.deleteProduct(id);
-    notifyListeners();
+    notifyListeners('products');
   },
   saveProductsBulk: async (newProducts: Product[]) => {
     await ApiService.saveProductsBulk(newProducts);
-    notifyListeners();
+    notifyListeners('products');
   },
 
   // Customers
@@ -90,11 +91,11 @@ export const StorageService = {
   saveCustomer: async (cust: Customer) => {
     if (!cust.id) await ApiService.saveCustomer(cust);
     else await ApiService.updateCustomer(cust);
-    notifyListeners();
+    notifyListeners('customers');
   },
   deleteCustomer: async (id: string) => {
     await ApiService.deleteCustomer(id);
-    notifyListeners();
+    notifyListeners('customers');
   },
 
   // Suppliers
@@ -104,11 +105,11 @@ export const StorageService = {
   saveSupplier: async (sup: Supplier) => {
     if (!sup.id) await ApiService.saveSupplier(sup);
     else await ApiService.updateSupplier(sup);
-    notifyListeners();
+    notifyListeners('suppliers');
   },
   deleteSupplier: async (id: string) => {
     await ApiService.deleteSupplier(id);
-    notifyListeners();
+    notifyListeners('suppliers');
   },
 
   // Transactions (Sales)
@@ -117,11 +118,22 @@ export const StorageService = {
   },
   addTransaction: async (transaction: Transaction) => {
     await ApiService.addTransaction(transaction);
-    notifyListeners();
+    notifyListeners('transactions');
+    // Transactions also affect products (stock) and cashflow
+    notifyListeners('products');
+    notifyListeners('cashflow');
   },
   updateTransaction: async (transaction: Transaction) => {
     await ApiService.updateTransaction(transaction);
-    notifyListeners();
+    notifyListeners('transactions');
+    notifyListeners('products');
+    notifyListeners('cashflow');
+  },
+  deleteTransaction: async (id: string) => {
+    await ApiService.deleteTransaction(id);
+    notifyListeners('transactions');
+    notifyListeners('products');
+    notifyListeners('cashflow');
   },
 
   // Purchases (Stock In)
@@ -130,11 +142,21 @@ export const StorageService = {
   },
   addPurchase: async (purchase: Purchase) => {
     await ApiService.addPurchase(purchase);
-    notifyListeners();
+    notifyListeners('purchases');
+    notifyListeners('products');
+    notifyListeners('cashflow');
   },
   updatePurchase: async (purchase: Purchase) => {
     await ApiService.updatePurchase(purchase);
-    notifyListeners();
+    notifyListeners('purchases');
+    notifyListeners('products');
+    notifyListeners('cashflow');
+  },
+  deletePurchase: async (id: string) => {
+    await ApiService.deletePurchase(id);
+    notifyListeners('purchases');
+    notifyListeners('products');
+    notifyListeners('cashflow');
   },
 
   // Cash Flow
@@ -143,7 +165,7 @@ export const StorageService = {
   },
   addCashFlow: async (cf: CashFlow) => {
     await ApiService.addCashFlow(cf);
-    notifyListeners();
+    notifyListeners('cashflow');
   },
 
   // Users
@@ -153,41 +175,51 @@ export const StorageService = {
   saveUser: async (user: User) => {
     if (!user.id) await ApiService.saveUser(user);
     else await ApiService.updateUser(user);
-    notifyListeners();
+    notifyListeners('users');
   },
   deleteUser: async (id: string) => {
     await ApiService.deleteUser(id);
-    notifyListeners();
+    notifyListeners('users');
   },
 
   // Reset Functions (SUPERADMIN ONLY)
   resetProducts: async () => {
     await ApiService.resetProducts();
-    notifyListeners();
+    notifyListeners('products');
   },
   resetTransactions: async () => {
     await ApiService.resetTransactions();
-    notifyListeners();
+    notifyListeners('transactions');
+    notifyListeners('products');
+    notifyListeners('cashflow');
   },
   resetPurchases: async () => {
     await ApiService.resetPurchases();
-    notifyListeners();
+    notifyListeners('purchases');
+    notifyListeners('products');
+    notifyListeners('cashflow');
   },
   resetCashFlow: async () => {
     await ApiService.resetCashFlow();
-    notifyListeners();
+    notifyListeners('cashflow');
   },
   resetAllFinancialData: async () => {
     await ApiService.resetAllFinancialData();
-    notifyListeners();
+    notifyListeners('transactions');
+    notifyListeners('purchases');
+    notifyListeners('cashflow');
+    notifyListeners('products');
   },
   resetMasterData: async () => {
     await ApiService.resetMasterData();
-    notifyListeners();
+    notifyListeners('products');
+    notifyListeners('categories');
+    notifyListeners('customers');
+    notifyListeners('suppliers');
   },
   resetAllData: async () => {
     await ApiService.resetAllData();
-    notifyListeners();
+    notifyListeners(); // All changed
   },
 
 };

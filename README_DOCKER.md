@@ -1,6 +1,8 @@
-# Panduan Docker Deployment (Versi PHP Backend)
+# Panduan Docker Deployment
 
-Panduan ini menjelaskan cara menjalankan aplikasi Cemilan KasirPOS menggunakan Docker dan Docker Compose dengan **Backend PHP**.
+Panduan ini menjelaskan cara menjalankan 6. **Rate Limiting**: ✅ Diimplementasikan menggunakan `express-rate-limit` (Global + Strict Login Limiter).
+ 7. **Error Handling**: ✅ Detail error disembunyikan di production (`NODE_ENV=production`).
+ 8. **Data Sanitization**: ✅ Password hash tidak dikirim ke client.
 
 ## 📋 Prasyarat
 
@@ -14,19 +16,26 @@ Aplikasi ini menggunakan 3 container:
 
 ```
 ┌─────────────────────────────────────────────┐
-│         Nginx (Frontend Container)          │
-│  - Port 80 (HTTP)                           │
-│  - Serve React Static Files                 │
-│  - Proxy /api → Backend Container           │
+│         Nginx (Reverse Proxy)               │
+│  - Port 80 (HTTP) / 443 (HTTPS)             │
+│  - Serve Frontend Static Files              │
+│  - Proxy /api → Backend                     │
 └────────────┬────────────────────────────────┘
              │
        ┌─────┴──────┐
        │            │
 ┌──────▼──────┐  ┌──▼────────────────────┐
-│  Backend    │  │   MySQL Database      │
-│  (PHP 8.2)  │  │   - Port 3306         │
-│  - Apache   │  │   - Persistent Vol    │
-└─────────────┘  └───────────────────────┘
+│  Frontend   │  │   Backend (Node.js)   │
+│  (React)    │  │   - Express API       │
+│  - Vite     │  │   - Port 3001         │
+│  - Built    │  │                       │
+└─────────────┘  └──────┬────────────────┘
+                        │
+                 ┌──────▼──────────────┐
+                 │  MySQL Database     │
+                 │  - Port 3306        │
+                 │  - Persistent Vol   │
+                 └─────────────────────┘
 ```
 
 ## 📁 Struktur File Docker
@@ -34,8 +43,6 @@ Aplikasi ini menggunakan 3 container:
 Buat file-file berikut di root project:
 
 ### 1. `Dockerfile` (Frontend)
-
-File ini akan mem-build React app dan menyajikannya menggunakan Nginx.
 
 ```dockerfile
 # Stage 1: Build React App
@@ -52,9 +59,7 @@ RUN npm ci --only=production
 # Copy source code
 COPY . .
 
-# Build static files (Pastikan .env.production mengarah ke /api)
-# Kita akan set VITE_API_URL saat build atau biarkan relative path
-ENV VITE_API_URL=/api
+# Build static files
 RUN npm run build
 
 # Stage 2: Serve with Nginx
@@ -72,105 +77,83 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
-### 2. `nginx.conf` (Frontend Config)
-
-Buat file `nginx.conf` di root project untuk konfigurasi Nginx:
-
-```nginx
-server {
-    listen 80;
-    server_name localhost;
-
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # Serve React App
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Proxy API requests to PHP Backend
-    location /api {
-        # 'backend' adalah nama service di docker-compose
-        proxy_pass http://backend:80/api;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-### 3. `Dockerfile.backend` (Backend PHP)
-
-File ini akan menjalankan server Apache dengan PHP.
+### 2. `Dockerfile.backend` (Backend)
 
 ```dockerfile
-FROM php:8.2-apache
+FROM node:18-alpine
 
-# Install extensions yang dibutuhkan
-RUN docker-php-ext-install pdo pdo_mysql
+WORKDIR /app
 
-# Enable mod_rewrite untuk routing API
-RUN a2enmod rewrite
+# Copy package files from server directory
+COPY server/package*.json ./
 
-# Copy source code backend ke web root
-COPY php_server/ /var/www/html/
+# Install dependencies
+RUN npm ci --only=production
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html
+# Copy backend source code
+COPY server/ ./
 
-# Expose port 80 (Apache default)
-EXPOSE 80
+# Expose backend port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD node -e "require('http').get('http://localhost:3001/api/products', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+CMD ["node", "index.js"]
 ```
 
-### 4. `docker-compose.yml`
+### 3. `docker-compose.yml`
 
 ```yaml
 version: '3.8'
 
 services:
-  # Frontend (Nginx + React)
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  mysql:
+    image: mysql:8.0
+    container_name: cemilan-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: cemilankasirpos
     ports:
-      - "80:80"
-    depends_on:
-      - backend
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
     networks:
       - app-network
 
-  # Backend (PHP + Apache)
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    volumes:
-      - ./php_server:/var/www/html # Development: Hot reload PHP
+    container_name: cemilan-backend
+    restart: always
+    ports:
+      - "3001:3001"
     environment:
-      - DB_HOST=mysql
-      - DB_NAME=cemilankasirpos
-      - DB_USER=root
-      - DB_PASS=rootpassword
-      - JWT_SECRET=rahasia_docker_secure
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASS: ${MYSQL_ROOT_PASSWORD:-root}
+      DB_NAME: cemilankasirpos
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET:-secret}
+      NODE_ENV: production
     depends_on:
       - mysql
     networks:
       - app-network
 
-  # Database (MySQL)
-  mysql:
-    image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cemilan-frontend
     restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: cemilankasirpos
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./cemilankasirpos.sql:/docker-entrypoint-initdb.d/init.sql # Auto import SQL
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     networks:
       - app-network
 
@@ -182,62 +165,307 @@ volumes:
   mysql_data:
 ```
 
-## 🚀 Cara Menjalankan
+# Lihat logs specific service
+docker-compose logs -f backend
 
-1.  **Persiapan Database**:
-    Pastikan file `cemilankasirpos.sql` ada di root project agar otomatis di-import saat container MySQL pertama kali dibuat.
+# Restart specific service
+docker-compose restart backend
 
-2.  **Jalankan Docker Compose**:
-    ```bash
-    docker-compose up -d --build
-    ```
+# Masuk ke container (debugging)
+docker-compose exec backend sh
+docker-compose exec mysql bash
 
-3.  **Akses Aplikasi**:
-    Buka browser dan akses `http://localhost`.
-
-## ⚙️ Konfigurasi Tambahan
-
-### Koneksi Database (PENTING)
-
-Agar backend PHP bisa terhubung ke container MySQL, Anda perlu menyesuaikan `php_server/config.php` agar membaca Environment Variables, atau Docker akan meng-override-nya jika Anda memodifikasi kode PHP-nya.
-
-Modifikasi `php_server/config.php` Anda menjadi seperti ini untuk mendukung Docker:
-
-```php
-<?php
-// Database Configuration
-// Prioritize Environment Variables (Docker), fallback to local defaults
-define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: 'cemilankasirpos');
-define('DB_USER', getenv('DB_USER') ?: 'root');
-define('DB_PASS', getenv('DB_PASS') ?: '');
-
-// ... sisa konfigurasi ...
-?>
+# Stop dan hapus semua (termasuk volumes)
+docker-compose down -v
 ```
 
-### Reset Database di Docker
-
-Jika Anda ingin mereset database Docker ke awal:
+### Database Commands
 
 ```bash
-# Hapus container dan volume
-docker-compose down -v
+# Backup database
+docker-compose exec mysql mysqldump -u root -p${MYSQL_ROOT_PASSWORD} cemilankasirpos > backup.sql
 
-# Jalankan ulang (akan import ulang SQL)
-docker-compose up -d
+# Restore database
+docker-compose exec -T mysql mysql -u root -p${MYSQL_ROOT_PASSWORD} cemilankasirpos < backup.sql
+
+# MySQL shell
+docker-compose exec mysql mysql -u root -p${MYSQL_ROOT_PASSWORD}
+```
+
+### Maintenance
+
+```bash
+# Update images
+docker-compose pull
+
+# Prune unused images/volumes
+docker system prune -a
+docker volume prune
+
+# View resource usage
+docker stats
+```
+
+## 📊 Monitoring & Logging
+
+### Logs
+
+```bash
+# Application logs
+docker-compose logs -f --tail=100 backend
+
+# Access logs (Nginx)
+docker-compose exec frontend tail -f /var/log/nginx/access.log
+
+# Error logs (Nginx)
+docker-compose exec frontend tail -f /var/log/nginx/error.log
+```
+
+### Health Checks
+
+```bash
+# Check container health
+docker-compose ps
+
+# Detailed health status
+docker inspect kasirpintar-backend | grep -A 10 Health
+
+# API health check
+curl http://localhost:3001/api/products
+```
+
+## 🔐 Security Best Practices
+
+### 1. Environment Variables
+
+❌ **JANGAN** commit file `.env` ke git
+✅ Gunakan `.env.example` sebagai template
+
+```bash
+# .env.example
+MYSQL_ROOT_PASSWORD=CHANGE_THIS
+# Keamanan (JWT)
+JWT_SECRET=rahasia_dapur_cemilan_kasirpos_2025_secure_key
+
+# Production Mode (PENTING: Sembunyikan Error Detail)
+NODE_ENV=production
+```
+
+### 2. Secrets Management
+
+Untuk production, gunakan Docker Secrets:
+
+```yaml
+# docker-compose.prod.yml
+services:
+  backend:
+    secrets:
+      - db_password
+    environment:
+      DB_PASS_FILE: /run/secrets/db_password
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+```
+
+### 3. Network Isolation
+
+```yaml
+services:
+  mysql:
+    networks:
+      - backend-net  # Hanya backend yang bisa akses
+
+  backend:
+    networks:
+      - backend-net
+      - frontend-net
+
+  frontend:
+    networks:
+      - frontend-net  # Tidak bisa akses MySQL langsung
+```
+
+### 4. Read-only Filesystem
+
+```yaml
+services:
+  frontend:
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+```
+
+### 4. Security Hardening
+*   **Error Hiding:** Saat `NODE_ENV=production`, detail error stack trace disembunyikan dari client.
+*   **Data Sanitization:** Password hash dihapus dari response API.
+*   **Bcrypt Hash:** Untuk keamanan standar. Sistem akan otomatis meng-hash password plain text saat login pertama kali (opsional, logika ada di `index.js`).
+*   Lihat **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)** untuk detail lengkap.
+
+## 🌐 Deployment ke Cloud
+
+### Docker Hub
+
+```bash
+# 1. Login
+docker login
+
+# 2. Tag images
+docker tag kasirpintar-frontend yourusername/kasirpintar-frontend:latest
+docker tag kasirpintar-backend yourusername/kasirpintar-backend:latest
+
+# 3. Push
+docker push yourusername/kasirpintar-frontend:latest
+docker push yourusername/kasirpintar-backend:latest
+```
+
+### Digital Ocean / AWS / GCP
+
+1.  **Buat VM/Droplet** dengan Docker pre-installed
+2.  **Clone repo** dan setup `.env`
+3.  **Jalankan** `docker-compose up -d`
+4.  **Setup domain** dan SSL (Let's Encrypt)
+
+```bash
+# Install certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Get SSL certificate
+sudo certbot --nginx -d yourdomain.com
+```
+
+### Kubernetes (Advanced)
+
+Convert docker-compose to K8s:
+
+```bash
+# Install kompose
+curl -L https://github.com/kubernetes/kompose/releases/download/v1.26.0/kompose-linux-amd64 -o kompose
+chmod +x kompose
+sudo mv ./kompose /usr/local/bin/kompose
+
+# Convert
+kompose convert
+```
+
+## 🔄 CI/CD Integration
+
+### GitHub Actions
+
+Buat `.github/workflows/docker.yml`:
+
+```yaml
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: yourusername/kasirpintar:latest
 ```
 
 ## 🐛 Troubleshooting
 
-### 1. API Error / 404 Not Found
-- Pastikan `mod_rewrite` aktif di container backend (sudah ada di Dockerfile).
-- Pastikan file `.htaccess` ada di folder `php_server`.
-- Cek logs backend: `docker-compose logs backend`.
+### Container tidak start
 
-### 2. Database Connection Error
-- Pastikan `php_server/config.php` sudah dimodifikasi untuk membaca `getenv('DB_HOST')` dkk.
-- Pastikan container `mysql` sudah running dan sehat.
+```bash
+# Lihat error logs
+docker-compose logs backend
 
-### 3. Changes not reflecting (PHP)
-- Jika Anda menggunakan volume `./php_server:/var/www/html`, perubahan di file PHP lokal akan langsung terlihat. Jika tidak, Anda perlu rebuild: `docker-compose build backend`.
+# Check port conflict
+netstat -tlnp | grep 3001
+
+# Restart dengan fresh install
+docker-compose down -v
+docker-compose up -d --build
+```
+
+### Database connection error
+
+```bash
+# Verify MySQL is running
+docker-compose exec mysql mysql -u root -p
+
+# Check environment variables
+docker-compose exec backend env | grep DB_
+```
+
+### Frontend tidak load
+
+```bash
+# Check nginx config
+docker-compose exec frontend nginx -t
+
+# Reload nginx
+docker-compose exec frontend nginx -s reload
+```
+
+## 📈 Performance Tuning
+
+### MySQL Optimization
+
+```yaml
+# docker-compose.yml
+mysql:
+  command: 
+    - --default-authentication-plugin=mysql_native_password
+    - --max_connections=200
+    - --innodb_buffer_pool_size=256M
+```
+
+### Nginx Caching
+
+```nginx
+# nginx.conf
+proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=api_cache:10m max_size=100m;
+
+location /api {
+    proxy_cache api_cache;
+    proxy_cache_valid 200 5m;
+    add_header X-Cache-Status $upstream_cache_status;
+}
+```
+
+## 📝 Checklist Deployment
+
+- [ ] `.env` dikonfigurasi dengan password yang kuat
+- [ ] SSL certificate installed (untuk HTTPS)
+- [ ] Firewall dikonfigurasi (hanya buka port 80, 443)
+- [ ] Database backup automated
+- [ ] Monitoring & logging setup
+- [ ] Health checks berfungsi
+- [ ] API_URL di frontend sudah benar
+- [ ] Test semua fitur utama
+- [ ] Documentation update
+- [ ] **NODE_ENV=production** is set (Critical for security)
+- [ ] **Rate Limiting**: ✅ Diimplementasikan menggunakan `express-rate-limit` (Global + Strict Login Limiter).
+- [ ] **Error Handling**: ✅ Detail error disembunyikan di production (`NODE_ENV=production`).
+- [ ] **Data Sanitization**: ✅ Password hash tidak dikirim ke client.
+- [ ] **CORS Configuration**: Pastikan origin di `server/index.js` di-set ke domain frontend production.
+- [ ] **Set NODE_ENV**: Wajib set `NODE_ENV=production` untuk mengaktifkan fitur keamanan error handling.
+
+> Baca **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)** untuk laporan audit keamanan lengkap.
+> For detailed security audit and hardening, see **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)**.
+
+---
+
+**Note:** Docker menyederhanakan deployment dengan containerization. Semua dependencies tercakup di dalam container, memastikan aplikasi berjalan konsisten di berbagai environment.

@@ -8,8 +8,8 @@ import { Transaction, Product, CartItem, User } from '../types';
 import { useData } from '../hooks/useData';
 
 export const Dashboard: React.FC = () => {
-  const transactions = useData(() => StorageService.getTransactions()) || [];
-  const products = useData(() => StorageService.getProducts()) || [];
+  const transactions = useData(() => StorageService.getTransactions(), [], 'transactions') || [];
+  const products = useData(() => StorageService.getProducts(), [], 'products') || [];
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');

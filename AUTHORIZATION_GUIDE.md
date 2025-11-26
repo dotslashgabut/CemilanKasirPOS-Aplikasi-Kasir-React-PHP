@@ -1,4 +1,4 @@
-# Panduan Sistem Authorization
+# Panduan Sistem Authorization (Node.js Backend)
 
 ## Perubahan yang Dilakukan
 
@@ -8,27 +8,42 @@ Sistem authorization berbasis role telah ditambahkan untuk mengamankan API backe
 
 Aplikasi menggunakan 3 tingkat role:
 
-1. **SUPERADMIN**: Akses penuh ke semua fitur termasuk Data Management dan Reset Data.
-2. **OWNER**: Akses ke fitur manajemen, kecuali manajemen user dan data management (reset).
-3. **CASHIER**: Hanya akses ke transaksi penjualan.
+1. **SUPERADMIN**: Akses penuh ke semua fitur termasuk Data Management
+2. **OWNER**: Akses ke fitur manajemen, kecuali manajemen user dan data management
+3. **CASHIER**: Hanya akses ke transaksi penjualan
 
 ## File yang Dimodifikasi
 
-### 1. Backend PHP
+### 1. Backend Node.js
 
-#### `php_server/auth.php`
+#### `server/index.js`
 
-File middleware autentikasi yang menyediakan:
+File server utama yang menyediakan:
 
-- `getUserFromHeaders()`: Memverifikasi dan mendekode **JWT Token** dari Authorization header
-- `requireAuth()`: Memastikan user sudah login dan token valid
-- `requireRole($allowedRoles)`: Memastikan user memiliki role yang sesuai
-- `generateJWT($payload)`: Membuat token JWT baru saat login
-- `verifyJWT($token)`: Memverifikasi signature dan expiration token
+- **Authentication Middleware**: `authenticateToken()` - Memverifikasi dan mendekode **JWT Token** dari Authorization header
+- **Login Route**: `/api/login` - Membuat token JWT baru saat login berhasil
+- **Generic CRUD Routes**: Otomatis generate routes untuk semua model dengan authentication
+- **JWT Verification**: Menggunakan `jsonwebtoken` library untuk verify signature dan expiration
+- **Password Hashing**: Menggunakan `bcryptjs` untuk hash password
 
-#### `php_server/index.php`
+#### Middleware Autentikasi
 
-Ditambahkan authorization checks pada setiap operasi:
+```javascript
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.sendStatus(401);
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+};
+```
+
+#### Authorization pada setiap operasi:
 
 **POST Operations:**
 
@@ -45,7 +60,7 @@ Ditambahkan authorization checks pada setiap operasi:
 **DELETE Operations:**
 
 - User management: Hanya SUPERADMIN
-- **Financial data (transactions, purchases, cashflow): Hanya SUPERADMIN** ⚡
+- **Financial data (transactions, purchases, cashflow): Hanya SUPERADMIN** ⚡ NEW
 - Master data & banks: CASHIER tidak bisa
 - Lainnya: Semua user terautentikasi
 
@@ -60,15 +75,15 @@ Ditambahkan authorization checks pada setiap operasi:
 - Master data: CASHIER tidak bisa
 - Lainnya: Semua user terautentikasi
 
-**Data Management (Reset Functions):**
+**Data Management (Reset Functions):** ⚡ NEW
 
-- **Hanya SUPERADMIN yang bisa akses Data Management tab**
+- **Hanya SUPERADMIN yang bisa akses Data Management tab** 
 - Reset Transactions: Menghapus semua data transaksi penjualan
-- Reset Purchases: Menghapus semua data pembelian/stok masuk
+- Reset Purchases: Menghapus semua data pembelian/stok masuk  
 - Reset Cash Flow: Menghapus semua data arus kas
 - Reset All Financial Data: Menghapus semua data keuangan (kombinasi 3 di atas)
 - Reset Master Data: Menghapus semua produk, kategori, pelanggan, supplier
-- **Reset All Data (Nuclear Option):** Menghapus SELURUH data database (Financial + Master Data)
+- **Reset All Data (Nuclear Option):** Menghapus SELURUH data database (Financial + Master Data) ⚡ NEW
 
 ### 2. Frontend React
 
@@ -85,8 +100,29 @@ Ditambahkan fungsi `getHeaders()` yang:
 
 ### 1. Login
 
+```javascript
+// POST /api/login
+{
+  "username": "superadmin",
+  "password": "password"
+}
+
+// Response
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "username": "superadmin",
+    "role": "SUPERADMIN"
+  }
+}
+```
+
 - User login melalui `App.tsx`
-- Data user disimpan di `localStorage` dengan key `pos_current_user`
+- Backend memverifikasi username dan password
+- Password di-compare dengan bcrypt (atau plain text untuk legacy support)
+- Jika valid, backend generate JWT token dengan expiration 24 jam
+- Data user dan token disimpan di `localStorage` (`pos_token` dan `pos_current_user`)
 
 ### 2. Setiap API Request
 
@@ -94,18 +130,19 @@ Ditambahkan fungsi `getHeaders()` yang:
 // Frontend mengirim header
 Authorization: Bearer <jwt_token_string>
 
-// Backend PHP memverifikasi
-$token = substr($authHeader, 7);
-$payload = verifyJWT($token); // Verify signature & expiration
+// Backend Node.js memverifikasi
+const authHeader = req.headers['authorization'];
+const token = authHeader && authHeader.split(' ')[1];
 
-if (!$payload) {
-    // HTTP 401 Unauthorized
-}
-
-// Validasi role
-if (!in_array($payload['role'], $allowedRoles)) {
-    // HTTP 403 Forbidden
-}
+jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+        // HTTP 403 Forbidden
+        return res.sendStatus(403);
+    }
+    
+    // Token valid, user data tersedia di req.user
+    req.user = user; // { id, username, role }
+});
 ```
 
 ### 3. Response Error
@@ -147,40 +184,55 @@ if (!in_array($payload['role'], $allowedRoles)) {
 ## Keamanan
 
 ### Status Keamanan Saat Ini:
-
-1. **JWT Authentication**: ✅ Sudah diimplementasikan. Token memiliki expiration time.
-2. **Password Hashing**: ✅ Sudah diimplementasikan menggunakan `password_hash()` (Bcrypt). Password tidak lagi disimpan plain text.
-3. **Input Sanitization**: ✅ `strip_tags()` diterapkan pada input string untuk mencegah XSS.
-4. **SQL Injection Protection**: ✅ Column validation dan Prepared Statements diterapkan.
-
-### Rekomendasi Production:
-
-1. **HTTPS only**: Wajib gunakan HTTPS agar token tidak dicuri di jaringan.
-2. **Environment Variables**: Simpan `JWT_SECRET` dan credential DB di environment variables server, bukan hardcoded.
-3. **Rate Limiting**: Tambahkan rate limiting pada endpoint login.
+ 
+ 1. **JWT Authentication**: ✅ Sudah diimplementasikan menggunakan `jsonwebtoken` library. Token memiliki expiration time (24 jam).
+ 2. **Password Hashing**: ✅ Sudah diimplementasikan menggunakan `bcryptjs`. Password tidak lagi disimpan plain text.
+ 3. **Input Sanitization**: ✅ Sequelize ORM menangani SQL injection. `helmet` middleware ditambahkan untuk perlindungan header HTTP.
+ 4. **SQL Injection Protection**: ✅ Sequelize ORM menggunakan parameterized queries secara otomatis.
+ 5. **Environment Variables**: ✅ `JWT_SECRET` dan database credentials disimpan di `server/.env` dan di-ignore oleh git.
+ 6. **Rate Limiting**: ✅ Diimplementasikan menggunakan `express-rate-limit` (Global + Strict Login Limiter).
+ 7. **Error Handling**: ✅ Detail error disembunyikan di production (`NODE_ENV=production`).
+ 8. **Data Sanitization**: ✅ Password hash tidak dikirim ke client.
+ 
+ ### Rekomendasi Production:
+ 
+ 1. **HTTPS only**: Wajib gunakan HTTPS agar token tidak dicuri di jaringan.
+ 2. **Environment Variables**: Pastikan `.env` file diisi dengan secret yang kuat.
+ 3. **CORS Configuration**: Pastikan origin di `server/index.js` di-set ke domain frontend production.
+ 4. **Set NODE_ENV**: Wajib set `NODE_ENV=production` untuk mengaktifkan fitur keamanan error handling.
+ 
+ > Baca **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)** untuk laporan audit keamanan lengkap.
 
 ## Troubleshooting
 
-### Error: "Unauthorized. Please login"
+### Error: "Unauthorized. Please login" atau HTTP 401
 
-- User belum login atau session expired
-- Solusi: Login ulang
+- User belum login atau token tidak ditemukan
+- Solusi: Login ulang untuk mendapatkan token baru
 
-### Error: "Access denied. Insufficient permissions"
+### Error: "Access denied" atau HTTP 403
 
-- User tidak punya akses ke resource
-- Solusi: Login dengan user yang memiliki role sesuai
+- Token invalid, expired, atau signature tidak cocok
+- User tidak punya akses ke resource (role tidak sesuai)
+- Solusi: Login ulang dengan user yang memiliki role sesuai
 
 ### Error: "Failed to save/update/delete"
 
 - Cek console browser untuk detail error
-- Cek `php_error.log` di folder `php_server/`
+- Cek terminal/console tempat Node.js server berjalan untuk log error
+- Periksa koneksi database di `server/.env`
 
 ### Error: "Reset data tidak berhasil"
 
 - Pastikan login sebagai SUPERADMIN
 - Pastikan konfirmasi text input benar (case-sensitive)
 - Cek console browser untuk error detail
+
+### Error: "Internal server error" atau HTTP 500
+
+- Terjadi error di backend Node.js
+- Cek terminal/console server untuk stack trace
+- Periksa koneksi database dan environment variables
 
 ## Default Users
 
@@ -193,7 +245,7 @@ SUPERADMIN:
 - Role: SUPERADMIN
 
 OWNER:
-- Username: owner
+- Username: owner  
 - Password: owner
 - Role: OWNER
 
@@ -212,7 +264,12 @@ SUPERADMIN:
 - Role: SUPERADMIN
 
 OWNER:
-- Username: owner
+- Username: admin  
+- Password: admin
+- Role: OWNER
+
+CASHIER:
+- Username: owner  
 - Password: owner
 - Role: OWNER
 
@@ -264,5 +321,18 @@ OWNER:
 3. Test fungsi reset data di Data Management tab
 4. Untuk production:
    - Setup HTTPS (Wajib)
-   - Set environment variables untuk secrets
-   - Batasi CORS sesuai domain frontend
+   - Set environment variables untuk `JWT_SECRET` dan database credentials
+   - Batasi CORS sesuai domain frontend (`server/index.js`)
+   - Implementasikan rate limiting untuk endpoint login
+   - Gunakan process manager seperti PM2 untuk menjalankan Node.js server
+   - Setup reverse proxy (nginx/Apache) untuk routing
+
+## Tech Stack Backend
+
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **ORM**: Sequelize
+- **Authentication**: JWT (`jsonwebtoken`)
+- **Password Hashing**: Bcrypt (`bcryptjs`)
+- **Database**: MySQL
+- **Environment**: dotenv

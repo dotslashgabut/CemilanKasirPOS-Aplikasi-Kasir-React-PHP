@@ -1,12 +1,13 @@
-# Panduan Hosting ke cPanel (Versi PHP Backend)
+# Panduan Hosting ke cPanel (Versi Node.js Backend)
 
-Panduan ini menjelaskan cara meng-hosting aplikasi Cemilan KasirPOS menggunakan **Backend PHP** ke shared hosting cPanel.
+Panduan ini menjelaskan cara meng-hosting aplikasi Cemilan KasirPOS menggunakan **Backend Node.js** ke shared hosting cPanel yang mendukung fitur **Setup Node.js App**.
 
 ## 📋 Prasyarat
 
 1.  Akses ke cPanel hosting.
-2.  Domain atau subdomain yang aktif (misal: `tokocemilan.com`).
-3.  Database MySQL yang sudah dibuat di cPanel.
+2.  Hosting mendukung **Node.js** (Fitur "Setup Node.js App").
+3.  Domain atau subdomain yang aktif (misal: `tokocemilan.com`).
+4.  Database MySQL yang sudah dibuat di cPanel.
 
 ## 🏗️ Langkah 1: Persiapan Database
 
@@ -15,92 +16,99 @@ Panduan ini menjelaskan cara meng-hosting aplikasi Cemilan KasirPOS menggunakan 
 3.  Buat database baru (contoh: `u12345_cemilan`).
 4.  Buat user database baru (contoh: `u12345_admin`) dan passwordnya.
 5.  **PENTING**: Berikan hak akses **ALL PRIVILEGES** user tersebut ke database yang baru dibuat.
-6.  Buka **phpMyAdmin**, pilih database tadi, lalu Import file SQL.
-    *   **Opsi 1 (Data Standar)**: Import file `cemilankasirpos.sql` (struktur database + data default minimal).
-    *   **Opsi 2 (Data Dummy)**: Import file `cemilankasirpos_dummy_data_500_produk.sql` jika Anda ingin langsung memiliki 500+ produk dan data transaksi contoh untuk testing.
+6.  Buka **phpMyAdmin**, pilih database tadi, lalu Import file `cemilankasirpos.sql` (atau file sql terbaru) yang ada di folder proyek ini.
 
-## ⚙️ Langkah 2: Konfigurasi Backend (PHP)
-
-1.  Buka file `php_server/config.php` di komputer Anda.
-2.  Ubah isinya sesuai dengan database cPanel yang baru Anda buat:
-    ```php
-    define('DB_HOST', 'localhost'); // Biasanya tetap localhost
-    define('DB_NAME', 'u12345_cemilan'); // Sesuaikan dengan nama DB di cPanel
-    define('DB_USER', 'u12345_admin');   // Sesuaikan dengan user DB di cPanel
-    define('DB_PASS', 'password_anda');  // Password user DB
-    ```
-3.  Simpan file tersebut.
-
-## 🖥️ Langkah 3: Build Frontend (React)
-
-1.  Tentukan di mana Anda akan menaruh file API PHP nanti.
-    *   Jika di folder `public_html/api`, maka URL-nya: `https://tokocemilan.com/api`
-    *   Jika di subdomain `api.tokocemilan.com`, maka URL-nya: `https://api.tokocemilan.com`
-    
-    *Kita asumsikan Anda menaruhnya di folder `api` (pilihan termudah).*
-
-2.  Edit file `.env.production` di komputer Anda:
-    ```env
-    VITE_API_URL=https://tokocemilan.com/api
-    ```
-    *(Ganti `tokocemilan.com` dengan domain asli Anda)*
-
-3.  Jalankan perintah build di terminal:
-    ```bash
-    npm run build
-    ```
-    Ini akan memperbarui folder `dist` dengan konfigurasi URL yang baru.
-
-## 🚀 Langkah 4: Upload ke cPanel
+## ⚙️ Langkah 2: Upload Backend (Node.js)
 
 1.  Buka **File Manager** di cPanel.
-2.  Masuk ke folder `public_html`.
-3.  **Upload Frontend**:
-    *   Upload semua isi dari folder `dist` (hasil build tadi) ke `public_html`.
-    *   Anda akan melihat file `index.html`, folder `assets`, dll di dalam `public_html`.
-4.  **Upload Backend**:
-    *   Buat folder baru bernama `api` di dalam `public_html`.
-    *   Upload semua isi dari folder `php_server` (termasuk `config.php` yang sudah diedit tadi) ke dalam folder `public_html/api`.
-    *   **PENTING: Konfigurasi .htaccess**
-        *   Pastikan file `.htaccess` dari folder `php_server` ikut terupload ke dalam folder `api`.
-        *   File ini mungkin tersembunyi. Pastikan opsi "Show Hidden Files" (biasanya di menu Settings pojok kanan atas File Manager) sudah dicentang.
-        *   Isi file `.htaccess` yang benar untuk cPanel adalah sebagai berikut:
+2.  Buat folder baru di luar `public_html` agar lebih aman (misal: `/home/u12345/cemilan-backend`).
+3.  Upload semua isi dari folder `server` di komputer Anda ke dalam folder tersebut.
+    *   **JANGAN** upload folder `node_modules`.
+    *   Pastikan `package.json`, `index.js`, folder `models`, `config`, dll terupload.
+4.  Buat file `.env` di dalam folder backend tersebut (jika belum ada) dan isi dengan konfigurasi database:
+    ```env
+    DB_HOST=localhost
+    DB_USER=u12345_admin
+    DB_PASS=password_anda
+    DB_NAME=u12345_cemilan
+    JWT_SECRET=rahasia_super_aman_ganti_ini
+    PORT=3000
+    NODE_ENV=production
+    ```
 
+    > **PENTING (KEAMANAN):** Pastikan `NODE_ENV=production` ditambahkan. Ini akan menyembunyikan pesan error detail dari pengguna (mencegah kebocoran info sistem). Lihat `SECURITY_AUDIT.md` untuk detailnya.
+
+## 🚀 Langkah 3: Konfigurasi Node.js di cPanel
+
+1.  Di dashboard cPanel, cari dan buka menu **Setup Node.js App**.
+2.  Klik **Create Application**.
+3.  Isi form konfigurasi:
+    *   **Node.js Version**: Pilih versi yang direkomendasikan (misal: 18.x atau 20.x).
+    *   **Application Mode**: `Production`.
+    *   **Application Root**: Masukkan path folder yang baru dibuat (misal: `cemilan-backend`).
+    *   **Application URL**: Pilih domain Anda.
+        *   Saran: Gunakan subdomain khusus untuk API, misal `api.tokocemilan.com`.
+        *   Jika ingin menggunakan subfolder (misal `tokocemilan.com/api`), pastikan tidak bentrok dengan frontend.
+    *   **Application Startup File**: `index.js`.
+4.  Klik **Create**.
+5.  Setelah aplikasi dibuat, klik tombol **Run NPM Install** untuk menginstall dependencies (ini akan membaca `package.json`).
+6.  **Environment Variables**:
+    *   Beberapa hosting mengharuskan setting environment variables lewat menu ini juga (tombol "Add Variable").
+    *   Masukkan key-value pair dari `.env` Anda di sini jika file `.env` tidak terbaca otomatis.
+
+## 🖥️ Langkah 4: Build & Upload Frontend (React)
+
+1.  **Edit Environment Variable Frontend**:
+    *   Buka file `.env.production` di komputer Anda.
+    *   Ubah `VITE_API_URL` sesuai dengan URL aplikasi Node.js Anda tadi.
+    *   Contoh jika pakai subdomain: `VITE_API_URL=https://api.tokocemilan.com/api`
+    *   *Catatan: Backend Express kita melayani di `/api`, jadi pastikan URL diakhiri `/api` jika route group di `index.js` menggunakan prefix tersebut, atau sesuaikan dengan routing Anda.*
+
+2.  **Build Project**:
+    *   Buka terminal di root project.
+    *   Jalankan: `npm run build`.
+    *   Folder `dist` akan terupdate.
+
+3.  **Upload ke cPanel**:
+    *   Buka **File Manager**.
+    *   Masuk ke folder `public_html` (atau folder subdomain frontend Anda).
+    *   Hapus file lama jika ada.
+    *   Upload **semua isi** dari folder `dist` ke sini.
+    *   Anda harus melihat `index.html`, folder `assets`, dll.
+
+4.  **Konfigurasi .htaccess untuk React Router**:
+    *   Buat atau edit file `.htaccess` di folder frontend (`public_html`).
+    *   Isi dengan kode berikut agar refresh halaman tidak 404:
     ```apache
     <IfModule mod_rewrite.c>
-        RewriteEngine On
-        
-        # Handle Authorization Header (Penting untuk Login)
-        RewriteCond %{HTTP:Authorization} .
-        RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-
-        # Redirect Trailing Slashes...
-        RewriteRule ^(.*)/$ /$1 [L,R=301]
-
-        # Handle Front Controller...
-        RewriteCond %{REQUEST_FILENAME} !-d
-        RewriteCond %{REQUEST_FILENAME} !-f
-        RewriteRule ^ index.php [L]
+      RewriteEngine On
+      RewriteBase /
+      RewriteRule ^index\.html$ - [L]
+      RewriteCond %{REQUEST_FILENAME} !-f
+      RewriteCond %{REQUEST_FILENAME} !-d
+      RewriteRule . /index.html [L]
     </IfModule>
     ```
 
 ## ✅ Langkah 5: Testing
 
-1.  Buka website Anda (misal: `https://tokocemilan.com`).
+1.  Buka website frontend Anda (misal: `https://tokocemilan.com`).
 2.  Coba login.
-    *   Jika pakai `cemilankasirpos.sql`: User `superadmin`, Pass `password`.
-    *   Jika pakai `cemilankasirpos_dummy_data_500_produk.sql`: User `superadmin`, Pass `password`.
-3.  Jika berhasil login dan data muncul, berarti koneksi ke API PHP dan Database sukses!
+3.  Jika berhasil, berarti Frontend sukses berkomunikasi dengan Backend Node.js.
 
-## 5. Keamanan (PENTING)
-- **HTTPS**: Pastikan website Anda menggunakan HTTPS (SSL). Sebagian besar cPanel menyediakan AutoSSL gratis (Let's Encrypt).
-- **Password**: Segera ganti password default user (`owner`, `superadmin`, `kasir`) setelah instalasi.
-- **Environment Variable**: Untuk keamanan maksimal, pindahkan `JWT_SECRET` dari `auth.php` ke environment variable server jika hosting Anda mendukungnya.
-- **File .htaccess**: Pastikan file `.htaccess` terupload dengan benar untuk mengatur routing dan header keamanan.
+## 🛡️ Troubleshooting
 
-## 6. Troubleshooting
-- **404 Not Found**: Cek file `.htaccess`. Pastikan `RewriteEngine On` aktif.
-- **Database Error**: Cek kembali `config.php`. Pastikan user database memiliki hak akses penuh ke database `cemilankasirpos`.
-- **Login Gagal**: Pastikan Anda menggunakan password yang benar. Jika lupa, Anda bisa mereset password lewat database (perlu generate hash Bcrypt baru).
-- **Halaman Blank**: Pastikan file `index.html` ada di root `public_html`.
-- **Gagal Login (Token Error)**: Biasanya karena header Authorization diblokir server. Pastikan baris `RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]` ada di `.htaccess`.
+1.  **API Error / Network Error**:
+    *   Cek Console browser (F12). Jika 404 atau 500 pada request ke API, cek URL API.
+    *   Pastikan Backend Node.js statusnya "Started" di cPanel.
+2.  **Database Connection Error**:
+    *   Cek log aplikasi di menu "Setup Node.js App" (biasanya ada stderr.log).
+    *   Pastikan user DB punya hak akses penuh.
+3.  **Changes not reflecting**:
+    *   Setiap kali mengubah kode backend (misal upload file baru), Anda harus klik **Restart** di menu Setup Node.js App.
+
+## 🔒 Referensi Keamanan
+
+Aplikasi ini telah diaudit keamanannya. Pastikan Anda mengikuti langkah-langkah di atas (terutama setting `NODE_ENV`) untuk memastikan deployment Anda aman.
+
+Baca **[SECURITY_AUDIT.md](SECURITY_AUDIT.md)** untuk laporan lengkap dan detail perbaikan keamanan yang telah diterapkan.

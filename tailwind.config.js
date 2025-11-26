@@ -17,6 +17,15 @@ export default {
                 success: '#10b981', // Emerald 500
                 warning: '#f59e0b', // Amber 500
                 danger: '#ef4444', // Red 500
+            },
+            keyframes: {
+                fadeIn: {
+                    '0%': { opacity: '0', transform: 'translateY(10px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                }
+            },
+            animation: {
+                'fade-in': 'fadeIn 0.3s ease-out forwards',
             }
         },
     },

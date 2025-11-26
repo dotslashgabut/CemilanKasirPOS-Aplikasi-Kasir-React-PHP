@@ -1,81 +1,47 @@
-# Security Audit Report - Cemilan KasirPOS
-**Date:** 22 November 2025
-**Auditor:** Antigravity AI
+# Security Audit Report - PHP Backend
 
-## 1. Executive Summary
-This document outlines the results of the security audit performed on the Cemilan KasirPOS application following the implementation of critical security patches. The application has transitioned from a vulnerable state (no auth, plain text passwords) to a significantly more secure architecture using industry-standard practices.
+## Overview
+This document outlines the security audit findings for the PHP backend of the Cemilan KasirPOS application. The audit focuses on code analysis, configuration review, and potential vulnerabilities.
 
-**Overall Security Posture:** 🟢 **SECURE** (for internal/controlled usage)
-*Major vulnerabilities have been remediated. Some configuration hardening is recommended for public production deployment.*
+## Findings
 
----
+### 1. Hardcoded Credentials
+- **Severity**: High
+- **Description**: Database credentials and JWT secrets are hardcoded in `config.php` and `auth.php`.
+- **Recommendation**: Use environment variables (`.env`) to store sensitive information. Do not commit `.env` files to version control.
 
-## 2. Key Security Implementations (Fixed)
+### 2. Error Handling & Information Leakage
+- **Severity**: Medium
+- **Description**: Database connection errors and query exceptions in `config.php` and `index.php` expose raw error messages (`$e->getMessage()`) to the client. This can leak database structure, usernames, or other sensitive details.
+- **Recommendation**: Log detailed errors to a file (`php_error.log`) and return generic error messages (e.g., "Internal Server Error") to the client in production.
 
-### ✅ 1. Authentication & Session Management
-*   **Status:** Implemented (JWT)
-*   **Details:** 
-    *   The application now uses **JSON Web Tokens (JWT)** for stateless authentication.
-    *   All API endpoints (except `/auth/login`) are protected by `authenticateToken` middleware.
-    *   Requests without a valid token are rejected with `401 Unauthorized` or `403 Forbidden`.
+### 3. CORS Configuration
+- **Severity**: Low (for development), Medium (for production)
+- **Description**: `Access-Control-Allow-Origin` is set to `*` or reflects the request origin.
+- **Recommendation**: Restrict allowed origins to specific domains in the production environment.
 
-### ✅ 2. Password Security
-*   **Status:** Implemented (Bcrypt)
-*   **Details:**
-    *   User passwords are no longer stored in plain text.
-    *   **Bcrypt** (salt rounds: 10) is used to hash passwords before storage.
-    *   **Auto-Migration:** A mechanism is in place to automatically upgrade legacy plain-text passwords to hashed versions upon the first successful login.
-    *   API responses for User queries explicitly strip the `password` field to prevent leakage.
+### 4. Rate Limiting
+- **Severity**: Low
+- **Description**: Rate limiting uses a JSON file (`login_attempts.json`) without file locking. This can lead to race conditions under high load.
+- **Recommendation**: Use a database or Redis for rate limiting in a production environment.
 
-### ✅ 3. API Access Control
-*   **Status:** Implemented
-*   **Details:**
-    *   Middleware intercepts every request to CRUD endpoints (`/api/products`, `/api/transactions`, etc.).
-    *   Unauthorized access attempts are blocked at the server level, preventing direct API manipulation by non-authenticated actors.
-    *   **Batch Operations:** Specific role checks added to batch insert endpoints to prevent unauthorized data modification by restricted roles (e.g., Cashiers).
+### 5. Input Sanitization
+- **Severity**: Low
+- **Description**: `strip_tags` is used for sanitization. While helpful, it is not a comprehensive solution against all XSS attacks.
+- **Recommendation**: Use context-specific escaping (e.g., `htmlspecialchars` for output) and validate input strictly against expected formats.
 
----
+### 6. Legacy Password Support
+- **Severity**: Medium
+- **Description**: The login logic supports plain text passwords for migration purposes.
+- **Recommendation**: Ensure all users migrate to hashed passwords as soon as possible and remove the plain text fallback logic.
 
-### ✅ 4. Role-Based Access Control (RBAC)
-*   **Status:** Implemented
-*   **Details:**
-    *   Strict role checks added for `GET` requests on sensitive resources (e.g., Users).
-    *   Superadmin-only access enforced for User management and critical financial data deletion.
-    *   Cashiers restricted from accessing or modifying master data.
+### 7. Exposed Utility Scripts
+- **Severity**: Low
+- **Description**: Scripts like `generate_hashes.php`, `migrate_passwords.php`, `check_connection.php`, and `test_connection.php` are accessible via the web and may expose system information.
+- **Recommendation**: Restrict access to these files (e.g., via `.htaccess` or server config) or remove them from the production server.
 
-### ✅ 5. Rate Limiting
-*   **Status:** Implemented
-*   **Details:**
-    *   Login endpoint protected by a file-based rate limiter (`php_server/rate_limit.php`).
-    *   Limits attempts to 5 per 15 minutes per IP address to prevent brute-force attacks.
-
-### ✅ 6. Input Validation
-*   **Status:** Implemented
-*   **Details:**
-    *   Server-side validation logic added (`php_server/validator.php`) for critical resources (`users`, `products`, `transactions`).
-    *   Validates data types, formats (email, phone), and logical constraints (positive numbers).
-
----
-
-### ✅ 7. CORS Configuration
-*   **Status:** Implemented
-*   **Details:**
-    *   Strict `Access-Control-Allow-Origin` enforced in `php_server/config.php`.
-    *   Only allows requests from `http://localhost:5173` (Development/Frontend).
-    *   Wildcard `*` access has been removed.
-
----
-
-## 3. Remaining Risks & Recommendations (For Future Improvement)
-
-While the critical holes are plugged, the following areas are recommended for further hardening, especially if the application is exposed to the public internet.
-
-### ⚠️ 1. HTTPS (SSL)
-*   **Current State:** HTTP (Localhost).
-*   **Risk:** Data (including tokens) sent in plain text over the network.
-*   **Recommendation:** Mandatory for production deployment. Use Let's Encrypt or Cloudflare.
-
----
-
-## 4. Conclusion
-The application's security has been upgraded from **Critical Risk** to **Low Risk**. The implementation of JWT and Bcrypt addresses the most immediate threats of unauthorized access and data breaches. The remaining recommendations are standard hardening procedures for production environments and can be implemented iteratively.
+## Action Plan
+1.  **Disable Debug Output**: Modify `config.php`, `index.php`, `logic.php`, and connection check scripts to hide raw exception messages from the API response. (Completed)
+2.  **Secure Credentials**: (User Action Required) Set up environment variables on the production server.
+3.  **Review Logs**: Regularly check `php_error.log` for suspicious activity.
+4.  **Cleanup**: Remove utility scripts from production. (Completed)

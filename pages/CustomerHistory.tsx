@@ -1,28 +1,37 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
-import { Transaction, PaymentStatus, Customer, UserRole, User, PaymentMethod, StoreSettings } from '../types';
+import { Transaction, PaymentStatus, Customer, UserRole, User, PaymentMethod, StoreSettings, TransactionType } from '../types';
 import { formatIDR, formatDate, exportToCSV } from '../utils';
 import { generatePrintTransactionDetail } from '../utils/printHelpers';
-import { Download, Search, Filter, RotateCcw, X, ArrowUpDown, ArrowUp, ArrowDown, Eye, FileText, Printer } from 'lucide-react';
+import { Download, Search, Filter, RotateCcw, X, Eye, FileText, Printer } from 'lucide-react';
 
 interface CustomerHistoryProps {
     currentUser: User | null;
 }
 
 export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser }) => {
-    const transactions = useData(() => StorageService.getTransactions()) || [];
-    const customers = useData(() => StorageService.getCustomers()) || [];
+    const transactions = useData(() => StorageService.getTransactions(), [], 'transactions') || [];
+    const customers = useData(() => StorageService.getCustomers(), [], 'customers') || [];
 
     // State
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
+
     const [detailTransaction, setDetailTransaction] = useState<Transaction | null>(null);
     const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+
+    // Pagination State
+    const [visibleCount, setVisibleCount] = useState(20);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Reset pagination on filter change
+    useEffect(() => {
+        setVisibleCount(20);
+    }, [selectedCustomerId, startDate, endDate, searchQuery]);
 
     // Load store settings
     useEffect(() => {
@@ -75,22 +84,39 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
         }
 
         // Sort
+        // Sort (Date Descending)
         items.sort((a, b) => {
-            let aVal = a[sortConfig.key as keyof Transaction];
-            let bVal = b[sortConfig.key as keyof Transaction];
-
-            if (sortConfig.key === 'date') {
-                aVal = new Date(a.date).getTime() as any;
-                bVal = new Date(b.date).getTime() as any;
-            }
-
-            if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-            return 0;
+            const aTime = new Date(a.date).getTime();
+            const bTime = new Date(b.date).getTime();
+            return bTime - aTime;
         });
 
         return items;
-    }, [transactions, selectedCustomerId, startDate, endDate, searchQuery, sortConfig, currentUser]);
+    }, [transactions, selectedCustomerId, startDate, endDate, searchQuery, currentUser]);
+
+    const visibleTransactions = useMemo(() => filteredTransactions.slice(0, visibleCount), [filteredTransactions, visibleCount]);
+
+    // Infinite Scroll Observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount((prev) => prev + 20);
+                }
+            },
+            { threshold: 0.5 }
+        );
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current);
+        }
+
+        return () => {
+            if (loadMoreRef.current) {
+                observer.unobserve(loadMoreRef.current);
+            }
+        };
+    }, [loadMoreRef.current, filteredTransactions]);
 
     // Calculate totals
     const totals = useMemo(() => {
@@ -103,19 +129,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
         return { totalSales, totalPaid, totalDebt };
     }, [filteredTransactions]);
 
-    const handleSort = (key: string) => {
-        setSortConfig(current => ({
-            key,
-            direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
-        }));
-    };
 
-    const SortIcon = ({ column }: { column: string }) => {
-        if (sortConfig.key !== column) return <ArrowUpDown size={14} className="ml-1 text-slate-400" />;
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp size={14} className="ml-1 text-blue-600" />
-            : <ArrowDown size={14} className="ml-1 text-blue-600" />;
-    };
 
     const handleExport = () => {
         const headers = ['ID Transaksi', 'Tanggal', 'Pelanggan', 'Total', 'Dibayar', 'Sisa', 'Status', 'Metode', 'Kasir'];
@@ -126,7 +140,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
             t.totalAmount,
             t.amountPaid,
             t.totalAmount - t.amountPaid,
-            t.paymentStatus,
+            t.type === TransactionType.RETURN ? 'RETUR' : t.paymentStatus,
             t.paymentMethod,
             t.cashierName
         ]);
@@ -146,7 +160,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                 <td style="text-align:right">${formatIDR(t.totalAmount)}</td>
                 <td style="text-align:right">${formatIDR(t.amountPaid)}</td>
                 <td style="text-align:right">${formatIDR(t.totalAmount - t.amountPaid)}</td>
-                <td>${t.paymentStatus}</td>
+                <td>${t.type === TransactionType.RETURN ? 'RETUR' : t.paymentStatus}</td>
                 <td>${t.cashierName}</td>
             </tr>
         `).join('');
@@ -252,7 +266,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                         onChange={e => setSelectedCustomerId(e.target.value)}
                     >
                         <option value="">-- Semua Pelanggan --</option>
-                        {customers.map(c => (
+                        {customers.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                     </select>
@@ -315,18 +329,13 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
                             <tr>
-                                <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('date')}>
-                                    <div className="flex items-center">Tanggal <SortIcon column="date" /></div>
-                                </th>
+                                <th className="p-4 font-medium">Tanggal</th>
                                 <th className="p-4 font-medium">ID Transaksi</th>
-                                <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('customerName')}>
-                                    <div className="flex items-center">Pelanggan <SortIcon column="customerName" /></div>
-                                </th>
-                                <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('totalAmount')}>
-                                    <div className="flex items-center">Total <SortIcon column="totalAmount" /></div>
-                                </th>
+                                <th className="p-4 font-medium">Pelanggan</th>
+                                <th className="p-4 font-medium">Total</th>
                                 <th className="p-4 font-medium">Dibayar</th>
-                                <th className="p-4 font-medium">Sisa/Piutang</th>
+                                <th className="p-4 font-medium">Piutang</th>
+                                <th className="p-4 font-medium">Kembalian</th>
                                 <th className="p-4 font-medium">Status</th>
                                 <th className="p-4 font-medium">Metode</th>
                                 <th className="p-4 font-medium">Kasir</th>
@@ -336,10 +345,10 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                         <tbody className="divide-y divide-slate-100">
                             {filteredTransactions.length === 0 && (
                                 <tr>
-                                    <td colSpan={10} className="p-8 text-center text-slate-400">Tidak ada transaksi.</td>
+                                    <td colSpan={11} className="p-8 text-center text-slate-400">Tidak ada transaksi.</td>
                                 </tr>
                             )}
-                            {filteredTransactions.map(t => (
+                            {visibleTransactions.map(t => (
                                 <tr key={t.id} onClick={() => setDetailTransaction(t)} className="hover:bg-slate-50 cursor-pointer group">
                                     <td className="p-4 text-slate-600">
                                         <div className="flex flex-col">
@@ -351,15 +360,28 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                     <td className="p-4 font-medium text-slate-800">{t.customerName}</td>
                                     <td className="p-4 font-semibold text-slate-700">{formatIDR(t.totalAmount)}</td>
                                     <td className="p-4 text-green-600">{formatIDR(t.amountPaid)}</td>
-                                    <td className="p-4 text-red-600 font-medium">{formatIDR(t.totalAmount - t.amountPaid)}</td>
+                                    <td className="p-4 text-red-600 font-medium">
+                                        {(() => {
+                                            const remaining = t.totalAmount - t.amountPaid;
+                                            return remaining > 0 ? formatIDR(remaining) : '-';
+                                        })()}
+                                    </td>
+                                    <td className="p-4 text-green-600 font-medium">
+                                        {(() => {
+                                            const remaining = t.totalAmount - t.amountPaid;
+                                            return remaining < 0 ? formatIDR(Math.abs(remaining)) : '-';
+                                        })()}
+                                    </td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${t.paymentStatus === PaymentStatus.PAID
-                                            ? 'bg-green-100 text-green-600'
-                                            : t.paymentStatus === PaymentStatus.PARTIAL
-                                                ? 'bg-orange-100 text-orange-600'
-                                                : 'bg-red-100 text-red-600'
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${t.type === TransactionType.RETURN
+                                            ? 'bg-purple-100 text-purple-600'
+                                            : t.paymentStatus === PaymentStatus.PAID
+                                                ? 'bg-green-100 text-green-600'
+                                                : t.paymentStatus === PaymentStatus.PARTIAL
+                                                    ? 'bg-orange-100 text-orange-600'
+                                                    : 'bg-red-100 text-red-600'
                                             }`}>
-                                            {t.paymentStatus}
+                                            {t.type === TransactionType.RETURN ? 'RETUR' : t.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : t.paymentStatus}
                                         </span>
                                     </td>
                                     <td className="p-4 text-slate-600">{t.paymentMethod}</td>
@@ -373,6 +395,13 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                     </td>
                                 </tr>
                             ))}
+                            {visibleTransactions.length < filteredTransactions.length && (
+                                <tr>
+                                    <td colSpan={11} className="p-4 text-center text-slate-400">
+                                        <div ref={loadMoreRef}>Loading more...</div>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -408,7 +437,9 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                 </div>
                                 <div>
                                     <span className="text-slate-500 block text-xs">Status</span>
-                                    <span className={`font-bold ${detailTransaction.paymentStatus === 'LUNAS' ? 'text-green-600' : detailTransaction.paymentStatus === 'SEBAGIAN' ? 'text-orange-600' : 'text-red-600'}`}>{detailTransaction.paymentStatus}</span>
+                                    <span className={`font-bold ${detailTransaction.type === TransactionType.RETURN ? 'text-purple-600' : detailTransaction.paymentStatus === 'LUNAS' ? 'text-green-600' : detailTransaction.paymentStatus === 'SEBAGIAN' ? 'text-orange-600' : 'text-red-600'}`}>
+                                        {detailTransaction.type === TransactionType.RETURN ? 'RETUR' : detailTransaction.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : detailTransaction.paymentStatus}
+                                    </span>
                                 </div>
                             </div>
 
@@ -429,8 +460,67 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                 </div>
                             </div>
 
+                            {/* Return History (If this is a Sale) */}
+                            {transactions.filter(t => t.type === TransactionType.RETURN && t.originalTransactionId === detailTransaction.id).length > 0 && (
+                                <div className="mt-6">
+                                    <h4 className="font-bold text-sm text-slate-800 mb-2">Riwayat Retur</h4>
+                                    <div className="bg-orange-50 rounded-lg p-3 space-y-2 text-sm border border-orange-100">
+                                        {transactions
+                                            .filter(t => t.type === TransactionType.RETURN && t.originalTransactionId === detailTransaction.id)
+                                            .map((ret, i) => (
+                                                <div key={i} className="flex justify-between border-b border-orange-200 last:border-0 pb-2">
+                                                    <div>
+                                                        <div className="flex gap-1 text-xs text-slate-500">
+                                                            <span>{new Date(ret.date).toLocaleDateString('id-ID')}</span>
+                                                            <span className="font-mono bg-slate-200 px-1 rounded text-[10px]">{new Date(ret.date).toLocaleTimeString('id-ID')}</span>
+                                                        </div>
+                                                        <span className="text-slate-700 block font-medium">Retur #{ret.id.substring(0, 6)}</span>
+                                                        <div className="text-xs text-slate-500 mt-1">
+                                                            {ret.items.map((item, idx) => (
+                                                                <div key={idx}>- {item.name} ({item.qty}x)</div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <span className="font-medium text-red-600">{formatIDR(ret.totalAmount)}</span>
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Original Transaction Info (If this is a Return) */}
+                            {detailTransaction.type === TransactionType.RETURN && detailTransaction.originalTransactionId && (
+                                <div className="mt-6">
+                                    <h4 className="font-bold text-sm text-slate-800 mb-2">Info Transaksi Induk</h4>
+                                    <div className="bg-blue-50 rounded-lg p-3 text-sm border border-blue-100">
+                                        {(() => {
+                                            const originalTx = transactions.find(t => t.id === detailTransaction.originalTransactionId);
+                                            if (originalTx) {
+                                                return (
+                                                    <div className="flex justify-between items-center cursor-pointer hover:bg-blue-100 p-2 rounded transition-colors" onClick={() => setDetailTransaction(originalTx)}>
+                                                        <div>
+                                                            <div className="flex gap-1 text-xs text-slate-500">
+                                                                <span>{new Date(originalTx.date).toLocaleDateString('id-ID')}</span>
+                                                            </div>
+                                                            <span className="text-slate-700 font-bold block">#{originalTx.id.substring(0, 8)}</span>
+                                                            <span className="text-xs text-slate-600">Total: {formatIDR(originalTx.totalAmount)}</span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className="text-xs bg-white border border-blue-200 px-2 py-1 rounded text-blue-600 flex items-center gap-1">
+                                                                <Eye size={10} /> Lihat
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return <span className="text-slate-500 italic">Transaksi induk tidak ditemukan</span>;
+                                        })()}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Payment History */}
-                            <h4 className="font-bold text-sm text-slate-800 mb-2">Riwayat Pembayaran</h4>
+                            <h4 className="font-bold text-sm text-slate-800 mb-2 mt-6">Riwayat Pembayaran</h4>
                             <div className="bg-slate-50 rounded-lg p-3 space-y-2 text-sm">
                                 {detailTransaction.paymentHistory?.map((ph, i) => (
                                     <div key={i} className="flex justify-between border-b border-slate-200 last:border-0 pb-1">
@@ -455,10 +545,25 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                     <span>Total Dibayar</span>
                                     <span>{formatIDR(detailTransaction.amountPaid)}</span>
                                 </div>
-                                <div className="flex justify-between text-red-600 font-bold">
-                                    <span>Sisa Tagihan</span>
-                                    <span>{formatIDR(detailTransaction.totalAmount - detailTransaction.amountPaid)}</span>
-                                </div>
+                                {(() => {
+                                    const remaining = detailTransaction.totalAmount - detailTransaction.amountPaid;
+                                    if (remaining > 0) {
+                                        return (
+                                            <div className="flex justify-between text-red-600 font-bold">
+                                                <span>Sisa Tagihan</span>
+                                                <span>{formatIDR(remaining)}</span>
+                                            </div>
+                                        );
+                                    } else if (remaining < 0) {
+                                        return (
+                                            <div className="flex justify-between text-green-600 font-bold">
+                                                <span>Kembalian</span>
+                                                <span>{formatIDR(Math.abs(remaining))}</span>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
                             </div>
                         </div>
                         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">

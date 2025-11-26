@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
@@ -7,8 +7,8 @@ import { formatIDR, exportToCSV, generateSKU } from '../utils';
 import { Edit2, Trash2, Plus, X, Download, Upload, Tag, Barcode, Image as ImageIcon, Search, Printer, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const Products: React.FC = () => {
-  const products = useData(() => StorageService.getProducts()) || [];
-  const categories = useData(() => StorageService.getCategories()) || [];
+  const products = useData(() => StorageService.getProducts(), [], 'products') || [];
+  const categories = useData(() => StorageService.getCategories(), [], 'categories') || [];
 
   // Filters
   const [filterCategory, setFilterCategory] = useState('ALL');
@@ -20,6 +20,10 @@ export const Products: React.FC = () => {
 
   // Sort State
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+  // Pagination State
+  const [visibleCount, setVisibleCount] = useState(20);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -259,33 +263,67 @@ export const Products: React.FC = () => {
   };
 
   // --- RENDER ---
-  const filteredProducts = products
-    .filter(p => filterCategory === 'ALL' || p.categoryId === filterCategory)
-    .filter(p => {
-      if (!searchQuery.trim()) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        p.name.toLowerCase().includes(query) ||
-        p.sku.toLowerCase().includes(query) ||
-        p.categoryName.toLowerCase().includes(query)
-      );
-    })
-    .sort((a, b) => {
-      if (!sortConfig) return 0;
+  // --- RENDER ---
+  const filteredProducts = useMemo(() => {
+    return products
+      .filter(p => filterCategory === 'ALL' || p.categoryId === filterCategory)
+      .filter(p => {
+        if (!searchQuery.trim()) return true;
+        const query = searchQuery.toLowerCase();
+        return (
+          p.name.toLowerCase().includes(query) ||
+          p.sku.toLowerCase().includes(query) ||
+          p.categoryName.toLowerCase().includes(query)
+        );
+      })
+      .sort((a, b) => {
+        if (!sortConfig) return 0;
 
-      let aVal: any = a[sortConfig.key as keyof Product];
-      let bVal: any = b[sortConfig.key as keyof Product];
+        let aVal: any = a[sortConfig.key as keyof Product];
+        let bVal: any = b[sortConfig.key as keyof Product];
 
-      // Handle numeric vs string
-      if (typeof aVal === 'string') {
-        aVal = aVal.toLowerCase();
-        bVal = bVal.toLowerCase();
+        // Handle numeric vs string
+        if (typeof aVal === 'string') {
+          aVal = aVal.toLowerCase();
+          bVal = bVal.toLowerCase();
+        }
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+  }, [products, filterCategory, searchQuery, sortConfig]);
+
+  const visibleProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [filterCategory, searchQuery, sortConfig]);
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => prev + 20);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current) {
+        observer.unobserve(loadMoreRef.current);
       }
-
-      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
+    };
+  }, [loadMoreRef.current, filteredProducts]);
 
   return (
     <div className="space-y-6">
@@ -405,11 +443,11 @@ export const Products: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
-            {filteredProducts.map(p => (
+            {visibleProducts.map(p => (
               <tr key={p.id} className="hover:bg-slate-50 group">
                 <td className="p-4 flex items-center gap-3">
                   {p.image && !p.image.includes('picsum.photos') ? (
-                    <img src={p.image} alt="" className="w-10 h-10 rounded-lg object-cover bg-slate-200 border border-slate-100" />
+                    <img src={p.image} alt="" loading="lazy" className="w-10 h-10 rounded-lg object-cover bg-slate-200 border border-slate-100" />
                   ) : (
                     <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center">
                       <ImageIcon size={16} className="text-slate-400" />
@@ -446,6 +484,14 @@ export const Products: React.FC = () => {
                 </td>
               </tr>
             ))}
+            {/* Sentinel for Infinite Scroll */}
+            {visibleProducts.length < filteredProducts.length && (
+              <tr>
+                <td colSpan={6} className="p-4 text-center text-slate-400">
+                  <div ref={loadMoreRef}>Loading more...</div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

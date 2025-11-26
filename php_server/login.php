@@ -39,8 +39,23 @@ try {
     $stmt->execute([$username]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Verify password hash
-    if ($user && password_verify($password, $user['password'])) {
+    $validPassword = false;
+    // Check if password is hashed (bcrypt starts with $2)
+    if (strpos($user['password'], '$2') === 0) {
+        $validPassword = password_verify($password, $user['password']);
+    } else {
+        // Legacy plain text fallback
+        if ($user['password'] === $password) {
+            $validPassword = true;
+            // Upgrade to hash
+            $newHash = password_hash($password, PASSWORD_BCRYPT);
+            $updateStmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $updateStmt->execute([$newHash, $user['id']]);
+        }
+    }
+
+    // Verify password
+    if ($user && $validPassword) {
         // Remove sensitive data
         unset($user['password']);
         

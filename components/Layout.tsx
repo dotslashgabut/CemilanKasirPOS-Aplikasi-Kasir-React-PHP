@@ -37,11 +37,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
     <div className="flex h-screen bg-slate-100 overflow-hidden">
       {/* Sidebar */}
       <aside
-        className={`${isSidebarOpen ? 'w-64' : 'w-24'} bg-slate-900 text-white flex flex-col shadow-xl z-10 transition-[width] duration-150 ease-out transform-gpu`}
+        className={`${isSidebarOpen ? 'w-64' : 'w-24'} bg-slate-900 text-white flex flex-col shadow-xl z-10 transition-[width] duration-300 ease-in-out transform-gpu`}
       >
         <div className="p-6 border-b border-slate-800 flex items-center justify-between h-[72px]">
           {isSidebarOpen && (
-            <h1 className="text-2xl font-bold text-blue-400 tracking-tighter whitespace-nowrap">
+            <h1 className="text-2xl font-bold text-blue-400 tracking-tighter whitespace-nowrap animate-fade-in">
               Cemilan<span className="text-white">.</span>
             </h1>
           )}
@@ -63,14 +63,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive
+                className={`w-full flex items-center ${isSidebarOpen ? 'justify-start gap-3' : 'justify-center'} px-4 py-3 rounded-xl transition-all duration-200 ${isActive
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
                   : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`}
                 title={!isSidebarOpen ? item.label : ''}
               >
                 <Icon size={20} className="flex-shrink-0" />
-                {isSidebarOpen && <span className="font-medium whitespace-nowrap">{item.label}</span>}
+                {isSidebarOpen && <span className="font-medium whitespace-nowrap animate-fade-in">{item.label}</span>}
               </button>
             );
           })}

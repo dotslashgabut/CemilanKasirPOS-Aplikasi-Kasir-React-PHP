@@ -1,10 +1,8 @@
-import { Product, Transaction, User, CashFlow, Category, Customer, Supplier, Purchase, StoreSettings, BankAccount } from "../types";
+import { Product, Transaction, User, CashFlow, Category, Customer, Supplier, Purchase, StoreSettings, BankAccount, PaymentStatus } from "../types";
 import { generateUUID, toMySQLDate } from "../utils";
 
 const isProd = import.meta.env.PROD;
-const API_URL = isProd
-    ? '/php_server/index.php/api'
-    : (import.meta.env.VITE_API_URL || 'http://localhost/cemilan-kasirpos-latest-full-mysql-php/php_server/index.php/api');
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Get headers with authentication
 const getHeaders = () => {
@@ -81,7 +79,7 @@ export const ApiService = {
     getStoreSettings: async (): Promise<StoreSettings> => {
         const defaultSettings: StoreSettings = {
             name: 'Cemilan KasirPOS Nusantara', jargon: '', address: '', phone: '', bankAccount: '', footerMessage: '', notes: '',
-            showAddress: true, showPhone: true, showJargon: true, showBank: true, printerType: '58mm',
+            showAddress: true, showJargon: true, showBank: true, printerType: '58mm',
             autoSyncMySQL: false, useMySQLPrimary: false
         };
 
@@ -296,47 +294,7 @@ export const ApiService = {
             headers: getHeaders(),
             body: JSON.stringify({ ...transaction, date: formattedDate })
         });
-
-        if (!res.ok) {
-            let errorMessage = `Failed to add transaction: HTTP ${res.status}`;
-            try {
-                const errorData = await res.json();
-                if (errorData.error) {
-                    errorMessage = errorData.error;
-                }
-            } catch (e) {
-                // Response not JSON, use default error
-            }
-            throw new Error(errorMessage);
-        }
-
-        // Update stock for each item (non-blocking - don't throw error if fails)
-        const isReturn = transaction.type === 'RETURN';
-        for (const item of transaction.items) {
-            try {
-                const productRes = await fetch(`${API_URL}/products/${item.id}`, { headers: getHeaders() });
-                if (productRes.ok) {
-                    const product = await productRes.json();
-                    const parsedProduct = parseProduct(product);
-                    if (isReturn) {
-                        parsedProduct.stock += item.qty;
-                    } else {
-                        parsedProduct.stock -= item.qty;
-                    }
-                    const updateRes = await fetch(`${API_URL}/products/${parsedProduct.id}`, {
-                        method: 'PUT',
-                        headers: getHeaders(),
-                        body: JSON.stringify(parsedProduct)
-                    });
-                    if (!updateRes.ok) {
-                        console.warn(`Failed to update stock for product ${parsedProduct.id}`);
-                    }
-                }
-            } catch (error) {
-                console.warn(`Error updating stock for item ${item.id}:`, error);
-                // Continue with other items - don't throw
-            }
-        }
+        if (!res.ok) throw new Error('Failed to add transaction');
     },
     updateTransaction: async (transaction: Transaction) => {
         // Convert ISO date to MySQL format
@@ -356,6 +314,173 @@ export const ApiService = {
             body: JSON.stringify({ ...transaction, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to update transaction');
+    },
+    deleteTransaction: async (id: string) => {
+        // 1. Get all transactions to find related returns and original transaction
+        const res = await fetch(`${API_URL}/transactions`, { headers: getHeaders() });
+        if (!res.ok) throw new Error('Failed to fetch transactions for deletion');
+        const transactions = await res.json();
+        const transaction = transactions.find((t: any) => t.id === id);
+
+        if (!transaction) {
+            throw new Error('Transaction not found');
+        }
+
+        const parsedTx = parseTransaction(transaction);
+
+        // --- LOGIC A: RESTORE DEBT (If deleting a RETURN transaction) ---
+        if (parsedTx.type === 'RETURN' && parsedTx.originalTransactionId) {
+            try {
+                const originalTxRaw = transactions.find((t: any) => t.id === parsedTx.originalTransactionId);
+
+                if (originalTxRaw) {
+                    const originalTx = parseTransaction(originalTxRaw);
+
+                    // Find "Potong Utang" entry in payment history
+                    if (originalTx.paymentHistory && originalTx.paymentHistory.length > 0) {
+                        // Match by approximate time (within 5s) or exact date string
+                        const historyIndex = originalTx.paymentHistory.findIndex(ph =>
+                            ph.note?.includes('Potong Utang') &&
+                            (ph.date === parsedTx.date || Math.abs(new Date(ph.date).getTime() - new Date(parsedTx.date).getTime()) < 5000)
+                        );
+
+                        if (historyIndex !== -1) {
+                            const entryToRemove = originalTx.paymentHistory[historyIndex];
+                            console.log(`Reverting debt cut of ${entryToRemove.amount} from transaction ${originalTx.id}`);
+
+                            const newHistory = [...originalTx.paymentHistory];
+                            newHistory.splice(historyIndex, 1);
+
+                            const newAmountPaid = originalTx.amountPaid - entryToRemove.amount;
+                            const newStatus = newAmountPaid >= originalTx.totalAmount ? PaymentStatus.PAID :
+                                (newAmountPaid > 0 ? PaymentStatus.PARTIAL : PaymentStatus.UNPAID);
+
+                            // Check if other returns exist
+                            const otherReturns = transactions.some((t: any) =>
+                                t.type === 'RETURN' &&
+                                t.originalTransactionId === originalTx.id &&
+                                t.id !== parsedTx.id
+                            );
+
+                            const updatedOriginalTx = {
+                                ...originalTx,
+                                amountPaid: newAmountPaid,
+                                paymentStatus: newStatus,
+                                paymentHistory: newHistory,
+                                isReturned: otherReturns
+                            };
+
+                            await ApiService.updateTransaction(updatedOriginalTx);
+                            console.log("Original transaction debt restored successfully.");
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to restore original transaction debt:", error);
+            }
+        }
+
+        // --- LOGIC B: CASCADE DELETE (If deleting a SALE transaction) ---
+        // Find and delete all RETURN transactions linked to this transaction
+        const returnTransactions = transactions.filter((t: any) =>
+            t.type === 'RETURN' && t.originalTransactionId === id
+        );
+
+        if (returnTransactions.length > 0) {
+            console.log(`Found ${returnTransactions.length} return transaction(s) to cascade delete`);
+
+            for (const returnTx of returnTransactions) {
+                try {
+                    const parsedReturn = parseTransaction(returnTx);
+
+                    // Revert Stock for Return Transaction (Return adds stock, so we subtract it back)
+                    if (parsedReturn.items && parsedReturn.items.length > 0) {
+                        for (const item of parsedReturn.items) {
+                            try {
+                                const productRes = await fetch(`${API_URL}/products/${item.id}`, { headers: getHeaders() });
+                                if (productRes.ok) {
+                                    const product = await productRes.json();
+                                    const parsedProduct = parseProduct(product);
+                                    parsedProduct.stock -= item.qty;
+                                    await fetch(`${API_URL}/products/${parsedProduct.id}`, {
+                                        method: 'PUT',
+                                        headers: getHeaders(),
+                                        body: JSON.stringify(parsedProduct)
+                                    });
+                                }
+                            } catch (e) {
+                                console.warn(`Failed to revert stock for return item ${item.id}`, e);
+                            }
+                        }
+                    }
+
+                    // Delete cashflows related to this return transaction
+                    const cfRes = await fetch(`${API_URL}/cashflow`, { headers: getHeaders() });
+                    if (cfRes.ok) {
+                        const cashflows = await cfRes.json();
+                        const returnCfs = cashflows.filter((cf: any) =>
+                            cf.description.includes(returnTx.id.substring(0, 6))
+                        );
+                        for (const cf of returnCfs) {
+                            await fetch(`${API_URL}/cashflow/${cf.id}`, {
+                                method: 'DELETE',
+                                headers: getHeaders()
+                            });
+                        }
+                    }
+
+                    // Delete the return transaction itself
+                    await fetch(`${API_URL}/transactions/${returnTx.id}`, {
+                        method: 'DELETE',
+                        headers: getHeaders()
+                    });
+
+                    console.log(`Deleted return transaction ${returnTx.id}`);
+                } catch (e) {
+                    console.error(`Failed to delete return transaction ${returnTx.id}:`, e);
+                }
+            }
+        }
+
+        // --- LOGIC C: REVERT STOCK FOR MAIN TRANSACTION ---
+        if (parsedTx.items && parsedTx.items.length > 0) {
+            const isReturn = parsedTx.type === 'RETURN';
+            for (const item of parsedTx.items) {
+                try {
+                    const productRes = await fetch(`${API_URL}/products/${item.id}`, { headers: getHeaders() });
+                    if (productRes.ok) {
+                        const product = await productRes.json();
+                        const parsedProduct = parseProduct(product);
+
+                        if (isReturn) {
+                            parsedProduct.stock -= item.qty; // Return: stock was increased, so subtract
+                        } else {
+                            parsedProduct.stock += item.qty; // Sale: stock was decreased, so add back
+                        }
+
+                        await fetch(`${API_URL}/products/${parsedProduct.id}`, {
+                            method: 'PUT',
+                            headers: getHeaders(),
+                            body: JSON.stringify(parsedProduct)
+                        });
+                    }
+                } catch (e) {
+                    console.warn(`Failed to revert stock for transaction item ${item.id}`, e);
+                }
+            }
+        }
+
+        // --- LOGIC D: DELETE RELATED CASHFLOWS ---
+        // Handled by Backend (Cascading Delete via referenceId)
+
+        // --- LOGIC E: DELETE TRANSACTION ---
+        const deleteRes = await fetch(`${API_URL}/transactions/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        if (!deleteRes.ok) throw new Error('Failed to delete transaction');
+
+        console.log(`Successfully deleted transaction ${id} and all related data`);
     },
 
     // Purchases (Stock In)
@@ -394,35 +519,6 @@ export const ApiService = {
             body: JSON.stringify({ ...purchase, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to add purchase');
-
-        if (purchase.items && purchase.items.length > 0) {
-            const isReturn = purchase.type === 'RETURN';
-            for (const item of purchase.items) {
-                try {
-                    const productRes = await fetch(`${API_URL}/products/${item.id}`, { headers: getHeaders() });
-                    if (productRes.ok) {
-                        const product = await productRes.json();
-                        const parsedProduct = parseProduct(product);
-                        if (isReturn) {
-                            parsedProduct.stock -= item.qty;
-                        } else {
-                            parsedProduct.stock += item.qty;
-                        }
-                        const updateRes = await fetch(`${API_URL}/products/${parsedProduct.id}`, {
-                            method: 'PUT',
-                            headers: getHeaders(),
-                            body: JSON.stringify(parsedProduct)
-                        });
-                        if (!updateRes.ok) {
-                            console.warn(`Failed to update stock for product ${parsedProduct.id} in purchase`);
-                        }
-                    }
-                } catch (error) {
-                    console.warn(`Error updating stock for purchase item ${item.id}:`, error);
-                    // Continue with other items - don't throw
-                }
-            }
-        }
     },
     updatePurchase: async (purchase: Purchase) => {
         // Convert ISO date to MySQL format
@@ -442,6 +538,81 @@ export const ApiService = {
             body: JSON.stringify({ ...purchase, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to update purchase');
+    },
+    deletePurchase: async (id: string) => {
+        // 0. Cascade Delete: Find and delete all returns linked to this purchase
+        try {
+            const allPurchasesRes = await fetch(`${API_URL}/purchases`, { headers: getHeaders() });
+            if (allPurchasesRes.ok) {
+                const allPurchases = await allPurchasesRes.json();
+                // Find returns that are linked to this purchase via originalPurchaseId OR description (legacy)
+                const children = allPurchases.filter((p: any) =>
+                    p.originalPurchaseId === id ||
+                    (p.type === 'RETURN' && p.description && p.description.includes(id.substring(0, 6)))
+                );
+
+                if (children.length > 0) {
+                    console.log(`Found ${children.length} return(s) linked to purchase ${id}. Deleting them first...`);
+                    for (const child of children) {
+                        // Avoid infinite recursion if something is wrong
+                        if (child.id === id) continue;
+
+                        console.log(`Cascade deleting return purchase ${child.id}`);
+                        await ApiService.deletePurchase(child.id);
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn("Error during cascade delete check:", e);
+            // Continue with main deletion even if cascade check fails (though ideally it shouldn't)
+        }
+
+        // 1. Get Purchase to revert stock
+        const res = await fetch(`${API_URL}/purchases`, { headers: getHeaders() });
+        if (!res.ok) throw new Error('Failed to fetch purchases for deletion');
+        const purchases = await res.json();
+        const purchase = purchases.find((p: any) => p.id === id);
+
+        if (purchase) {
+            const parsedPurchase = parsePurchase(purchase);
+            // Revert Stock
+            if (parsedPurchase.items && parsedPurchase.items.length > 0) {
+                const isReturn = parsedPurchase.type === 'RETURN';
+                for (const item of parsedPurchase.items) {
+                    try {
+                        const productRes = await fetch(`${API_URL}/products/${item.id}`, { headers: getHeaders() });
+                        if (productRes.ok) {
+                            const product = await productRes.json();
+                            const parsedProduct = parseProduct(product);
+                            // Logic reversed from addPurchase
+                            if (isReturn) {
+                                parsedProduct.stock += item.qty; // Return: stock was decreased, so add back
+                            } else {
+                                parsedProduct.stock -= item.qty; // Purchase: stock was increased, so subtract
+                            }
+                            await fetch(`${API_URL}/products/${parsedProduct.id}`, {
+                                method: 'PUT',
+                                headers: getHeaders(),
+                                body: JSON.stringify(parsedProduct)
+                            });
+                        }
+                    } catch (e) {
+                        console.warn(`Failed to revert stock for purchase item ${item.id}`, e);
+                    }
+                }
+            }
+
+            // 2. Delete Related CashFlows
+            // Handled by Backend (Cascading Delete via referenceId)
+            // Legacy cleanup is skipped as description matching is unreliable for purchases
+        }
+
+        // 3. Delete Purchase
+        const deleteRes = await fetch(`${API_URL}/purchases/${id}`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+        if (!deleteRes.ok) throw new Error('Failed to delete purchase');
     },
 
     // Cash Flow
@@ -494,61 +665,69 @@ export const ApiService = {
     },
 
     // Reset Functions
-    // Reset Functions
     resetProducts: async () => {
-        const res = await fetch(`${API_URL}/products/reset`, {
-            method: 'DELETE',
-            headers: getHeaders()
-        });
-        if (!res.ok) throw new Error('Failed to reset products');
+        const products = await ApiService.getProducts();
+        for (const product of products) {
+            await ApiService.deleteProduct(product.id);
+        }
     },
     resetTransactions: async () => {
-        const res = await fetch(`${API_URL}/transactions/reset`, {
-            method: 'DELETE',
-            headers: getHeaders()
-        });
-        if (!res.ok) throw new Error('Failed to reset transactions');
+        const transactions = await ApiService.getTransactions();
+        for (const tx of transactions) {
+            try {
+                await ApiService.deleteTransaction(tx.id);
+            } catch (e) {
+                console.error(`Failed to delete transaction ${tx.id} during reset`, e);
+            }
+        }
     },
     resetPurchases: async () => {
-        const res = await fetch(`${API_URL}/purchases/reset`, {
-            method: 'DELETE',
-            headers: getHeaders()
-        });
-        if (!res.ok) throw new Error('Failed to reset purchases');
+        const purchases = await ApiService.getPurchases();
+        for (const purchase of purchases) {
+            try {
+                await ApiService.deletePurchase(purchase.id);
+            } catch (e) {
+                console.error(`Failed to delete purchase ${purchase.id} during reset`, e);
+            }
+        }
     },
     resetCashFlow: async () => {
-        const res = await fetch(`${API_URL}/cashflow/reset`, {
-            method: 'DELETE',
-            headers: getHeaders()
-        });
-        if (!res.ok) throw new Error('Failed to reset cashflow');
+        const cashflows = await ApiService.getCashFlow();
+        for (const cf of cashflows) {
+            await fetch(`${API_URL}/cashflow/${cf.id}`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
+        }
     },
     resetAllFinancialData: async () => {
         // Reset all financial data
+        // Note: Order matters? 
+        // deleteTransaction handles its own cashflow and stock
+        // deletePurchase handles its own cashflow and stock
+        // So we should run them, then clean up any remaining cashflow
         await ApiService.resetTransactions();
         await ApiService.resetPurchases();
         await ApiService.resetCashFlow();
     },
     resetMasterData: async () => {
-        // Delete all master data (products, categories, customers, suppliers)
-        // Order matters if there are foreign keys, but DELETE FROM usually handles it if no strict constraints or if we delete children first.
-        // Usually: Transactions -> Products (stock), but here we are deleting Master Data.
-        // Products depend on Categories.
-        // Transactions depend on Customers/Suppliers (sometimes).
+        // Delete all master data
 
-        // Best effort: Delete in order of dependency (Children first)
+        // Products
+        const products = await ApiService.getProducts();
+        for (const p of products) await ApiService.deleteProduct(p.id);
 
-        // 1. Products (depend on Categories)
-        await fetch(`${API_URL}/products/reset`, { method: 'DELETE', headers: getHeaders() });
+        // Categories
+        const categories = await ApiService.getCategories();
+        for (const c of categories) await ApiService.deleteCategory(c.id);
 
-        // 2. Categories
-        await fetch(`${API_URL}/categories/reset`, { method: 'DELETE', headers: getHeaders() });
+        // Customers
+        const customers = await ApiService.getCustomers();
+        for (const c of customers) await ApiService.deleteCustomer(c.id);
 
-        // 3. Customers
-        await fetch(`${API_URL}/customers/reset`, { method: 'DELETE', headers: getHeaders() });
-
-        // 4. Suppliers
-        await fetch(`${API_URL}/suppliers/reset`, { method: 'DELETE', headers: getHeaders() });
+        // Suppliers
+        const suppliers = await ApiService.getSuppliers();
+        for (const s of suppliers) await ApiService.deleteSupplier(s.id);
     },
     resetAllData: async () => {
         // Nuclear option: Reset EVERYTHING (Financial + Master Data)
@@ -566,8 +745,15 @@ export const ApiService = {
         });
 
         if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || 'Login failed');
+            const text = await res.text();
+            let errorMessage = 'Login failed';
+            try {
+                const err = JSON.parse(text);
+                errorMessage = err.error || errorMessage;
+            } catch (e) {
+                if (text) errorMessage = text;
+            }
+            throw new Error(errorMessage);
         }
 
         return await res.json();

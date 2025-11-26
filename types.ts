@@ -115,6 +115,8 @@ export interface Transaction {
   cashierId: string;
   cashierName: string;
   paymentHistory?: PaymentHistoryItem[]; // Track installments
+  isReturned?: boolean; // Flag if transaction has been returned
+  skipCashFlow?: boolean; // Optional flag to skip backend auto-cashflow
 }
 
 export enum PurchaseType {
@@ -138,6 +140,7 @@ export interface Purchase {
   bankId?: string; // New: If paid via transfer
   bankName?: string; // New: Snapshot of bank name
   paymentHistory?: PaymentHistoryItem[];
+  originalPurchaseId?: string; // Link to parent purchase for returns
 }
 
 export enum CashFlowType {
@@ -157,6 +160,7 @@ export interface CashFlow {
   bankName?: string; // New
   userId?: string; // New: Track who created this record
   userName?: string; // New
+  referenceId?: string; // New: Link to Transaction/Purchase ID
 }
 
 export interface DashboardStats {

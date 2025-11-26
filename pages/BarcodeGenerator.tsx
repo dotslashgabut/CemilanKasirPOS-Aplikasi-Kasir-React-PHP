@@ -6,14 +6,14 @@ import { Barcode, Search, Printer, X } from 'lucide-react';
 import { formatIDR } from '../utils';
 
 export const BarcodeGenerator: React.FC = () => {
-    const products = useData(() => StorageService.getProducts()) || [];
+    const products = useData(() => StorageService.getProducts(), [], 'products') || [];
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProducts, setSelectedProducts] = useState<{ product: Product; count: number }[]>([]);
 
-    const filteredProducts = products.filter(p =>
+    const filteredProducts = React.useMemo(() => products.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.sku.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    ), [products, searchQuery]);
 
     const handleAddProduct = (product: Product) => {
         const existing = selectedProducts.find(p => p.product.id === product.id);

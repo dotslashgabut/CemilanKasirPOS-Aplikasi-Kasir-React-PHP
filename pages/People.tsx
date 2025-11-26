@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
@@ -8,9 +8,18 @@ import { exportToCSV } from '../utils';
 
 export const People: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'customers' | 'suppliers'>('customers');
-    const customers = useData(() => StorageService.getCustomers()) || [];
-    const suppliers = useData(() => StorageService.getSuppliers()) || [];
+    const customers = useData(() => StorageService.getCustomers(), [], 'customers') || [];
+    const suppliers = useData(() => StorageService.getSuppliers(), [], 'suppliers') || [];
     const [search, setSearch] = useState('');
+
+    // Pagination State
+    const [visibleCount, setVisibleCount] = useState(20);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Reset pagination on tab/search change
+    useEffect(() => {
+        setVisibleCount(20);
+    }, [activeTab, search]);
 
     // Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,10 +152,34 @@ export const People: React.FC = () => {
     };
 
     const dataList = activeTab === 'customers' ? customers : suppliers;
-    const filteredList = dataList.filter(item =>
+    const filteredList = useMemo(() => dataList.filter(item =>
         item.name.toLowerCase().includes(search.toLowerCase()) ||
         item.phone.includes(search)
-    );
+    ), [dataList, search]);
+
+    const visibleList = useMemo(() => filteredList.slice(0, visibleCount), [filteredList, visibleCount]);
+
+    // Infinite Scroll Observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount((prev) => prev + 20);
+                }
+            },
+            { threshold: 0.5 }
+        );
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current);
+        }
+
+        return () => {
+            if (loadMoreRef.current) {
+                observer.unobserve(loadMoreRef.current);
+            }
+        };
+    }, [loadMoreRef.current, filteredList]);
 
     return (
         <div className="space-y-6">
@@ -201,7 +234,7 @@ export const People: React.FC = () => {
                         Tidak ada data kontak ditemukan.
                     </div>
                 )}
-                {filteredList.map(item => (
+                {visibleList.map(item => (
                     <div key={item.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-300 transition-colors group">
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center gap-3">
@@ -243,6 +276,11 @@ export const People: React.FC = () => {
                         </div>
                     </div>
                 ))}
+                {visibleList.length < filteredList.length && (
+                    <div className="col-span-full text-center py-4 text-slate-400">
+                        <div ref={loadMoreRef}>Loading more...</div>
+                    </div>
+                )}
             </div>
 
             {/* Modal */}
