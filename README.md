@@ -1,6 +1,6 @@
 # Cemilan KasirPOS Nusantara
 
-![Static Badge](https://img.shields.io/badge/build-ERROR-green?style=for-the-badge)
+![Static Badge](https://img.shields.io/badge/build-ERROR-red?style=for-the-badge)
 
 **Bug:** Unknown
 
