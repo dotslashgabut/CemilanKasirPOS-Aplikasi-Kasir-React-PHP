@@ -117,6 +117,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
     const [returnPurchaseBankId, setReturnPurchaseBankId] = useState('');
     const [returnPurchaseManualAmount, setReturnPurchaseManualAmount] = useState('');
     const [returnPurchaseMode, setReturnPurchaseMode] = useState<'items' | 'manual'>('items');
+    const [returnTxNote, setReturnTxNote] = useState('');
+    const [returnPurchaseNote, setReturnPurchaseNote] = useState('');
 
     useEffect(() => {
         StorageService.getStoreSettings().then(setStoreSettings);
@@ -284,6 +286,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                 paymentStatus: PaymentStatus.PAID,
                 paymentMethod: PaymentMethod.CASH,
                 paymentNote: `Retur dari #${detailTransaction.id.substring(0, 6)}` + (cutDebtAmount > 0 ? ` (Potong Utang: ${formatIDR(cutDebtAmount)})` : ''),
+                returnNote: returnTxNote,
                 ...(detailTransaction.customerId && { customerId: detailTransaction.customerId }), // Only include if exists
                 customerName: detailTransaction.customerName,
                 cashierId: currentUser?.id || 'SYSTEM',
@@ -312,6 +315,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
 
             setIsReturnTxModalOpen(false);
             setDetailTransaction(null);
+            setReturnTxNote('');
 
             let message = 'Retur berhasil diproses.';
             if (cutDebtAmount > 0) message += `\nDipotong dari hutang: ${formatIDR(cutDebtAmount)}`;
@@ -378,7 +382,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
             paymentMethod: returnPurchaseMethod,
             bankId: returnPurchaseBankId || undefined,
             bankName: selectedBank?.bankName,
-            paymentHistory: []
+            paymentHistory: [],
+            returnNote: returnPurchaseNote
         };
 
         // Update Original Purchase Status
@@ -398,6 +403,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         setReturnPurchaseManualAmount('');
         setReturnPurchaseMethod(PaymentMethod.CASH);
         setReturnPurchaseBankId('');
+        setReturnPurchaseNote('');
         alert('Retur pembelian berhasil diproses.');
     };
 
@@ -454,8 +460,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         if (type === 'transaction') {
             return items.filter(item => item.cashierId === currentUser.id);
         } else if (type === 'purchase') {
-            // Purchases don't have cashierId, so cashiers see all purchases
-            return items;
+            // Filter purchases by userId
+            return items.filter(item => item.userId === currentUser.id);
         } else if (type === 'cashflow') {
             // Filter cashflows related to cashier's transactions OR all purchases
             const cashierTransactionIds = transactions
@@ -468,16 +474,16 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                     return true;
                 }
 
-                // 2. Allow all Purchase-related categories (since Cashiers see all purchases)
-                const purchaseCategories = [
-                    'Pembelian',
-                    'Pembelian Stok',
-                    'Pelunasan Utang Supplier',
-                    'Retur Pembelian'
-                ];
-                if (purchaseCategories.includes(item.category)) {
-                    return true;
-                }
+                // 2. Allow all Purchase-related categories (REMOVED - now relies on userId)
+                // const purchaseCategories = [
+                //     'Pembelian',
+                //     'Pembelian Stok',
+                //     'Pelunasan Utang Supplier',
+                //     'Retur Pembelian'
+                // ];
+                // if (purchaseCategories.includes(item.category)) {
+                //     return true;
+                // }
 
                 // 3. Check for Transaction-related items (Sales, Returns, Receivables)
                 // Check by Reference ID (Best)
@@ -2115,6 +2121,11 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                                                 <div key={idx}>- {item.name} ({item.qty}x)</div>
                                                             ))}
                                                         </div>
+                                                        {ret.returnNote && (
+                                                            <div className="text-xs text-slate-600 mt-1 italic bg-white/50 p-1 rounded border border-orange-200">
+                                                                Catatan: {ret.returnNote}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <span className="font-medium text-red-600">{formatIDR(ret.totalAmount)}</span>
                                                 </div>
@@ -2328,6 +2339,11 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                                             <div className="text-xs text-slate-500 mt-1 italic">
                                                                 {ret.description}
                                                             </div>
+                                                            {ret.returnNote && (
+                                                                <div className="text-xs text-slate-600 mt-1 italic bg-white/50 p-1 rounded border border-orange-200">
+                                                                    Catatan: {ret.returnNote}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         <span className="font-medium text-red-600">{formatIDR(ret.totalAmount)}</span>
                                                     </div>
@@ -2721,6 +2737,16 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     </div>
                                 ))}
                             </div>
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Catatan Retur (Kondisi Fisik, Alasan, dll)</label>
+                                <textarea
+                                    className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                    rows={2}
+                                    placeholder="Contoh: Barang rusak, kemasan penyok..."
+                                    value={returnTxNote}
+                                    onChange={e => setReturnTxNote(e.target.value)}
+                                />
+                            </div>
                             <div className="mt-6 p-4 bg-red-50 rounded-xl flex justify-between items-center">
                                 <span className="text-red-800 font-medium">Total Refund</span>
                                 <span className="text-red-800 font-bold text-xl">
@@ -2814,6 +2840,17 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     </div>
                                 </div>
                             )}
+
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Catatan Retur (Kondisi Fisik, Alasan, dll)</label>
+                                <textarea
+                                    className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                    rows={2}
+                                    placeholder="Contoh: Barang rusak, kemasan penyok..."
+                                    value={returnPurchaseNote}
+                                    onChange={e => setReturnPurchaseNote(e.target.value)}
+                                />
+                            </div>
 
                             {/* Payment Method Selection */}
                             <div className="mt-6 pt-4 border-t border-slate-100">

@@ -218,6 +218,7 @@ Setiap produk mendukung 4 tingkatan harga:
   - Alamat dan kontak
   - Detail item dan harga
   - Total dan pembayaran
+  - Catatan retur (jika ada)
   - Footer/jargon toko
   - Pesan terima kasih
 - **Print Preview**: Lihat preview sebelum cetak
@@ -303,12 +304,14 @@ Setiap produk mendukung 4 tingkatan harga:
 - Bank account (jika transfer)
 - Nama kasir
 - Status retur: "(Ada Retur)" jika ada
+- Catatan retur: Alasan/kondisi barang saat retur
 
 #### Fitur
 
 - **Detail Transaksi**: Lihat detail lengkap per transaksi
 - **Payment History**: Track cicilan/pembayaran tempo
 - **Return Transaction**: Link ke transaksi retur jika ada
+- **Return Notes**: Lihat catatan alasan retur di detail
 - **Filter by Date**: Filter transaksi berdasarkan periode
 - **Filter by Cashier**: Filter berdasarkan kasir (untuk CASHIER role)
 - **Search**: Cari transaksi by ID/customer
@@ -340,6 +343,7 @@ Setiap produk mendukung 4 tingkatan harga:
 - Bank account (jika transfer)
 - User yang input
 - Status retur: "(Ada Retur)" jika ada
+- Catatan retur: Alasan/kondisi barang saat retur ke supplier
 
 #### Fitur
 
@@ -348,6 +352,7 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Text Description**: Atau cukup deskripsi text
 - **Payment Tracking**: Track pembayaran hutang supplier
 - **Return Purchase**: Proses retur pembelian
+- **Return Notes**: Lihat catatan alasan retur di detail
 - **Filter & Search**: Filter by date, supplier, dll
 - **Export & Print**: Ekspor dan cetak laporan
 - **User Tracking**: Catat siapa yang input pembelian
@@ -486,6 +491,7 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Cash Flow Entry**: Auto-generate cash flow keluar (refund)
 - **Link to Original**: Retur linked ke transaksi original
 - **Flag Original**: Transaksi original ditandai "(Ada Retur)"
+- **Return Note**: Input catatan alasan retur (mis: barang rusak)
 
 #### Retur Pembelian (Purchase Return)
 
@@ -497,6 +503,7 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Cash Flow Entry**: Auto-generate cash flow masuk (refund)
 - **Link to Original**: Retur linked ke pembelian original
 - **Flag Original**: Pembelian original ditandai "(Ada Retur)"
+- **Return Note**: Input catatan alasan retur ke supplier
 
 #### Riwayat Retur
 
@@ -504,6 +511,7 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Purchase Returns**: Lihat semua retur pembelian
 - **Link Navigation**: Klik untuk lihat transaksi/pembelian induk
 - **Detail Items**: Lihat detail item yang diretur
+- **View Notes**: Lihat catatan alasan retur di detail riwayat
 
 ### 9. Cicilan/Installments Tracking
 

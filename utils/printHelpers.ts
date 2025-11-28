@@ -134,6 +134,10 @@ export const generatePrintInvoice = (tx: Transaction, settings: StoreSettings, f
                     <div class="notes-section">
                         <strong>Catatan:</strong> ${tx.paymentNote}
                     </div>` : ''}
+                    ${tx.returnNote ? `
+                    <div class="notes-section">
+                        <strong>Catatan Retur:</strong> ${tx.returnNote}
+                    </div>` : ''}
                 </div>
                 <div class="right-bottom">
                     <div class="total-row final">
@@ -552,6 +556,7 @@ export const generatePrintTransactionDetail = (tx: Transaction, settings: StoreS
                     <div>
                         <div class="info-item"><span class="label">Pelanggan:</span> ${tx.customerName}</div>
                         <div class="info-item"><span class="label">Status:</span> <span class="${remaining <= 0 ? 'status-paid' : 'status-unpaid'}">${tx.paymentStatus}</span></div>
+                        ${tx.returnNote ? `<div class="info-item"><span class="label">Catatan Retur:</span> ${tx.returnNote}</div>` : ''}
                     </div>
                 </div>
 
@@ -674,6 +679,7 @@ export const generatePrintPurchaseDetail = (purchase: Purchase, settings: StoreS
                     <div>
                         <div class="info-item"><span class="label">Supplier:</span> ${purchase.supplierName}</div>
                         <div class="info-item"><span class="label">Status:</span> <span class="${remaining <= 0 ? 'status-paid' : 'status-unpaid'}">${purchase.paymentStatus}</span></div>
+                        ${purchase.returnNote ? `<div class="info-item"><span class="label">Catatan Retur:</span> ${purchase.returnNote}</div>` : ''}
                     </div>
                 </div>
 

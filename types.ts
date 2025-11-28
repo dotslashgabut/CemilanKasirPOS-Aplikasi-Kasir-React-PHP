@@ -116,6 +116,7 @@ export interface Transaction {
   cashierName: string;
   paymentHistory?: PaymentHistoryItem[]; // Track installments
   isReturned?: boolean; // Flag if transaction has been returned
+  returnNote?: string; // Note for return transaction
   skipCashFlow?: boolean; // Optional flag to skip backend auto-cashflow
 }
 
@@ -142,6 +143,7 @@ export interface Purchase {
   paymentHistory?: PaymentHistoryItem[];
   originalPurchaseId?: string; // Link to parent purchase for returns
   isReturned?: boolean; // Flag if purchase has been returned
+  returnNote?: string; // Note for return purchase
 }
 
 export enum CashFlowType {

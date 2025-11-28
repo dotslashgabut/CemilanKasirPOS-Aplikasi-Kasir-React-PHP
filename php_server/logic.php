@@ -35,7 +35,7 @@ function handleTransactionCreate($pdo, $data, $currentUser = null) {
         }
 
         // Prepare data for insertion
-        $columns = ['id', 'type', 'originalTransactionId', 'date', 'items', 'totalAmount', 'amountPaid', 'change', 'paymentStatus', 'paymentMethod', 'paymentNote', 'bankId', 'bankName', 'customerId', 'customerName', 'cashierId', 'cashierName', 'paymentHistory', 'isReturned', 'createdAt', 'updatedAt'];
+        $columns = ['id', 'type', 'originalTransactionId', 'date', 'items', 'totalAmount', 'amountPaid', 'change', 'paymentStatus', 'paymentMethod', 'paymentNote', 'returnNote', 'bankId', 'bankName', 'customerId', 'customerName', 'cashierId', 'cashierName', 'paymentHistory', 'isReturned', 'createdAt', 'updatedAt'];
         
         $insertData = [];
         foreach ($columns as $col) {
@@ -173,7 +173,7 @@ function handlePurchaseCreate($pdo, $data, $currentUser = null) {
             $data['userName'] = $currentUser['name'];
         }
 
-        $columns = ['id', 'type', 'originalPurchaseId', 'date', 'supplierId', 'supplierName', 'description', 'items', 'totalAmount', 'amountPaid', 'paymentStatus', 'paymentMethod', 'bankId', 'bankName', 'paymentHistory', 'isReturned', 'userId', 'userName', 'createdAt', 'updatedAt'];
+        $columns = ['id', 'type', 'originalPurchaseId', 'date', 'supplierId', 'supplierName', 'description', 'items', 'totalAmount', 'amountPaid', 'paymentStatus', 'paymentMethod', 'returnNote', 'bankId', 'bankName', 'paymentHistory', 'isReturned', 'userId', 'userName', 'createdAt', 'updatedAt'];
         
         $insertData = [];
         foreach ($columns as $col) {

@@ -798,6 +798,7 @@ CREATE TABLE `purchases` (
   `updatedAt` datetime NOT NULL,
   `originalPurchaseId` varchar(255) DEFAULT NULL,
   `isReturned` tinyint(1) DEFAULT '0',
+  `returnNote` text,
   `userId` varchar(255) DEFAULT NULL,
   `userName` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -930,6 +931,7 @@ CREATE TABLE `transactions` (
   `cashierName` varchar(255) DEFAULT NULL,
   `paymentHistory` json DEFAULT NULL,
   `isReturned` tinyint(1) DEFAULT '0',
+  `returnNote` text,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

@@ -528,6 +528,11 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                                                 <div key={idx}>- {item.name} ({item.qty}x)</div>
                                                             ))}
                                                         </div>
+                                                        {ret.returnNote && (
+                                                            <div className="text-xs text-slate-600 mt-1 italic bg-white/50 p-1 rounded border border-orange-200">
+                                                                Catatan: {ret.returnNote}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <span className="font-medium text-red-600">{formatIDR(ret.totalAmount)}</span>
                                                 </div>
