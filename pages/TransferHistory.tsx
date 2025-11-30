@@ -281,20 +281,20 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ currentUser })
                     Daftar Transfer ({filteredItems.length})
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-slate-50 border-b border-slate-200">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tanggal & ID</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tipe</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Deskripsi</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Bank / E-Wallet</th>
-                                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Jumlah</th>
+                                <th className="p-4 font-medium">Tanggal & ID</th>
+                                <th className="p-4 font-medium">Tipe</th>
+                                <th className="p-4 font-medium">Deskripsi</th>
+                                <th className="p-4 font-medium">Bank / E-Wallet</th>
+                                <th className="p-4 font-medium">Jumlah</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {filteredItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                                    <td colSpan={5} className="p-8 text-center text-slate-400">
                                         Tidak ada data riwayat transfer.
                                     </td>
                                 </tr>

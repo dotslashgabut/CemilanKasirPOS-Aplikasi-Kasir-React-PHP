@@ -144,6 +144,7 @@ export interface Purchase {
   originalPurchaseId?: string; // Link to parent purchase for returns
   isReturned?: boolean; // Flag if purchase has been returned
   returnNote?: string; // Note for return purchase
+  skipCashFlow?: boolean; // Optional flag to skip backend auto-cashflow
 }
 
 export enum CashFlowType {

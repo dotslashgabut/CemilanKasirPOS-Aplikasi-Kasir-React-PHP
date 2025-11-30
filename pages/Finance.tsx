@@ -4,8 +4,9 @@ import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
 import { Transaction, PaymentStatus, CashFlow, CashFlowType, Purchase, Supplier, PaymentMethod, CashFlow as CashFlowTypeInterface, StoreSettings, BankAccount, User, UserRole, TransactionType, PurchaseType } from '../types';
 import { formatIDR, formatDate, exportToCSV, generateId } from '../utils';
-import { generatePrintInvoice, generatePrintGoodsNote, generatePrintSuratJalan, generatePrintTransactionDetail, generatePrintPurchaseDetail } from '../utils/printHelpers';
+import { generatePrintInvoice, generatePrintGoodsNote, generatePrintSuratJalan, generatePrintTransactionDetail, generatePrintPurchaseDetail, generatePrintPurchaseNote } from '../utils/printHelpers';
 import { ArrowDownLeft, ArrowUpRight, Download, Plus, Printer, FileText, Filter, RotateCcw, X, Eye, ShoppingBag, Calendar, Clock, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, FileSpreadsheet } from 'lucide-react';
+import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 import * as XLSX from 'xlsx';
 
 interface FinanceProps {
@@ -122,6 +123,25 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
     const [returnTxMethod, setReturnTxMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
     const [returnTxBankId, setReturnTxBankId] = useState('');
     const [returnPurchaseNote, setReturnPurchaseNote] = useState('');
+
+    // Confirmation Modal State
+    const [confirmation, setConfirmation] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        confirmLabel: string;
+        cancelLabel: string;
+        onConfirm: () => void;
+        type: 'default' | 'danger' | 'warning';
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        confirmLabel: 'Konfirmasi',
+        cancelLabel: 'Batal',
+        onConfirm: () => { },
+        type: 'default'
+    });
 
     useEffect(() => {
         StorageService.getStoreSettings().then(setStoreSettings);
@@ -374,10 +394,49 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
 
         const selectedBank = banks.find(b => b.id === returnPurchaseBankId);
 
+        // 1. Hitung Hutang Saat Ini (Sisa Tagihan)
+        const currentDebt = detailPurchase.totalAmount - detailPurchase.amountPaid;
+
+        // 2. Tentukan Alokasi Nilai Retur
+        // Prioritas: Potong Hutang dulu, baru Refund Tunai
+        const cutDebtAmount = Math.min(totalRefund, currentDebt);
+        const cashRefundAmount = totalRefund - cutDebtAmount;
+
+        const now = new Date().toISOString();
+
+        // 3. Update Pembelian Asal (Potong Utang)
+        let updatedOriginalPurchase = {
+            ...detailPurchase,
+            isReturned: true
+        };
+
+        if (cutDebtAmount > 0) {
+            const newPaid = detailPurchase.amountPaid + cutDebtAmount;
+            const newStatus = newPaid >= detailPurchase.totalAmount ? PaymentStatus.PAID : PaymentStatus.PARTIAL;
+
+            const updatedHistory = [...(detailPurchase.paymentHistory || [])];
+            updatedHistory.push({
+                date: now,
+                amount: cutDebtAmount,
+                method: PaymentMethod.CASH, // Dianggap sebagai pembayaran via retur
+                note: 'Potong Utang (Retur Pembelian)'
+            });
+
+            updatedOriginalPurchase = {
+                ...updatedOriginalPurchase,
+                amountPaid: newPaid,
+                paymentStatus: newStatus,
+                paymentHistory: updatedHistory
+            };
+        }
+
+        await StorageService.updatePurchase(updatedOriginalPurchase);
+
+        // 4. Buat Transaksi Retur Pembelian
         const returnPurchase: Purchase = {
             id: generateId(),
             type: PurchaseType.RETURN,
-            date: new Date().toISOString(),
+            date: now,
             supplierId: detailPurchase.supplierId,
             supplierName: detailPurchase.supplierName,
             originalPurchaseId: detailPurchase.id,
@@ -395,22 +454,33 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
             amountPaid: -totalRefund,
             paymentStatus: PaymentStatus.PAID,
             paymentMethod: returnPurchaseMethod,
-            bankId: returnPurchaseBankId || undefined,
+            bankId: returnPurchaseMethod === PaymentMethod.TRANSFER ? returnPurchaseBankId : undefined,
             bankName: selectedBank?.bankName,
             paymentHistory: [],
-            returnNote: returnPurchaseNote
+            returnNote: returnPurchaseNote + (cutDebtAmount > 0 ? ` (Potong Utang: ${formatIDR(cutDebtAmount)})` : ''),
+            skipCashFlow: cutDebtAmount > 0 // Skip backend auto-cashflow if we are cutting debt
         };
-
-        // Update Original Purchase Status
-        const updatedOriginalPurchase = {
-            ...detailPurchase,
-            isReturned: true
-        };
-        await StorageService.updatePurchase(updatedOriginalPurchase);
 
         await StorageService.addPurchase(returnPurchase);
 
-        // Record Cash In (Refund from Supplier) - Handled by Backend automatically now
+        // 5. Record Cash In (Hanya jika ada uang tunai yang dikembalikan)
+        // If we cut debt, we skipped backend auto-cashflow, so we must add it manually here if there is a cash refund
+        if (cutDebtAmount > 0 && cashRefundAmount > 0) {
+            await StorageService.addCashFlow({
+                id: '',
+                date: now,
+                type: CashFlowType.IN,
+                amount: cashRefundAmount,
+                category: 'Retur Pembelian',
+                description: `Refund Retur Pembelian #${detailPurchase.id.substring(0, 6)}` + (returnPurchaseMethod === PaymentMethod.TRANSFER ? ` (via ${selectedBank?.bankName})` : ''),
+                paymentMethod: returnPurchaseMethod,
+                bankId: returnPurchaseMethod === PaymentMethod.TRANSFER ? returnPurchaseBankId : undefined,
+                bankName: selectedBank?.bankName,
+                userId: currentUser?.id,
+                userName: currentUser?.name,
+                referenceId: returnPurchase.id
+            });
+        }
 
         setIsReturnPurchaseModalOpen(false);
         setDetailPurchase(null);
@@ -419,7 +489,12 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         setReturnPurchaseMethod(PaymentMethod.CASH);
         setReturnPurchaseBankId('');
         setReturnPurchaseNote('');
-        alert('Retur pembelian berhasil diproses.');
+
+        let message = 'Retur pembelian berhasil diproses.';
+        if (cutDebtAmount > 0) message += `\nDipotong dari utang: ${formatIDR(cutDebtAmount)}`;
+        if (cashRefundAmount > 0) message += `\nDikembalikan tunai: ${formatIDR(cashRefundAmount)}`;
+
+        alert(message);
     };
 
     // Filter Logic
@@ -930,14 +1005,17 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         let filename = 'export.csv';
 
         if (activeTab === 'history') {
-            headers = ['ID', 'Tanggal', 'Waktu', 'Pelanggan', 'Keterangan', 'Kasir', 'Total', 'Dibayar', 'Status', 'Metode'];
+            headers = ['ID', 'Tanggal', 'Waktu', 'Pelanggan', 'Keterangan', 'Kasir', 'Total', 'Dibayar', 'Piutang', 'Kembalian', 'Status', 'Metode'];
             rows = filteredTransactions.map(t => {
                 const d = new Date(t.date);
+                const remaining = t.totalAmount - t.amountPaid;
+                const piutang = remaining > 0 ? remaining : 0;
+                const kembalian = remaining < 0 ? Math.abs(remaining) : 0;
                 let status = t.type === TransactionType.RETURN ? 'RETUR' : (t.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : t.paymentStatus);
                 if (t.isReturned && t.type !== TransactionType.RETURN) {
                     status += ' (Ada Retur)';
                 }
-                return [t.id, d.toLocaleDateString('id-ID'), d.toLocaleTimeString('id-ID'), t.customerName, t.paymentNote || '-', t.cashierName, t.totalAmount, t.amountPaid, status, t.paymentMethod]
+                return [t.id, d.toLocaleDateString('id-ID'), d.toLocaleTimeString('id-ID'), t.customerName, t.paymentNote || '-', t.cashierName, t.totalAmount, t.amountPaid, piutang, kembalian, status, t.paymentMethod]
             });
             filename = 'laporan-transaksi.csv';
         } else if (activeTab === 'debt_customer') {
@@ -945,14 +1023,15 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
             rows = receivables.map(r => [r.id, formatDate(r.date), r.customerName, r.totalAmount, r.amountPaid, r.totalAmount - r.amountPaid, r.paymentStatus]);
             filename = 'laporan-piutang-pelanggan.csv';
         } else if (activeTab === 'purchase_history') {
-            headers = ['ID', 'Tanggal', 'Waktu', 'Supplier', 'Keterangan', 'Total', 'Dibayar', 'Status'];
+            headers = ['ID', 'Tanggal', 'Waktu', 'Supplier', 'Keterangan', 'Jml Item', 'Total', 'Dibayar', 'Status'];
             rows = filteredPurchases.map(p => {
                 const d = new Date(p.date);
+                const itemCount = p.items ? p.items.reduce((sum, i) => sum + i.qty, 0) : 0;
                 let status = p.type === PurchaseType.RETURN ? 'RETUR' : (p.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : p.paymentStatus);
                 if (p.isReturned && p.type !== PurchaseType.RETURN) {
                     status += ' (Ada Retur)';
                 }
-                return [p.id, d.toLocaleDateString('id-ID'), d.toLocaleTimeString('id-ID'), p.supplierName, p.description, p.totalAmount, p.amountPaid, status]
+                return [p.id, d.toLocaleDateString('id-ID'), d.toLocaleTimeString('id-ID'), p.supplierName, p.description, itemCount, p.totalAmount, p.amountPaid, status]
             });
             filename = 'laporan-pembelian.csv';
         } else if (activeTab === 'debt_supplier') {
@@ -989,6 +1068,9 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
             fileNamePrefix = "Laporan_Transaksi";
             data = filteredTransactions.map(t => {
                 const itemsSummary = t.items.map(i => `${i.name} (${i.qty}x)`).join(', ');
+                const remaining = t.totalAmount - t.amountPaid;
+                const piutang = remaining > 0 ? remaining : 0;
+                const kembalian = remaining < 0 ? Math.abs(remaining) : 0;
                 let status = t.type === TransactionType.RETURN ? 'RETUR' : (t.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : t.paymentStatus);
                 if (t.isReturned && t.type !== TransactionType.RETURN) {
                     status += ' (Ada Retur)';
@@ -1002,7 +1084,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                     'Item': itemsSummary,
                     'Total': t.totalAmount,
                     'Dibayar': t.amountPaid,
-                    'Kembalian': t.change,
+                    'Piutang': piutang,
+                    'Kembalian': kembalian,
                     'Status': status,
                     'Metode Bayar': t.paymentMethod,
                     'Bank': t.bankName || '-',
@@ -1012,7 +1095,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
             cols = [
                 { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 20 },
                 { wch: 50 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-                { wch: 15 }, { wch: 15 }, { wch: 20 }
+                { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }
             ];
         } else if (activeTab === 'debt_customer') {
             sheetName = "Piutang Pelanggan";
@@ -1034,6 +1117,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
             fileNamePrefix = "Laporan_Pembelian";
             data = filteredPurchases.map(p => {
                 const itemsSummary = p.items ? p.items.map(i => `${i.name} (${i.qty}x)`).join(', ') : '-';
+                const itemCount = p.items ? p.items.reduce((sum, i) => sum + i.qty, 0) : 0;
                 let status = p.type === PurchaseType.RETURN ? 'RETUR' : (p.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : p.paymentStatus);
                 if (p.isReturned && p.type !== PurchaseType.RETURN) {
                     status += ' (Ada Retur)';
@@ -1045,6 +1129,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                     'Supplier': p.supplierName,
                     'Keterangan': p.description,
                     'Item': itemsSummary,
+                    'Jml Item': itemCount,
                     'Total': p.totalAmount,
                     'Dibayar': p.amountPaid,
                     'Status': status,
@@ -1124,6 +1209,9 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         if (activeTab === 'history') {
             title = 'Laporan Transaksi Penjualan';
             const rows = filteredTransactions.map(t => {
+                const remaining = t.totalAmount - t.amountPaid;
+                const piutang = remaining > 0 ? remaining : 0;
+                const kembalian = remaining < 0 ? Math.abs(remaining) : 0;
                 let status = t.type === TransactionType.RETURN ? 'RETUR' : (t.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : t.paymentStatus);
                 if (t.isReturned && t.type !== TransactionType.RETURN) {
                     status += ' (Ada Retur)';
@@ -1136,11 +1224,14 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                   <td>${t.paymentNote || '-'}</td>
                   <td>${t.cashierName}</td>
                   <td style="text-align:right">${formatIDR(t.totalAmount)}</td>
+                  <td style="text-align:right">${formatIDR(t.amountPaid)}</td>
+                  <td style="text-align:right">${piutang > 0 ? formatIDR(piutang) : '-'}</td>
+                  <td style="text-align:right">${kembalian > 0 ? formatIDR(kembalian) : '-'}</td>
                   <td>${status}</td>
               </tr>
           `;
             }).join('');
-            content = `<thead><tr><th>ID</th><th>Tanggal & Waktu</th><th>Pelanggan</th><th>Keterangan</th><th>Kasir</th><th>Total</th><th>Status</th></tr></thead><tbody>${rows}</tbody>`;
+            content = `<thead><tr><th>ID</th><th>Tanggal & Waktu</th><th>Pelanggan</th><th>Keterangan</th><th>Kasir</th><th>Total</th><th>Dibayar</th><th>Piutang</th><th>Kembalian</th><th>Status</th></tr></thead><tbody>${rows}</tbody>`;
         } else if (activeTab === 'debt_customer') {
             title = 'Laporan Piutang Pelanggan';
             const rows = receivables.map(r => `
@@ -1157,6 +1248,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         } else if (activeTab === 'purchase_history') {
             title = 'Laporan Pembelian Stok';
             const rows = filteredPurchases.map(p => {
+                const itemCount = p.items ? p.items.reduce((sum, i) => sum + i.qty, 0) : 0;
                 let status = p.type === PurchaseType.RETURN ? 'RETUR' : (p.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : p.paymentStatus);
                 if (p.isReturned && p.type !== PurchaseType.RETURN) {
                     status += ' (Ada Retur)';
@@ -1167,12 +1259,13 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                   <td>${formatDate(p.date)}</td>
                   <td>${p.supplierName}</td>
                   <td>${p.description}</td>
+                  <td style="text-align:center">${itemCount}</td>
                   <td style="text-align:right">${formatIDR(p.totalAmount)}</td>
                   <td>${status}</td>
               </tr>
           `;
             }).join('');
-            content = `<thead><tr><th>ID</th><th>Tanggal & Waktu</th><th>Supplier</th><th>Keterangan</th><th>Total</th><th>Status</th></tr></thead><tbody>${rows}</tbody>`;
+            content = `<thead><tr><th>ID</th><th>Tanggal & Waktu</th><th>Supplier</th><th>Keterangan</th><th>Item</th><th>Total</th><th>Status</th></tr></thead><tbody>${rows}</tbody>`;
         } else if (activeTab === 'debt_supplier') {
             title = 'Laporan Utang Supplier';
             const rows = payables.map(p => `
@@ -1301,8 +1394,98 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         w.document.close();
     };
 
+    const printPurchaseNote = (purchase: Purchase) => {
+        const settings = storeSettings || { name: 'KasirPintar' } as StoreSettings;
+        const w = window.open('', '', 'width=800,height=600');
+        if (!w) return;
+
+        const html = generatePrintPurchaseNote(purchase, settings, formatIDR, formatDate);
+        w.document.write(html);
+        w.document.close();
+    };
+
     // Render logic helper
     const numericInput = (val: string) => val.replace(/[^0-9]/g, '');
+
+    // --- CONFIRMATION WRAPPERS ---
+
+    const initiateRepaymentCustomer = () => {
+        if (!selectedDebt) return;
+        const pay = parseFloat(repaymentAmount) || 0;
+        if (pay <= 0) {
+            alert("Masukkan nominal pembayaran yang valid.");
+            return;
+        }
+        if (repaymentMethod === PaymentMethod.TRANSFER && !repaymentBankId) {
+            alert("Pilih rekening bank tujuan transfer.");
+            return;
+        }
+        const remainingDebt = selectedDebt.totalAmount - selectedDebt.amountPaid;
+        if (pay > remainingDebt) {
+            alert(`Nominal pembayaran melebihi sisa piutang (${formatIDR(remainingDebt)}).`);
+            return;
+        }
+
+        setConfirmation({
+            isOpen: true,
+            title: 'Konfirmasi Pembayaran Piutang',
+            message: `Cek kembali data pembayaran:\n\nPelanggan: ${selectedDebt.customerName}\nNominal: ${formatIDR(pay)}\nMetode: ${repaymentMethod}\n\nLanjutkan proses pembayaran?`,
+            confirmLabel: 'Proses',
+            cancelLabel: 'Batal',
+            onConfirm: handleRepaymentCustomer,
+            type: 'warning'
+        });
+    };
+
+    const initiateRepaymentSupplier = () => {
+        if (!selectedPayable) return;
+        const pay = parseFloat(payableRepaymentAmount) || 0;
+        if (pay <= 0) {
+            alert("Masukkan nominal pembayaran yang valid.");
+            return;
+        }
+        if (payableRepaymentMethod === PaymentMethod.TRANSFER && !payableBankId) {
+            alert("Pilih rekening bank sumber transfer.");
+            return;
+        }
+        const remainingDebt = selectedPayable.totalAmount - selectedPayable.amountPaid;
+        if (pay > remainingDebt) {
+            alert(`Nominal pembayaran melebihi sisa utang (${formatIDR(remainingDebt)}).`);
+            return;
+        }
+
+        setConfirmation({
+            isOpen: true,
+            title: 'Konfirmasi Pembayaran Utang',
+            message: `Cek kembali data pembayaran:\n\nSupplier: ${selectedPayable.supplierName}\nNominal: ${formatIDR(pay)}\nMetode: ${payableRepaymentMethod}\n\nLanjutkan proses pembayaran?`,
+            confirmLabel: 'Proses',
+            cancelLabel: 'Batal',
+            onConfirm: handleRepaymentSupplier,
+            type: 'warning'
+        });
+    };
+
+    const initiateAddCashFlow = () => {
+        const amount = parseFloat(cfAmount);
+        if (!amount || !cfDesc || !cfCategory) {
+            alert("Mohon lengkapi jumlah, kategori, dan keterangan.");
+            return;
+        }
+        if (cfPaymentMethod === PaymentMethod.TRANSFER && !cfBankId) {
+            alert("Pilih rekening bank.");
+            return;
+        }
+
+        setConfirmation({
+            isOpen: true,
+            title: 'Konfirmasi Catat Kas Manual',
+            message: `Cek kembali data kas manual:\n\nTipe: ${cfType === CashFlowType.IN ? 'Uang Masuk' : 'Uang Keluar'}\nKategori: ${cfCategory}\nNominal: ${formatIDR(amount)}\nKeterangan: ${cfDesc}\n\nSimpan catatan ini?`,
+            confirmLabel: 'Catat',
+            cancelLabel: 'Batal',
+            onConfirm: handleAddCashFlow,
+            type: 'warning'
+        });
+    };
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -1719,7 +1902,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     />
                                 </div>
                                 <button
-                                    onClick={handleRepaymentCustomer}
+                                    onClick={initiateRepaymentCustomer}
                                     className="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold hover:bg-slate-800"
                                 >
                                     Proses Pembayaran
@@ -1752,13 +1935,15 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                 <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('date')}>Tanggal <SortIcon column="date" /></th>
                                 <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('supplierName')}>Supplier <SortIcon column="supplierName" /></th>
                                 <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('description')}>Keterangan <SortIcon column="description" /></th>
+                                <th className="p-4 font-medium">Item</th>
                                 <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('totalAmount')}>Total <SortIcon column="totalAmount" /></th>
                                 <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('paymentStatus')}>Status <SortIcon column="paymentStatus" /></th>
+                                <th className="p-4 font-medium text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {visiblePurchases.map(p => (
-                                <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setDetailPurchase(p)}>
+                                <tr key={p.id} className="hover:bg-slate-50 cursor-pointer group" onClick={() => setDetailPurchase(p)}>
                                     <td className="p-4 font-mono text-xs text-slate-400">#{p.id.substring(0, 6)}</td>
                                     <td className="p-4 text-slate-600">
                                         <div className="flex flex-col">
@@ -1768,6 +1953,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     </td>
                                     <td className="p-4 font-medium text-slate-800">{p.supplierName}</td>
                                     <td className="p-4 text-slate-600">{p.description}</td>
+                                    <td className="p-4 text-slate-600">{p.items ? p.items.reduce((sum, i) => sum + i.qty, 0) : 0}</td>
                                     <td className="p-4 text-slate-800">{formatIDR(p.totalAmount)}</td>
                                     <td className="p-4">
                                         <span className={`px-2 py-1 rounded text-xs font-bold ${p.type === PurchaseType.RETURN
@@ -1781,6 +1967,13 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                             {p.type === PurchaseType.RETURN ? 'RETUR' : p.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : p.paymentStatus}
                                             {p.isReturned && p.type !== PurchaseType.RETURN ? ' (Ada Retur)' : ''}
                                         </span>
+                                    </td>
+                                    <td className="p-4 text-right">
+                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={(e) => { e.stopPropagation(); printPurchaseNote(p); }} className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 flex items-center gap-1" title="Cetak Nota">
+                                                <Printer size={12} /> Nota
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -1920,7 +2113,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     />
                                 </div>
                                 <button
-                                    onClick={handleRepaymentSupplier}
+                                    onClick={initiateRepaymentSupplier}
                                     className="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold hover:bg-slate-800"
                                 >
                                     Bayar Utang
@@ -2097,7 +2290,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                 )}
                             </div>
                             <button
-                                onClick={handleAddCashFlow}
+                                onClick={initiateAddCashFlow}
                                 className="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold hover:bg-slate-800"
                             >
                                 Simpan Catatan
@@ -2330,6 +2523,17 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                 document.body
             )}
 
+            <ConfirmationModal
+                isOpen={confirmation.isOpen}
+                onClose={() => setConfirmation(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmation.onConfirm}
+                title={confirmation.title}
+                message={confirmation.message}
+                confirmLabel={confirmation.confirmLabel}
+                cancelLabel={confirmation.cancelLabel}
+                type={confirmation.type}
+            />
+
             {/* PURCHASE DETAIL MODAL */}
             {detailPurchase && createPortal(
                 <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
@@ -2375,10 +2579,31 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                 {detailPurchase.description}
                             </div>
 
-                            <div className="flex justify-between font-bold text-slate-900 mb-6 border-b border-slate-200 pb-2">
-                                <span>Total Pembelian</span>
-                                <span>{formatIDR(detailPurchase.totalAmount)}</span>
-                            </div>
+                            {detailPurchase.items && detailPurchase.items.length > 0 ? (
+                                <div className="mb-6">
+                                    <h4 className="font-bold text-sm text-slate-800 mb-2">Rincian Barang Stok</h4>
+                                    <div className="border rounded-lg overflow-hidden">
+                                        {detailPurchase.items.map((item, i) => (
+                                            <div key={i} className="flex justify-between p-3 border-b last:border-0 text-sm">
+                                                <div>
+                                                    <span className="block font-medium text-slate-700">{item.name}</span>
+                                                    <span className="text-xs text-slate-500">{item.qty} x {formatIDR(item.finalPrice)}</span>
+                                                </div>
+                                                <span className="font-medium text-slate-800">{formatIDR(item.finalPrice * item.qty)}</span>
+                                            </div>
+                                        ))}
+                                        <div className="bg-slate-50 p-3 flex justify-between font-bold text-slate-900">
+                                            <span>Total</span>
+                                            <span>{formatIDR(detailPurchase.totalAmount)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex justify-between font-bold text-slate-900 mb-6 border-b border-slate-200 pb-2">
+                                    <span>Total Pembelian</span>
+                                    <span>{formatIDR(detailPurchase.totalAmount)}</span>
+                                </div>
+                            )}
 
                             {/* Return History (If this is a Purchase) */}
                             {purchases.filter(p => p.type === 'RETURN' && (
@@ -2722,7 +2947,23 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                         className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                         placeholder="0 jika tempo"
                                         value={purchaseForm.paid}
-                                        onChange={e => setPurchaseForm({ ...purchaseForm, paid: numericInput(e.target.value) })}
+                                        onChange={e => {
+                                            const val = numericInput(e.target.value);
+                                            const numVal = parseFloat(val) || 0;
+
+                                            let total = 0;
+                                            if (purchaseMode === 'items') {
+                                                total = purchaseItems.reduce((sum, i) => sum + (i.qty * i.price), 0);
+                                            } else {
+                                                total = parseFloat(purchaseForm.amount.replace(/[^0-9]/g, '')) || 0;
+                                            }
+
+                                            if (numVal > total) {
+                                                alert(`Nominal dibayar tidak boleh melebihi Total Belanja (${formatIDR(total)})`);
+                                                return;
+                                            }
+                                            setPurchaseForm({ ...purchaseForm, paid: val });
+                                        }}
                                     />
                                     <p className="text-xs text-slate-500 mt-1">Sisa akan dicatat sebagai utang supplier.</p>
                                 </div>

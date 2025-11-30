@@ -134,33 +134,45 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
 
 
     const handleExport = () => {
-        const headers = ['ID Transaksi', 'Tanggal', 'Pelanggan', 'Total', 'Dibayar', 'Sisa', 'Status', 'Metode', 'Kasir'];
-        const rows = filteredTransactions.map(t => [
-            t.id,
-            formatDate(t.date),
-            t.customerName,
-            t.totalAmount,
-            t.amountPaid,
-            t.totalAmount - t.amountPaid,
-            t.type === TransactionType.RETURN ? 'RETUR' : (t.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : t.paymentStatus) + (t.isReturned ? ' (Ada Retur)' : ''),
-            t.paymentMethod,
-            t.cashierName
-        ]);
+        const headers = ['ID Transaksi', 'Tanggal', 'Pelanggan', 'Total', 'Dibayar', 'Piutang', 'Kembalian', 'Status', 'Metode', 'Kasir'];
+        const rows = filteredTransactions.map(t => {
+            const remaining = t.totalAmount - t.amountPaid;
+            const piutang = remaining > 0 ? remaining : 0;
+            const kembalian = remaining < 0 ? Math.abs(remaining) : 0;
+            return [
+                t.id,
+                formatDate(t.date),
+                t.customerName,
+                t.totalAmount,
+                t.amountPaid,
+                piutang,
+                kembalian,
+                t.type === TransactionType.RETURN ? 'RETUR' : (t.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : t.paymentStatus) + (t.isReturned ? ' (Ada Retur)' : ''),
+                t.paymentMethod,
+                t.cashierName
+            ];
+        });
         exportToCSV(`riwayat-pelanggan-${selectedCustomer?.name || 'all'}.csv`, headers, rows);
     };
 
     const handleExportExcel = () => {
-        const data = filteredTransactions.map(t => ({
-            'ID Transaksi': t.id,
-            'Tanggal': formatDate(t.date),
-            'Pelanggan': t.customerName,
-            'Total': t.totalAmount,
-            'Dibayar': t.amountPaid,
-            'Sisa': t.totalAmount - t.amountPaid,
-            'Status': t.type === TransactionType.RETURN ? 'RETUR' : (t.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : t.paymentStatus) + (t.isReturned ? ' (Ada Retur)' : ''),
-            'Metode': t.paymentMethod,
-            'Kasir': t.cashierName
-        }));
+        const data = filteredTransactions.map(t => {
+            const remaining = t.totalAmount - t.amountPaid;
+            const piutang = remaining > 0 ? remaining : 0;
+            const kembalian = remaining < 0 ? Math.abs(remaining) : 0;
+            return {
+                'ID Transaksi': t.id,
+                'Tanggal': formatDate(t.date),
+                'Pelanggan': t.customerName,
+                'Total': t.totalAmount,
+                'Dibayar': t.amountPaid,
+                'Piutang': piutang,
+                'Kembalian': kembalian,
+                'Status': t.type === TransactionType.RETURN ? 'RETUR' : (t.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : t.paymentStatus) + (t.isReturned ? ' (Ada Retur)' : ''),
+                'Metode': t.paymentMethod,
+                'Kasir': t.cashierName
+            };
+        });
 
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
@@ -173,7 +185,8 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
             { wch: 20 }, // Pelanggan
             { wch: 15 }, // Total
             { wch: 15 }, // Dibayar
-            { wch: 15 }, // Sisa
+            { wch: 15 }, // Piutang
+            { wch: 15 }, // Kembalian
             { wch: 15 }, // Status
             { wch: 15 }, // Metode
             { wch: 15 }  // Kasir
@@ -186,7 +199,11 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
-        const rows = filteredTransactions.map((t, idx) => `
+        const rows = filteredTransactions.map((t, idx) => {
+            const remaining = t.totalAmount - t.amountPaid;
+            const piutang = remaining > 0 ? remaining : 0;
+            const kembalian = remaining < 0 ? Math.abs(remaining) : 0;
+            return `
             <tr>
                 <td>${idx + 1}</td>
                 <td>${formatDate(t.date)}</td>
@@ -194,11 +211,13 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                 <td>${t.customerName}</td>
                 <td style="text-align:right">${formatIDR(t.totalAmount)}</td>
                 <td style="text-align:right">${formatIDR(t.amountPaid)}</td>
-                <td style="text-align:right">${formatIDR(t.totalAmount - t.amountPaid)}</td>
+                <td style="text-align:right">${piutang > 0 ? formatIDR(piutang) : '-'}</td>
+                <td style="text-align:right">${kembalian > 0 ? formatIDR(kembalian) : '-'}</td>
                 <td>${t.type === TransactionType.RETURN ? 'RETUR' : (t.paymentStatus === 'BELUM_LUNAS' ? 'BELUM LUNAS' : t.paymentStatus) + (t.isReturned ? ' (Ada Retur)' : '')}</td>
                 <td>${t.cashierName}</td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
         const html = `
             <html>
@@ -231,7 +250,8 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                 <th>Pelanggan</th>
                                 <th>Total</th>
                                 <th>Dibayar</th>
-                                <th>Sisa</th>
+                                <th>Piutang</th>
+                                <th>Kembalian</th>
                                 <th>Status</th>
                                 <th>Kasir</th>
                             </tr>

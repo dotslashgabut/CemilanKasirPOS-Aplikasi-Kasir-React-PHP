@@ -152,6 +152,7 @@ OWNER:
 #### Pencarian Produk
 
 - **Search by Name**: Cari produk berdasarkan nama
+- **Clear Search**: Tombol 'x' untuk menghapus pencarian dengan cepat
 - **Barcode Scanner**: Input barcode untuk pencarian cepat
 - **Autocomplete**: Saran produk otomatis saat mengetik
 - **Filter Kategori**: Filter produk berdasarkan kategori
@@ -161,8 +162,8 @@ OWNER:
 - **Tambah Produk**: Tambah produk ke keranjang dengan qty
 - **Edit Qty**: Ubah jumlah item langsung dari keranjang
 - **Validasi Stok**:
-  - Tombol plus (+) otomatis berhenti saat mencapai batas stok
-  - Input manual divalidasi (maks 4 digit), menampilkan peringatan jika melebihi stok
+  - **Plus Button**: Tombol plus (+) otomatis berhenti saat mencapai batas stok tersedia
+  - **Manual Input**: Input manual divalidasi (maks 4 digit), menampilkan peringatan "jumlah melebihi stok" jika melebihi ketersediaan
 - **Hapus Item**: Hapus item dari keranjang
 - **Clear Cart**: Kosongkan seluruh keranjang
 - **Real-time Total**: Hitung total otomatis saat ada perubahan
@@ -200,6 +201,7 @@ Setiap produk mendukung 4 tingkatan harga:
    
    - Catat sebagai piutang pelanggan
    - Support pembayaran sebagian (DP)
+   - **Validasi**: Jumlah pembayaran tidak boleh melebihi total tagihan/harga item
    - Cicilan dapat dilacak di riwayat transaksi
 
 #### Data Customer
@@ -321,7 +323,7 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Filter by Date**: Filter transaksi berdasarkan periode
 - **Filter by Cashier**: Filter berdasarkan kasir (untuk CASHIER role)
 - **Search**: Cari transaksi by ID/customer
-- **Export**: Ekspor ke CSV/Excel
+- **Export**: Ekspor ke CSV/Excel (Kolom 'Kembalian' dan 'Piutang' dipisah untuk kejelasan)
 - **Print**: Cetak laporan transaksi
 
 #### Pembayaran Cicilan
@@ -353,11 +355,12 @@ Setiap produk mendukung 4 tingkatan harga:
 
 #### Fitur
 
-- **Create Purchase**: Input pembelian baru
-- **Itemized Purchase**: Support detail item (opsional)
+- **Create Purchase**: Input pembelian baru dengan validasi pembayaran (tidak boleh melebihi total belanja)
+- **Itemized Purchase**: Support detail item (opsional), rincian barang tampil di deskripsi web/export/print
+- **Print Purchase Order**: Cetak bukti pemesanan pembelian
 - **Text Description**: Atau cukup deskripsi text
 - **Payment Tracking**: Track pembayaran hutang supplier
-- **Return Purchase**: Proses retur pembelian
+- **Return Purchase**: Proses retur pembelian (Otomatis potong hutang jika ada)
 - **Return Notes**: Lihat catatan alasan retur di detail
 - **Filter & Search**: Filter by date, supplier, dll
 - **Export & Print**: Ekspor dan cetak laporan
@@ -378,7 +381,7 @@ Setiap produk mendukung 4 tingkatan harga:
 #### Pengelolaan
 
 - **Add Payment**: Terima pembayaran cicilan
-- **Full Payment**: Lunasi piutang sekaligus
+- **Full Payment**: Lunasi piutang sekaligus (dengan konfirmasi pop-up untuk mencegah kesalahan)
 - **Payment History**: Riwayat pembayaran per customer
 - **Reminder**: Info customer yang belum bayar
 
@@ -395,7 +398,7 @@ Setiap produk mendukung 4 tingkatan harga:
 #### Pengelolaan
 
 - **Add Payment**: Bayar cicilan ke supplier
-- **Full Payment**: Lunasi utang sekaligus
+- **Full Payment**: Lunasi utang sekaligus (dengan konfirmasi pop-up untuk mencegah kesalahan)
 - **Payment History**: Track semua pembayaran
 
 ### 5. Arus Kas (Cash Flow)
@@ -506,6 +509,7 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Return Items**: Pilih item yang diretur ke supplier
 - **Qty Return**: Tentukan jumlah retur
 - **Refund Expected**: Catat refund dari supplier
+- **Debt Adjustment**: Otomatis mengurangi hutang jika pembelian belum lunas
 - **Stock Adjustment**: Stock otomatis berkurang
 - **Cash Flow Entry**: Auto-generate cash flow masuk (refund)
 - **Link to Original**: Retur linked ke pembelian original
@@ -624,7 +628,7 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Show Returns**: Lihat retur dalam detail transaksi
 - **Payment Tracking**: Track pembayaran cicilan
 - **Period Filter**: Filter by periode waktu
-- **Export**: Export history customer
+- **Export**: Export history customer (Kolom 'Sisa' dipisah menjadi 'Piutang' dan 'Kembalian')
 
 ### 3. Database Supplier
 
@@ -866,8 +870,8 @@ Toggle show/hide untuk:
 - **Mobile Friendly**: UI responsive untuk tablet/mobile
 - **Touch Optimized**: Tombol besar untuk touch screen
 - **Adaptive Layout**: Layout menyesuaikan ukuran layar
-- **Page Transitions**: Animasi fade-in yang halus saat perpindahan halaman
-- **Page Titles**: Deskripsi dan ikon pada judul halaman untuk konteks yang lebih baik
+- **Page Transitions**: Animasi fade-in yang halus diseluruh halaman aplikasi untuk pengalaman pengguna yang lebih baik
+- **Page Titles**: Deskripsi informatif di bawah judul halaman (Riwayat Pelanggan, Supplier, Barang Terjual, dll)
 
 ### 3. Data Export & Import
 

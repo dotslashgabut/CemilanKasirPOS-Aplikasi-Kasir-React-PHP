@@ -153,7 +153,7 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
         const rows = soldItems.map((i, idx) => `
             <tr>
                 <td>${idx + 1}</td>
-                <td>${new Date(i.date).toLocaleDateString('id-ID')} ${new Date(i.date).toLocaleTimeString('id-ID')}</td>
+                <td>${new Date(i.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} ${new Date(i.date).toLocaleTimeString('id-ID')}</td>
                 <td>${i.transactionId.substring(0, 6)}</td>
                 <td>${i.name}</td>
                 <td>${i.qty}</td>
@@ -186,7 +186,7 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                         <thead>
                             <tr>
                                 <th style="width: 40px;">No</th>
-                                <th>Waktu</th>
+                                <th>Tanggal</th>
                                 <th>ID Transaksi</th>
                                 <th>Item</th>
                                 <th>Qty</th>
@@ -374,7 +374,7 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                     <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
                         <tr>
                             <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('date')}>
-                                <div className="flex items-center">Waktu <SortIcon column="date" /></div>
+                                <div className="flex items-center">Tanggal <SortIcon column="date" /></div>
                             </th>
                             <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('transactionId')}>
                                 <div className="flex items-center">ID Transaksi <SortIcon column="transactionId" /></div>
@@ -415,7 +415,7 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                             <tr key={`${item.transactionId}-${idx}`} className="hover:bg-slate-50">
                                 <td className="p-4 text-slate-600">
                                     <div className="flex flex-col">
-                                        <span>{new Date(item.date).toLocaleDateString('id-ID')}</span>
+                                        <span>{new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                         <span className="text-xs text-slate-400">{new Date(item.date).toLocaleTimeString('id-ID')}</span>
                                     </div>
                                 </td>

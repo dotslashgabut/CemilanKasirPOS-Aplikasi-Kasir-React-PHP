@@ -94,7 +94,6 @@ export const generatePrintInvoice = (tx: Transaction, settings: StoreSettings, f
                     <p style="margin: 0 0 1px 0; font-size: 10px;"><strong>No:</strong> ${tx.id.substring(0, 8)}</p>
                     <p style="margin: 0 0 1px 0; font-size: 10px;"><strong>Tanggal:</strong> ${formatDate(tx.date)}</p>
                     <p style="margin: 0 0 1px 0; font-size: 10px;"><strong>Kepada Yth:</strong> ${tx.customerName}</p>
-                    <p style="margin: 0; font-size: 10px;"><strong>Kasir:</strong> ${tx.cashierName}</p>
                 </div>
             </div>
         `;
@@ -639,6 +638,16 @@ export const generatePrintPurchaseDetail = (purchase: Purchase, settings: StoreS
         .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #666; }
     `;
 
+    const itemsHtml = purchase.items && purchase.items.length > 0 ? purchase.items.map((item, idx) => `
+        <tr>
+            <td>${idx + 1}</td>
+            <td>${item.name}</td>
+            <td class="text-right">${item.qty}</td>
+            <td class="text-right">${formatIDR(item.finalPrice)}</td>
+            <td class="text-right">${formatIDR(item.finalPrice * item.qty)}</td>
+        </tr>
+    `).join('') : `<tr><td colspan="5" class="text-center">Tidak ada rincian barang (Pembelian Manual)</td></tr>`;
+
     const paymentHistoryHtml = purchase.paymentHistory ? purchase.paymentHistory.map((ph, idx) => `
         <tr>
             <td>${idx + 1}</td>
@@ -688,6 +697,28 @@ export const generatePrintPurchaseDetail = (purchase: Purchase, settings: StoreS
                     ${purchase.description}
                 </div>
 
+                <div class="section-title">Rincian Barang</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">No</th>
+                            <th>Nama Barang</th>
+                            <th class="text-right" style="width: 60px;">Qty</th>
+                            <th class="text-right" style="width: 120px;">Harga Beli</th>
+                            <th class="text-right" style="width: 120px;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-right" style="font-weight: bold;">Total Pembelian</td>
+                            <td class="text-right" style="font-weight: bold;">${formatIDR(purchase.totalAmount)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
                 <div class="section-title">Riwayat Pembayaran & Angsuran Utang</div>
                 <table>
                     <thead>
@@ -703,10 +734,6 @@ export const generatePrintPurchaseDetail = (purchase: Purchase, settings: StoreS
                         ${paymentHistoryHtml}
                     </tbody>
                     <tfoot>
-                        <tr>
-                            <td colspan="4" class="text-right" style="font-weight: bold;">Total Pembelian</td>
-                            <td class="text-right" style="font-weight: bold;">${formatIDR(purchase.totalAmount)}</td>
-                        </tr>
                         <tr>
                             <td colspan="4" class="text-right" style="font-weight: bold;">Total Dibayar</td>
                             <td class="text-right" style="font-weight: bold;">${formatIDR(purchase.amountPaid)}</td>
@@ -726,6 +753,163 @@ export const generatePrintPurchaseDetail = (purchase: Purchase, settings: StoreS
                     <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
                 </div>
                 <script>window.print();</script>
+            </body>
+        </html>
+    `;
+};
+
+export const generatePrintPurchaseNote = (purchase: Purchase, settings: StoreSettings, formatIDR: (val: number) => string, formatDate: (date: string) => string) => {
+    const type = settings.printerType || '58mm';
+    const isA4 = type === 'A4';
+
+    // CSS based on printer type
+    let css = '';
+    if (type === '80mm') {
+        css = `body { font-family: 'Courier New', monospace; font-size: 12px; padding: 10px; width: 78mm; margin: 0 auto; color: #000; }`;
+    } else if (isA4) {
+        css = `
+            body { font-family: Arial, sans-serif; font-size: 11px; padding: 20px; max-width: 210mm; margin: 0 auto; color: #000; }
+            .header-container { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 5px; }
+            .store-info { width: 50%; }
+            .supplier-info { width: 40%; text-align: right; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            th, td { border: 1px solid #333; padding: 3px 5px; text-align: left; font-size: 11px; }
+            th { background-color: #f0f0f0; font-weight: bold; text-align: center; }
+            
+            .bottom-section { display: flex; justify-content: space-between; margin-top: 10px; }
+            .left-bottom { width: 55%; }
+            .right-bottom { width: 40%; }
+            
+            .total-row { display: flex; justify-content: space-between; padding: 2px 0; }
+            .total-row.final { font-weight: bold; border-top: 1px solid #333; margin-top: 3px; padding-top: 3px; font-size: 12px; }
+            
+            .footer { margin-top: 15px; text-align: center; font-size: 10px; border-top: 1px dashed #ccc; padding-top: 5px; }
+        `;
+    } else {
+        css = `body { font-family: 'Courier New', monospace; font-size: 11px; padding: 5px; width: 56mm; margin: 0 auto; color: #000; }`;
+    }
+
+    // Items HTML
+    let itemsHtml = '';
+    if (isA4) {
+        itemsHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">No</th>
+                        <th>Nama Barang</th>
+                        <th style="width: 60px;">Qty</th>
+                        <th style="width: 120px; text-align: right;">Harga</th>
+                        <th style="width: 120px; text-align: right;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${purchase.items && purchase.items.length > 0 ? purchase.items.map((item, idx) => `
+                        <tr>
+                            <td style="text-align: center;">${idx + 1}</td>
+                            <td>${item.name}</td>
+                            <td style="text-align: center;">${item.qty}</td>
+                            <td style="text-align: right;">${formatIDR(item.finalPrice)}</td>
+                            <td style="text-align: right;">${formatIDR(item.finalPrice * item.qty)}</td>
+                        </tr>
+                    `).join('') : `<tr><td colspan="5" style="text-align:center;">${purchase.description}</td></tr>`}
+                </tbody>
+            </table>
+        `;
+    } else {
+        itemsHtml = purchase.items && purchase.items.length > 0 ? purchase.items.map(item => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                <div style="max-width: 60%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${item.name} x${item.qty}</div>
+                <div>${formatIDR(item.finalPrice * item.qty)}</div>
+            </div>
+        `).join('') : `<div style="text-align:center; margin: 10px 0;">${purchase.description}</div>`;
+    }
+
+    // Header Content
+    let headerHtml = '';
+    if (isA4) {
+        headerHtml = `
+            <div class="header-container">
+                <div class="store-info">
+                    <h2 style="margin: 0 0 2px 0; font-size: 18px;">${settings.name}</h2>
+                    ${settings.showAddress ? `<p style="margin: 0 0 1px 0; font-size: 10px;">${settings.address}</p>` : ''}
+                    <p style="margin: 0; font-size: 10px;">${settings.phone}</p>
+                </div>
+                <div class="supplier-info">
+                    <h3 style="margin: 0 0 5px 0; font-size: 14px;">NOTA PEMBELIAN</h3>
+                    <p style="margin: 0 0 1px 0; font-size: 10px;"><strong>No:</strong> ${purchase.id.substring(0, 8)}</p>
+                    <p style="margin: 0 0 1px 0; font-size: 10px;"><strong>Tanggal:</strong> ${formatDate(purchase.date)}</p>
+                    <p style="margin: 0 0 1px 0; font-size: 10px;"><strong>Supplier:</strong> ${purchase.supplierName}</p>
+                </div>
+            </div>
+        `;
+    } else {
+        headerHtml = `
+            <div style="text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px;">
+                <h3 style="margin:0; font-size: 14px;">${settings.name}</h3>
+                <p style="margin-top: 5px; font-weight: bold;">NOTA PEMBELIAN</p>
+            </div>
+            <div style="margin-bottom: 10px; font-size: 90%;">
+                <div>Tgl: ${formatDate(purchase.date)}</div>
+                <div>No: ${purchase.id.substring(0, 8)}</div>
+                <div>Supp: ${purchase.supplierName}</div>
+            </div>
+        `;
+    }
+
+    // Total Section
+    let contentHtml = '';
+    const remaining = purchase.totalAmount - purchase.amountPaid;
+
+    if (isA4) {
+        contentHtml = `
+            <div class="bottom-section">
+                <div class="left-bottom">
+                    <div style="margin-top: 8px; padding: 8px; border: 1px solid #ddd; background: #fff; font-size: 10px;">
+                        <strong>Keterangan:</strong> ${purchase.description}
+                    </div>
+                </div>
+                <div class="right-bottom">
+                    <div class="total-row final">
+                        <span>TOTAL PEMBELIAN</span>
+                        <span>${formatIDR(purchase.totalAmount)}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Bayar (${purchase.paymentMethod})</span>
+                        <span>${formatIDR(purchase.amountPaid)}</span>
+                    </div>
+                    ${remaining > 0 ? `
+                    <div class="total-row" style="color: red;">
+                        <span>Sisa Utang</span>
+                        <span>${formatIDR(remaining)}</span>
+                    </div>` : ''}
+                </div>
+            </div>
+        `;
+    } else {
+        contentHtml = `
+            <div style="margin-top: 5px; border-top: 1px dashed #000; padding-top: 5px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;"><strong>TOTAL</strong> <strong>${formatIDR(purchase.totalAmount)}</strong></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">BAYAR (${purchase.paymentMethod}) <span>${formatIDR(purchase.amountPaid)}</span></div>
+                ${remaining > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 2px;">SISA UTANG <span>${formatIDR(remaining)}</span></div>` : ''}
+            </div>
+            <div class="footer">
+                <p style="margin:5px 0;">Simpan struk ini sebagai bukti pembelian.</p>
+            </div>
+        `;
+    }
+
+    return `
+        <html>
+            <head>
+                <title>Nota Pembelian #${purchase.id.substring(0, 8)}</title>
+                <style>${css}</style>
+            </head>
+            <body>
+                ${headerHtml}
+                ${itemsHtml}
+                ${contentHtml}
+                <script>window.print(); setTimeout(function(){ window.close(); }, 1000);</script>
             </body>
         </html>
     `;

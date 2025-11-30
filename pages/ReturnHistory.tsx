@@ -288,22 +288,22 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                     Daftar Retur ({activeTab === 'sales' ? filteredSales.length : filteredPurchases.length})
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-slate-50 border-b border-slate-200">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tanggal & ID</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                <th className="p-4 font-medium">Tanggal & ID</th>
+                                <th className="p-4 font-medium">
                                     {activeTab === 'sales' ? 'Pelanggan' : 'Supplier'}
                                 </th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Barang Diretur</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Catatan</th>
-                                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Nilai Retur</th>
+                                <th className="p-4 font-medium">Barang Diretur</th>
+                                <th className="p-4 font-medium">Catatan</th>
+                                <th className="p-4 font-medium">Nilai Retur</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {(activeTab === 'sales' ? filteredSales : filteredPurchases).length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                                    <td colSpan={5} className="p-8 text-center text-slate-400">
                                         Tidak ada data retur.
                                     </td>
                                 </tr>
