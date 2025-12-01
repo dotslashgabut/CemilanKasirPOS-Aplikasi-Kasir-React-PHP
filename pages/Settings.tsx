@@ -819,7 +819,7 @@ export const Settings: React.FC = () => {
 
             {/* User Modal */}
             {
-                isModalOpen && (
+                isModalOpen && createPortal(
                     <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 overflow-y-auto">
                         <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
                             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -868,7 +868,8 @@ export const Settings: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )
             }
         </div >
