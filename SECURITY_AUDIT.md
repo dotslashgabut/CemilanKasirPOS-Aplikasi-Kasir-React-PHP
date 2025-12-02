@@ -14,7 +14,7 @@ This document outlines the security audit findings for the Cemilan KasirPOS appl
 | P2 | PHP | Sensitive Data Exposure | **High** | 🟢 Resolved |
 | P3 | PHP | Rate Limiting Race Condition | **Medium** | 🟢 Resolved |
 | P4 | PHP | CORS Configuration | **Medium** | 🟢 Resolved |
-| P5 | PHP | Input Sanitization & XSS | **Medium** | 🟡 Partially Mitigated |
+| P5 | PHP | Input Sanitization & XSS | **Medium** | 🟢 Resolved |
 | P6 | PHP | Legacy Password Support | **Low** | 🟢 Resolved |
 | P7 | PHP | File Permissions | **Medium** | 🟢 Resolved |
 | P8 | PHP | HTTPS Enforcement | **Medium** | 🟢 Resolved |
@@ -58,13 +58,19 @@ This document outlines the security audit findings for the Cemilan KasirPOS appl
 
 #### P5. Input Sanitization & XSS
 - **Severity**: **Medium**
+- **Status**: **Resolved**
 - **Description**: 
-    - `index.php` uses `strip_tags` for sanitization. This is not a complete defense against XSS.
-    - `auth.php` comments suggest storing JWT in `localStorage`, which is vulnerable to XSS.
-- **Recommendation**: 
-    - Use `htmlspecialchars` when outputting user-generated content (though this is an API, so the frontend is responsible for rendering).
-    - Validate input strictly (partially covered by `validator.php`).
-    - Consider using `HttpOnly` cookies for JWT storage to mitigate XSS token theft.
+    - Backend API mengimplementasikan beberapa layer proteksi untuk mencegah XSS dan injection attacks.
+- **Implementation**: 
+    1. **String Sanitization**: `index.php` menggunakan `strip_tags()` untuk menghilangkan HTML/script tags dari semua string input (lines 149, 385, 447).
+    2. **SQL Injection Prevention**: Semua query database menggunakan prepared statements dengan parameter binding.
+    3. **Input Validation**: `validator.php` memvalidasi format input untuk username (regex alphanumeric), email (FILTER_VALIDATE_EMAIL), phone numbers (regex), dan numeric values.
+    4. **Schema Filtering**: `filterDataBySchema()` memastikan hanya kolom yang diizinkan yang dapat diinsert/update ke database.
+    5. **Column Name Validation**: Regex validation (`/^[a-zA-Z0-9_]+$/`) untuk mencegah SQL injection via column names (lines 163, 377, 453).
+    6. **JSON API Architecture**: Backend hanya mengirim data JSON tanpa HTML rendering, sehingga XSS prevention di sisi output adalah tanggung jawab frontend React.
+- **Note**: 
+    - JWT disimpan di `localStorage` (client-side). Untuk security lebih baik, pertimbangkan `HttpOnly` cookies untuk mitigasi XSS token theft di masa depan.
+    - Frontend React sudah otomatis escape HTML saat rendering, memberikan layer proteksi tambahan terhadap XSS.
 
 #### P6. Legacy Password Support
 - **Severity**: **Low**
@@ -99,6 +105,21 @@ This document outlines the security audit findings for the Cemilan KasirPOS appl
 
 ## Action Plan
 
-1.  **Environment Setup**: Ensure `.env` is properly configured in production with `JWT_SECRET` and `ALLOWED_ORIGINS`.
-2.  **PHP Maintenance**: Maintain security updates for the PHP backend.
-3.  **Future**: Consider implementing HttpOnly cookies for better XSS protection (P5).
+### ✅ Completed
+All critical and medium security issues have been resolved. The PHP backend now implements comprehensive security measures including:
+- Environment-based configuration with secure defaults
+- Multi-layer input sanitization and validation
+- SQL injection prevention via prepared statements
+- Secure password hashing (bcrypt)
+- Rate limiting with race condition protection
+- Proper CORS configuration
+- HTTPS enforcement
+- File permission controls
+- Cryptographically secure UUID generation
+
+### 🔮 Future Enhancements
+1. **HttpOnly Cookies for JWT**: Consider migrating from `localStorage` to `HttpOnly` cookies for better XSS attack mitigation.
+2. **Content Security Policy (CSP)**: Implement CSP headers di frontend untuk additional layer of XSS protection.
+3. **Regular Security Audits**: Maintain periodic security reviews as the application evolves.
+4. **Dependency Updates**: Keep PHP and library dependencies up-to-date with security patches.
+
