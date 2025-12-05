@@ -150,45 +150,68 @@ export const Products: React.FC = () => {
   // --- IMPORT / EXPORT ---
 
   const handleExport = () => {
-    const headers = ['ID', 'Nama Produk', 'SKU', 'Kategori', 'Stok', 'HPP', 'Harga Eceran', 'Harga Umum', 'Harga Grosir', 'Harga Promo'];
-    const rows = products.map(p => [
-      p.id, p.name, p.sku, p.categoryName, p.stock, p.hpp, p.priceRetail, p.priceGeneral, p.priceWholesale, p.pricePromo || 0
-    ]);
+    const currentUser = JSON.parse(localStorage.getItem('pos_current_user') || '{}');
+    const isCashier = currentUser.role === UserRole.CASHIER;
+
+    const headers = ['ID', 'Nama Produk', 'SKU', 'Kategori', 'Stok'];
+    if (!isCashier) headers.push('HPP');
+    headers.push('Harga Eceran', 'Harga Umum', 'Harga Grosir', 'Harga Promo');
+
+    const rows = products.map(p => {
+      const row = [p.id, p.name, p.sku, p.categoryName, p.stock];
+      if (!isCashier) row.push(p.hpp);
+      row.push(p.priceRetail, p.priceGeneral, p.priceWholesale, p.pricePromo || 0);
+      return row;
+    });
+
     exportToCSV(`produk-${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
   };
 
   const handleExportExcel = () => {
-    const data = filteredProducts.map(p => ({
-      'ID': p.id,
-      'Nama Produk': p.name,
-      'SKU': p.sku,
-      'Kategori': p.categoryName,
-      'Stok': p.stock,
-      'HPP': p.hpp,
-      'Harga Eceran': p.priceRetail,
-      'Harga Umum': p.priceGeneral,
-      'Harga Grosir': p.priceWholesale,
-      'Harga Promo': p.pricePromo || 0
-    }));
+    const currentUser = JSON.parse(localStorage.getItem('pos_current_user') || '{}');
+    const isCashier = currentUser.role === UserRole.CASHIER;
+
+    const data = filteredProducts.map(p => {
+      const row: any = {
+        'ID': p.id,
+        'Nama Produk': p.name,
+        'SKU': p.sku,
+        'Kategori': p.categoryName,
+        'Stok': p.stock,
+      };
+      if (!isCashier) {
+        row['HPP'] = p.hpp;
+      }
+      row['Harga Eceran'] = p.priceRetail;
+      row['Harga Umum'] = p.priceGeneral;
+      row['Harga Grosir'] = p.priceWholesale;
+      row['Harga Promo'] = p.pricePromo || 0;
+      return row;
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Produk");
 
     // Auto-width columns
-    const max_width = data.reduce((w, r) => Math.max(w, r['Nama Produk'].length), 10);
-    worksheet['!cols'] = [
+    const cols = [
       { wch: 15 }, // ID
       { wch: 30 }, // Nama
       { wch: 15 }, // SKU
       { wch: 15 }, // Kategori
       { wch: 10 }, // Stok
-      { wch: 15 }, // HPP
+    ];
+    if (!isCashier) {
+      cols.push({ wch: 15 }); // HPP
+    }
+    cols.push(
       { wch: 15 }, // Eceran
       { wch: 15 }, // Umum
       { wch: 15 }, // Grosir
       { wch: 15 }  // Promo
-    ];
+    );
+
+    worksheet['!cols'] = cols;
 
     XLSX.writeFile(workbook, `Produk_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
