@@ -20,6 +20,46 @@ const getHeaders = () => {
     return headers;
 };
 
+// Global request helper to handle Auth & Caching
+const request = async (endpoint: string, options: RequestInit = {}) => {
+    const url = `${API_URL}${endpoint}`;
+    const headers = getHeaders();
+
+    const config = {
+        ...options,
+        headers: {
+            ...headers,
+            ...options.headers,
+        },
+    };
+
+    // Add cache buster for GET requests to prevent stale data
+    // (Fixes issue where deleted items still show up)
+    let finalUrl = url;
+    if (!config.method || config.method === 'GET') {
+        const separator = url.includes('?') ? '&' : '?';
+        finalUrl = `${url}${separator}_t=${new Date().getTime()}`;
+    }
+
+    try {
+        const res = await fetch(finalUrl, config);
+
+        // Handle Session Expiry / Unauthorized
+        // (Fixes issue where page doesn't reload on session expiry)
+        if (res.status === 401 || res.status === 403) {
+            console.warn("Session expired or unauthorized. Redirecting to login...");
+            localStorage.removeItem('pos_current_user');
+            localStorage.removeItem('pos_token');
+            window.location.reload();
+            throw new Error('Session expired');
+        }
+
+        return res;
+    } catch (error) {
+        throw error;
+    }
+};
+
 // Helper to ensure numbers are numbers
 const parseNumber = (val: any): number => {
     if (typeof val === 'number') return val;
@@ -84,7 +124,8 @@ export const ApiService = {
         };
 
         try {
-            const res = await fetch(`${API_URL}/store_settings/settings?_t=${new Date().getTime()}`, { headers: getHeaders() });
+            // Cache buster is now handled by request()
+            const res = await request('/store_settings/settings');
             if (!res.ok) return defaultSettings;
             const settings = await res.json();
             return { ...defaultSettings, ...settings };
@@ -97,17 +138,15 @@ export const ApiService = {
         const payload = { ...settings, id: 'settings' };
 
         // Try to update first
-        const res = await fetch(`${API_URL}/store_settings/settings`, {
+        const res = await request('/store_settings/settings', {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify(payload)
         });
 
         // If not found (404), create new record
         if (res.status === 404) {
-            const createRes = await fetch(`${API_URL}/store_settings`, {
+            const createRes = await request('/store_settings', {
                 method: 'POST',
-                headers: getHeaders(),
                 body: JSON.stringify(payload)
             });
             if (!createRes.ok) {
@@ -122,146 +161,135 @@ export const ApiService = {
 
     // Banks
     getBanks: async (): Promise<BankAccount[]> => {
-        const res = await fetch(`${API_URL}/banks`, { headers: getHeaders() });
+        const res = await request('/banks');
         return await res.json();
     },
     saveBank: async (bank: BankAccount) => {
         if (!bank.id) bank.id = generateUUID();
-        const res = await fetch(`${API_URL}/banks`, {
+        const res = await request('/banks', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(bank)
         });
         if (!res.ok) throw new Error('Failed to save bank');
     },
     updateBank: async (bank: BankAccount) => {
-        await fetch(`${API_URL}/banks/${bank.id}`, {
+        await request(`/banks/${bank.id}`, {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify(bank)
         });
     },
     deleteBank: async (id: string) => {
-        const res = await fetch(`${API_URL}/banks/${id}`, { method: 'DELETE', headers: getHeaders() });
+        const res = await request(`/banks/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete bank');
     },
 
     // Categories
     getCategories: async (): Promise<Category[]> => {
-        const res = await fetch(`${API_URL}/categories`, { headers: getHeaders() });
+        const res = await request('/categories');
         return await res.json();
     },
     saveCategory: async (category: Category) => {
         if (!category.id) category.id = generateUUID();
-        const res = await fetch(`${API_URL}/categories`, {
+        const res = await request('/categories', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(category)
         });
         if (!res.ok) throw new Error('Failed to save category');
     },
     updateCategory: async (category: Category) => {
-        await fetch(`${API_URL}/categories/${category.id}`, {
+        await request(`/categories/${category.id}`, {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify(category)
         });
     },
     deleteCategory: async (id: string) => {
-        const res = await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE', headers: getHeaders() });
+        const res = await request(`/categories/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete category');
     },
 
     // Products
     getProducts: async (): Promise<Product[]> => {
-        const res = await fetch(`${API_URL}/products`, { headers: getHeaders() });
+        const res = await request('/products');
         const data = await res.json();
         return data.map(parseProduct);
     },
     saveProduct: async (product: Product) => {
         if (!product.id) product.id = generateUUID();
-        const res = await fetch(`${API_URL}/products`, {
+        const res = await request('/products', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(product)
         });
         if (!res.ok) throw new Error('Failed to save product');
     },
     updateProduct: async (product: Product) => {
-        await fetch(`${API_URL}/products/${product.id}`, {
+        await request(`/products/${product.id}`, {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify(product)
         });
     },
     deleteProduct: async (id: string) => {
-        const res = await fetch(`${API_URL}/products/${id}`, { method: 'DELETE', headers: getHeaders() });
+        const res = await request(`/products/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete product');
     },
     saveProductsBulk: async (newProducts: Product[]) => {
         const productsWithIds = newProducts.map(p => ({ ...p, id: p.id || generateUUID() }));
-        await fetch(`${API_URL}/products/batch`, {
+        await request('/products/batch', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(productsWithIds)
         });
     },
 
     // Customers
     getCustomers: async (): Promise<Customer[]> => {
-        const res = await fetch(`${API_URL}/customers`, { headers: getHeaders() });
+        const res = await request('/customers');
         return await res.json();
     },
     saveCustomer: async (cust: Customer) => {
         if (!cust.id) cust.id = generateUUID();
-        const res = await fetch(`${API_URL}/customers`, {
+        const res = await request('/customers', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(cust)
         });
         if (!res.ok) throw new Error('Failed to save customer');
     },
     updateCustomer: async (cust: Customer) => {
-        await fetch(`${API_URL}/customers/${cust.id}`, {
+        await request(`/customers/${cust.id}`, {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify(cust)
         });
     },
     deleteCustomer: async (id: string) => {
-        const res = await fetch(`${API_URL}/customers/${id}`, { method: 'DELETE', headers: getHeaders() });
+        const res = await request(`/customers/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete customer');
     },
 
     // Suppliers
     getSuppliers: async (): Promise<Supplier[]> => {
-        const res = await fetch(`${API_URL}/suppliers`, { headers: getHeaders() });
+        const res = await request('/suppliers');
         return await res.json();
     },
     saveSupplier: async (sup: Supplier) => {
         if (!sup.id) sup.id = generateUUID();
-        const res = await fetch(`${API_URL}/suppliers`, {
+        const res = await request('/suppliers', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(sup)
         });
         if (!res.ok) throw new Error('Failed to save supplier');
     },
     updateSupplier: async (sup: Supplier) => {
-        await fetch(`${API_URL}/suppliers/${sup.id}`, {
+        await request(`/suppliers/${sup.id}`, {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify(sup)
         });
     },
     deleteSupplier: async (id: string) => {
-        const res = await fetch(`${API_URL}/suppliers/${id}`, { method: 'DELETE', headers: getHeaders() });
+        const res = await request(`/suppliers/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete supplier');
     },
 
     // Transactions (Sales)
     getTransactions: async (): Promise<Transaction[]> => {
-        const res = await fetch(`${API_URL}/transactions`, { headers: getHeaders() });
+        const res = await request('/transactions');
         if (!res.ok) return [];
         const data = await res.json();
         return data.map(parseTransaction);
@@ -289,9 +317,8 @@ export const ApiService = {
             }));
         }
 
-        const res = await fetch(`${API_URL}/transactions`, {
+        const res = await request('/transactions', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify({ ...transaction, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to add transaction');
@@ -308,16 +335,15 @@ export const ApiService = {
             }));
         }
 
-        const res = await fetch(`${API_URL}/transactions/${transaction.id}`, {
+        const res = await request(`/transactions/${transaction.id}`, {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify({ ...transaction, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to update transaction');
     },
     deleteTransaction: async (id: string) => {
         // 1. Get all transactions to find related returns and original transaction
-        const res = await fetch(`${API_URL}/transactions`, { headers: getHeaders() });
+        const res = await request('/transactions');
         if (!res.ok) throw new Error('Failed to fetch transactions for deletion');
         const transactions = await res.json();
         const transaction = transactions.find((t: any) => t.id === id);
@@ -397,14 +423,13 @@ export const ApiService = {
                     if (parsedReturn.items && parsedReturn.items.length > 0) {
                         for (const item of parsedReturn.items) {
                             try {
-                                const productRes = await fetch(`${API_URL}/products/${item.id}`, { headers: getHeaders() });
+                                const productRes = await request(`/products/${item.id}`);
                                 if (productRes.ok) {
                                     const product = await productRes.json();
                                     const parsedProduct = parseProduct(product);
                                     parsedProduct.stock -= item.qty;
-                                    await fetch(`${API_URL}/products/${parsedProduct.id}`, {
+                                    await request(`/products/${parsedProduct.id}`, {
                                         method: 'PUT',
-                                        headers: getHeaders(),
                                         body: JSON.stringify(parsedProduct)
                                     });
                                 }
@@ -415,24 +440,22 @@ export const ApiService = {
                     }
 
                     // Delete cashflows related to this return transaction
-                    const cfRes = await fetch(`${API_URL}/cashflow`, { headers: getHeaders() });
+                    const cfRes = await request('/cashflow');
                     if (cfRes.ok) {
                         const cashflows = await cfRes.json();
                         const returnCfs = cashflows.filter((cf: any) =>
                             cf.description.includes(returnTx.id.substring(0, 6))
                         );
                         for (const cf of returnCfs) {
-                            await fetch(`${API_URL}/cashflow/${cf.id}`, {
-                                method: 'DELETE',
-                                headers: getHeaders()
+                            await request(`/cashflow/${cf.id}`, {
+                                method: 'DELETE'
                             });
                         }
                     }
 
                     // Delete the return transaction itself
-                    await fetch(`${API_URL}/transactions/${returnTx.id}`, {
-                        method: 'DELETE',
-                        headers: getHeaders()
+                    await request(`/transactions/${returnTx.id}`, {
+                        method: 'DELETE'
                     });
 
                     console.log(`Deleted return transaction ${returnTx.id}`);
@@ -447,7 +470,7 @@ export const ApiService = {
             const isReturn = parsedTx.type === 'RETURN';
             for (const item of parsedTx.items) {
                 try {
-                    const productRes = await fetch(`${API_URL}/products/${item.id}`, { headers: getHeaders() });
+                    const productRes = await request(`/products/${item.id}`);
                     if (productRes.ok) {
                         const product = await productRes.json();
                         const parsedProduct = parseProduct(product);
@@ -458,9 +481,8 @@ export const ApiService = {
                             parsedProduct.stock += item.qty; // Sale: stock was decreased, so add back
                         }
 
-                        await fetch(`${API_URL}/products/${parsedProduct.id}`, {
+                        await request(`/products/${parsedProduct.id}`, {
                             method: 'PUT',
-                            headers: getHeaders(),
                             body: JSON.stringify(parsedProduct)
                         });
                     }
@@ -474,9 +496,8 @@ export const ApiService = {
         // Handled by Backend (Cascading Delete via referenceId)
 
         // --- LOGIC E: DELETE TRANSACTION ---
-        const deleteRes = await fetch(`${API_URL}/transactions/${id}`, {
-            method: 'DELETE',
-            headers: getHeaders()
+        const deleteRes = await request(`/transactions/${id}`, {
+            method: 'DELETE'
         });
         if (!deleteRes.ok) throw new Error('Failed to delete transaction');
 
@@ -485,7 +506,7 @@ export const ApiService = {
 
     // Purchases (Stock In)
     getPurchases: async (): Promise<Purchase[]> => {
-        const res = await fetch(`${API_URL}/purchases`, { headers: getHeaders() });
+        const res = await request('/purchases');
         if (!res.ok) return [];
         const data = await res.json();
         return data.map(parsePurchase);
@@ -513,9 +534,8 @@ export const ApiService = {
             }));
         }
 
-        const res = await fetch(`${API_URL}/purchases`, {
+        const res = await request('/purchases', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify({ ...purchase, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to add purchase');
@@ -532,9 +552,8 @@ export const ApiService = {
             }));
         }
 
-        const res = await fetch(`${API_URL}/purchases/${purchase.id}`, {
+        const res = await request(`/purchases/${purchase.id}`, {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify({ ...purchase, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to update purchase');
@@ -542,7 +561,7 @@ export const ApiService = {
     deletePurchase: async (id: string) => {
         // 0. Cascade Delete: Find and delete all returns linked to this purchase
         try {
-            const allPurchasesRes = await fetch(`${API_URL}/purchases`, { headers: getHeaders() });
+            const allPurchasesRes = await request('/purchases');
             if (allPurchasesRes.ok) {
                 const allPurchases = await allPurchasesRes.json();
                 // Find returns that are linked to this purchase via originalPurchaseId OR description (legacy)
@@ -568,7 +587,7 @@ export const ApiService = {
         }
 
         // 1. Get Purchase to revert stock
-        const res = await fetch(`${API_URL}/purchases`, { headers: getHeaders() });
+        const res = await request('/purchases');
         if (!res.ok) throw new Error('Failed to fetch purchases for deletion');
         const purchases = await res.json();
         const purchase = purchases.find((p: any) => p.id === id);
@@ -632,7 +651,7 @@ export const ApiService = {
                 const isReturn = parsedPurchase.type === 'RETURN';
                 for (const item of parsedPurchase.items) {
                     try {
-                        const productRes = await fetch(`${API_URL}/products/${item.id}`, { headers: getHeaders() });
+                        const productRes = await request(`/products/${item.id}`);
                         if (productRes.ok) {
                             const product = await productRes.json();
                             const parsedProduct = parseProduct(product);
@@ -642,9 +661,8 @@ export const ApiService = {
                             } else {
                                 parsedProduct.stock -= item.qty; // Purchase: stock was increased, so subtract
                             }
-                            await fetch(`${API_URL}/products/${parsedProduct.id}`, {
+                            await request(`/products/${parsedProduct.id}`, {
                                 method: 'PUT',
-                                headers: getHeaders(),
                                 body: JSON.stringify(parsedProduct)
                             });
                         }
@@ -660,38 +678,36 @@ export const ApiService = {
         }
 
         // 3. Delete Purchase
-        const deleteRes = await fetch(`${API_URL}/purchases/${id}`, {
-            method: 'DELETE',
-            headers: getHeaders()
+        const deleteRes = await request(`/purchases/${id}`, {
+            method: 'DELETE'
         });
         if (!deleteRes.ok) throw new Error('Failed to delete purchase');
     },
 
     // Cash Flow
     getCashFlow: async (): Promise<CashFlow[]> => {
-        const res = await fetch(`${API_URL}/cashflow`, { headers: getHeaders() });
+        const res = await request('/cashflow');
         if (!res.ok) return [];
         const data = await res.json();
         return data.map(parseCashFlow);
     },
     addCashFlow: async (cf: CashFlow) => {
         const formattedDate = toMySQLDate(new Date(cf.date));
-        const res = await fetch(`${API_URL}/cashflow`, {
+        const res = await request('/cashflow', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify({ ...cf, id: cf.id || generateUUID(), date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to add cashflow');
     },
     deleteCashFlow: async (id: string) => {
-        const res = await fetch(`${API_URL}/cashflow/${id}`, { method: 'DELETE', headers: getHeaders() });
+        const res = await request(`/cashflow/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete cashflow');
     },
 
     // Users
     getUsers: async (): Promise<User[]> => {
         try {
-            const res = await fetch(`${API_URL}/users`, { headers: getHeaders() });
+            const res = await request('/users');
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
         } catch (e) {
@@ -701,22 +717,20 @@ export const ApiService = {
     },
     saveUser: async (user: User) => {
         if (!user.id) user.id = generateUUID();
-        const res = await fetch(`${API_URL}/users`, {
+        const res = await request('/users', {
             method: 'POST',
-            headers: getHeaders(),
             body: JSON.stringify(user)
         });
         if (!res.ok) throw new Error('Failed to save user');
     },
     updateUser: async (user: User) => {
-        await fetch(`${API_URL}/users/${user.id}`, {
+        await request(`/users/${user.id}`, {
             method: 'PUT',
-            headers: getHeaders(),
             body: JSON.stringify(user)
         });
     },
     deleteUser: async (id: string) => {
-        const res = await fetch(`${API_URL}/users/${id}`, { method: 'DELETE', headers: getHeaders() });
+        const res = await request(`/users/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete user');
     },
 
@@ -750,9 +764,8 @@ export const ApiService = {
     resetCashFlow: async () => {
         const cashflows = await ApiService.getCashFlow();
         for (const cf of cashflows) {
-            await fetch(`${API_URL}/cashflow/${cf.id}`, {
-                method: 'DELETE',
-                headers: getHeaders()
+            await request(`/cashflow/${cf.id}`, {
+                method: 'DELETE'
             });
         }
     },
