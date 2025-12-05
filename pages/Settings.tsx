@@ -17,7 +17,15 @@ export const Settings: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'store' | 'users' | 'payments' | 'data'>('store');
 
     // User State with useData
-    const users = useData(() => StorageService.getUsers(), [], 'users') || [];
+    const currentUser = JSON.parse(localStorage.getItem('pos_current_user') || '{}') as User;
+    const isSuperAdmin = currentUser.role === UserRole.SUPERADMIN;
+
+    const users = useData(async () => {
+        if (isSuperAdmin) {
+            return await StorageService.getUsers();
+        }
+        return [];
+    }, [isSuperAdmin], 'users') || [];
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -209,7 +217,7 @@ export const Settings: React.FC = () => {
     };
 
     const handleDeleteUser = async (id: string) => {
-        const currentUser = JSON.parse(localStorage.getItem('pos_current_user') || '{}') as User;
+
         const userToDelete = users.find(u => u.id === id);
 
         if (!userToDelete) return;
@@ -372,7 +380,7 @@ export const Settings: React.FC = () => {
                     Bank & E-Wallet
                 </button>
                 {/* Only Superadmin can see User Management */}
-                {(JSON.parse(localStorage.getItem('pos_current_user') || '{}') as User).role === UserRole.SUPERADMIN && (
+                {isSuperAdmin && (
                     <>
                         <button
                             onClick={() => setActiveTab('users')}
