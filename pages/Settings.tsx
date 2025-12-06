@@ -363,7 +363,7 @@ export const Settings: React.FC = () => {
                     <SettingsIcon className="text-slate-600" />
                     Pengaturan
                 </h2>
-                <p className="text-slate-500 mt-1">Kelola profil toko, metode pembayaran, dan akses pengguna.</p>
+                <p className="text-slate-500 text-sm mt-1">Kelola profil toko, metode pembayaran, dan akses pengguna.</p>
             </div>
 
             <div className="flex gap-4 mb-6 border-b border-slate-200 overflow-x-auto">

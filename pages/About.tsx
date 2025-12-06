@@ -11,7 +11,7 @@ export const About: React.FC = () => {
                         <Info className="text-blue-600" />
                         Tentang Aplikasi
                     </h1>
-                    <p className="text-slate-500">Informasi mengenai aplikasi dan pengembang</p>
+                    <p className="text-slate-500 text-sm mt-1">Informasi mengenai aplikasi dan pengembang</p>
                 </div>
             </div>
 

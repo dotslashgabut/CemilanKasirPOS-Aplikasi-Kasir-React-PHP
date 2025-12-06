@@ -219,7 +219,7 @@ export const People: React.FC = () => {
                     <Users className="text-blue-600" />
                     Daftar Kontak
                 </h2>
-                <p className="text-slate-500 mt-1">Kelola data pelanggan dan supplier.</p>
+                <p className="text-slate-500 text-sm mt-1">Kelola data pelanggan dan supplier.</p>
             </div>
 
             <div className="flex flex-col md:flex-row justify-between gap-4">
