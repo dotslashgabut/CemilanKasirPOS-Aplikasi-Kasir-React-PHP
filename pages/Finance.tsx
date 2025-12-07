@@ -824,7 +824,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                 return;
             }
             total = purchaseItems.reduce((sum, i) => sum + (i.qty * i.price), 0);
-            description = `Pembelian Stok: ${purchaseItems.map(i => i.name).join(', ')}`;
+            const itemsList = purchaseItems.map(i => i.name).join(', ');
+            description = purchaseForm.description
+                ? `${purchaseForm.description} (${itemsList})`
+                : `Pembelian Stok: ${itemsList}`;
             items = purchaseItems.map(i => {
                 const product = products.find(p => p.id === i.id);
                 return {
@@ -2907,6 +2910,17 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                                     Belum ada barang dipilih.
                                                 </div>
                                             )}
+                                        </div>
+
+                                        <div className="mt-4">
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">Catatan / Keterangan</label>
+                                            <input
+                                                type="text"
+                                                className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                placeholder="Contoh: Stok tambahan, kiriman pagi..."
+                                                value={purchaseForm.description}
+                                                onChange={e => setPurchaseForm({ ...purchaseForm, description: e.target.value })}
+                                            />
                                         </div>
 
                                         <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">

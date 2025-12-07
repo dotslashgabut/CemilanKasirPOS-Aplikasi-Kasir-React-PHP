@@ -481,10 +481,31 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                                 {detailPurchase.description}
                             </div>
 
-                            <div className="flex justify-between font-bold text-slate-900 mb-6 border-b border-slate-200 pb-2">
-                                <span>Total Pembelian</span>
-                                <span>{formatIDR(detailPurchase.totalAmount)}</span>
-                            </div>
+                            {detailPurchase.items && detailPurchase.items.length > 0 ? (
+                                <div className="mb-6">
+                                    <h4 className="font-bold text-sm text-slate-800 mb-2">Rincian Barang Stok</h4>
+                                    <div className="border rounded-lg overflow-hidden">
+                                        {detailPurchase.items.map((item, i) => (
+                                            <div key={i} className="flex justify-between p-3 border-b last:border-0 text-sm">
+                                                <div>
+                                                    <span className="block font-medium text-slate-700">{item.name}</span>
+                                                    <span className="text-xs text-slate-500">{item.qty} x {formatIDR(item.finalPrice)}</span>
+                                                </div>
+                                                <span className="font-medium text-slate-800">{formatIDR(item.finalPrice * item.qty)}</span>
+                                            </div>
+                                        ))}
+                                        <div className="bg-slate-50 p-3 flex justify-between font-bold text-slate-900">
+                                            <span>Total</span>
+                                            <span>{formatIDR(detailPurchase.totalAmount)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex justify-between font-bold text-slate-900 mb-6 border-b border-slate-200 pb-2">
+                                    <span>Total Pembelian</span>
+                                    <span>{formatIDR(detailPurchase.totalAmount)}</span>
+                                </div>
+                            )}
 
                             {/* Return History (If this is a Purchase) */}
                             {purchases.filter(p => p.type === PurchaseType.RETURN && (p.originalPurchaseId === detailPurchase.id || p.description.includes(detailPurchase.id))).length > 0 && (
