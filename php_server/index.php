@@ -137,18 +137,28 @@ if ($id === 'batch' && $method === 'POST') {
             if (!is_array($item)) continue;
 
             // Prepare columns and values
-            $columns = array_keys($item);
-            $quotedColumns = array_map(function($col) { return "`$col`"; }, $columns);
-            $placeholders = array_map(function($col) { return ":$col"; }, $columns);
-            
             // Handle JSON fields and Sanitize
             foreach ($item as $key => $value) {
                 if (is_array($value)) {
                     $item[$key] = json_encode($value);
                 } elseif (is_string($value)) {
                     $item[$key] = strip_tags($value);
+                } elseif (is_bool($value)) {
+                    $item[$key] = $value ? 1 : 0;
                 }
             }
+
+            // Add timestamps if missing
+            if (!isset($item['createdAt'])) $item['createdAt'] = date('Y-m-d H:i:s');
+            if (!isset($item['updatedAt'])) $item['updatedAt'] = date('Y-m-d H:i:s');
+
+            // Filter by schema
+            $item = filterDataBySchema($item, $tableName, $schemas);
+
+            // Re-calculate columns after filtering
+            $columns = array_keys($item);
+            $quotedColumns = array_map(function($col) { return "`$col`"; }, $columns);
+            $placeholders = array_map(function($col) { return ":$col"; }, $columns);
 
             // Validate Input (Fix P9: Batch Insert Validation Bypass)
             $validationErrors = validateInput($resource, $item);

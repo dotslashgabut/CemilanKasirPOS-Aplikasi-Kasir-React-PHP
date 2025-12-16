@@ -275,6 +275,14 @@ export const ApiService = {
         const res = await request(`/customers/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete customer');
     },
+    saveCustomersBulk: async (newCustomers: Customer[]) => {
+        const customersWithIds = newCustomers.map(c => ({ ...c, id: c.id || generateUUID() }));
+        const res = await request('/customers/batch', {
+            method: 'POST',
+            body: JSON.stringify(customersWithIds)
+        });
+        if (!res.ok) throw new Error('Failed to save customers bulk');
+    },
 
     // Suppliers
     getSuppliers: async (): Promise<Supplier[]> => {
@@ -298,6 +306,14 @@ export const ApiService = {
     deleteSupplier: async (id: string) => {
         const res = await request(`/suppliers/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete supplier');
+    },
+    saveSuppliersBulk: async (newSuppliers: Supplier[]) => {
+        const suppliersWithIds = newSuppliers.map(s => ({ ...s, id: s.id || generateUUID() }));
+        const res = await request('/suppliers/batch', {
+            method: 'POST',
+            body: JSON.stringify(suppliersWithIds)
+        });
+        if (!res.ok) throw new Error('Failed to save suppliers bulk');
     },
 
     // Transactions (Sales)

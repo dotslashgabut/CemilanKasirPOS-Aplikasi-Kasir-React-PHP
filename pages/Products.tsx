@@ -286,35 +286,72 @@ export const Products: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const lines = text.split('\n');
-      // Skip header, start from 1
+      const lines = text.split('\n').filter(l => l.trim());
+
+      if (lines.length < 2) {
+        alert('Format CSV tidak valid atau kosong.');
+        return;
+      }
+
+      // Parse Headers (Simple comma split, removing quotes and whitespace)
+      const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase());
+
+      const colMap = {
+        id: headers.findIndex(h => h === 'id'),
+        name: headers.findIndex(h => h === 'nama produk' || h === 'nama' || h === 'name'),
+        sku: headers.findIndex(h => h === 'sku' || h === 'kode'),
+        category: headers.findIndex(h => h === 'kategori' || h === 'category'),
+        stock: headers.findIndex(h => h === 'stok' || h === 'stock'),
+        hpp: headers.findIndex(h => h.includes('hpp') || h.includes('modal')),
+        retail: headers.findIndex(h => h.includes('eceran') || h.includes('retail')),
+        general: headers.findIndex(h => h.includes('umum') || h.includes('general')),
+        wholesale: headers.findIndex(h => h.includes('grosir') || h.includes('wholesale')),
+        promo: headers.findIndex(h => h.includes('promo'))
+      };
+
+      // Basic validation: Name is required
+      if (colMap.name === -1) {
+        alert('Kolom "Nama Produk" tidak ditemukan dalam CSV.');
+        return;
+      }
+
       const newProducts: Product[] = [];
 
       for (let i = 1; i < lines.length; i++) {
+        // Basic split, assumes no commas in descriptions/names for now which matches simple export
         const cols = lines[i].split(',');
-        if (cols.length < 4) continue; // Basic validation
+        if (cols.length < headers.length) continue;
 
-        // Expected CSV Format: Name,SKU,CategoryName,Stock,HPP,PriceRetail,PriceGeneral,PriceWholesale
-        // Note: This is a basic parser, does not handle commas inside quotes perfectly
+        const getValue = (index: number, type: 'string' | 'int' = 'string') => {
+          if (index === -1) return type === 'int' ? 0 : '';
+          const val = cols[index]?.replace(/"/g, '').trim() || '';
+          return type === 'int' ? (parseInt(val) || 0) : val;
+        };
+
+        const existingId = getValue(colMap.id); // If ID exists in CSV, try to use it (or it might be ignored by backend if treating as new insert always, but let's pass it)
+        // Note: StorageService.saveProductsBulk usually treats items with IDs as updates if backend logic supports it. 
+        // Our backend logic for 'batch' assumes upsert if ID matches.
+
         newProducts.push({
-          id: generateSKU(), // Generate new IDs
-          name: cols[0]?.replace(/"/g, '') || 'Imported Item',
-          sku: cols[1]?.replace(/"/g, '') || generateSKU(),
-          categoryId: '', // Needs manual assignment or complex matching
-          categoryName: cols[2]?.replace(/"/g, '') || 'Import',
-          stock: parseInt(cols[3]) || 0,
-          hpp: parseInt(cols[4]) || 0,
-          priceRetail: parseInt(cols[5]) || 0,
-          priceGeneral: parseInt(cols[6]) || 0,
-          priceWholesale: parseInt(cols[7]) || 0,
-          pricePromo: parseInt(cols[8]) || 0,
+          id: existingId || generateSKU(), // Use existing ID if present (update), else generate
+          name: getValue(colMap.name),
+          sku: getValue(colMap.sku) || generateSKU(),
+          categoryId: '', // Category mapping is complex by name, backend/service might handle or leave empty
+          categoryName: getValue(colMap.category) || 'Import',
+          stock: getValue(colMap.stock, 'int') as number,
+          hpp: getValue(colMap.hpp, 'int') as number,
+          priceRetail: getValue(colMap.retail, 'int') as number,
+          priceGeneral: getValue(colMap.general, 'int') as number,
+          priceWholesale: getValue(colMap.wholesale, 'int') as number,
+          pricePromo: getValue(colMap.promo, 'int') as number,
           image: ''
         });
       }
 
       if (newProducts.length > 0) {
         StorageService.saveProductsBulk(newProducts).then(() => {
-          alert(`Berhasil import ${newProducts.length} produk.`);
+          alert(`Berhasil memproses ${newProducts.length} produk (Tambah/Update).`);
+          window.location.reload(); // Reload to refresh list
         });
       }
     };

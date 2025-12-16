@@ -97,6 +97,10 @@ export const StorageService = {
     await ApiService.deleteCustomer(id);
     notifyListeners('customers');
   },
+  saveCustomersBulk: async (newCustomers: Customer[]) => {
+    await ApiService.saveCustomersBulk(newCustomers);
+    notifyListeners('customers');
+  },
 
   // Suppliers
   getSuppliers: async (): Promise<Supplier[]> => {
@@ -109,6 +113,10 @@ export const StorageService = {
   },
   deleteSupplier: async (id: string) => {
     await ApiService.deleteSupplier(id);
+    notifyListeners('suppliers');
+  },
+  saveSuppliersBulk: async (newSuppliers: Supplier[]) => {
+    await ApiService.saveSuppliersBulk(newSuppliers);
     notifyListeners('suppliers');
   },
 
