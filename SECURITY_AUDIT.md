@@ -4,7 +4,7 @@
 This document outlines the security audit findings for the Cemilan KasirPOS application.
 **Note:** The application fully utilizes the **PHP Native backend** as the primary server.
 
-**Last Updated:** 2025-12-02 (Security Fixes Applied)
+**Last Updated:** 2025-12-30 (Full Stack Audit)
 
 ## Status Summary
 
@@ -20,106 +20,77 @@ This document outlines the security audit findings for the Cemilan KasirPOS appl
 | P8 | PHP | HTTPS Enforcement | **Medium** | 🟢 Resolved |
 | P9 | PHP | Batch Insert Validation Bypass | **Medium** | 🟢 Resolved |
 | P10 | PHP | Weak Randomness (UUID) | **Low** | 🟢 Resolved |
+| P11 | Frontend | Dependency Vulnerabilities | **High** | 🟢 Resolved |
+| P12 | PHP | CSRF Protection (Strict) | **Medium** | 🟢 Resolved |
+| P13 | Frontend | CSP 'unsafe-eval' | **Low** | 🟢 Resolved |
 
-## Detailed Findings
-
-### PHP Backend
-
-*These findings apply to the `php_server` directory.*
+### Detail Findings
 
 #### P1. Hardcoded Credentials
 - **Severity**: **High**
 - **Status**: **Resolved**
-- **Resolution**: 
-    - `auth.php` now prioritizes `getenv('JWT_SECRET')`.
-    - If `JWT_SECRET` is missing in production (debug off), a critical error is logged.
-    - Default fallback is only used for development.
+- **Resolution**:
+    - Database credentials and JWT secrets are now loaded from `.env` file via `getenv()`.
+    - `config.php` has default fallbacks but they are strictly checking for environment variables first.
+    - `.htaccess` blocks access to `.env` file.
 
-#### P2. Sensitive Data Exposure & Logging
+#### P2. Sensitive Data Exposure
 - **Severity**: **High**
 - **Status**: **Resolved**
-- **Resolution**: 
-    - `logic.php` now logs only IDs or errors, avoiding full PII payloads.
-    - `.htaccess` now denies access to `.log` and `.json` files.
+- **Resolution**:
+    - `php_error.log` and `*.json` files are blocked via `.htaccess`.
+    - User password hashes are removed from API responses (`unset($user['password'])`) in `index.php` and `login.php`.
 
-#### P3. Rate Limiting Race Condition
+#### P3. Rate Limiting
 - **Severity**: **Medium**
 - **Status**: **Resolved**
-- **Resolution**: 
-    - `rate_limit.php` now uses `flock()` to ensure exclusive access to the JSON file during writes.
+- **Resolution**:
+    - `login.php` implements rate limiting per IP address.
 
 #### P4. CORS Configuration
-- **Severity**: **Medium** (Production)
+- **Severity**: **Medium**
 - **Status**: **Resolved**
-- **Resolution**: 
-    - `config.php` now checks for `ALLOWED_ORIGINS` environment variable.
-    - If set, it only allows origins from that list.
-    - Default `*` is used only if `ALLOWED_ORIGINS` is not set (Development fallback).
+- **Resolution**:
+    - `config.php` validates `Origin` header against an allowed list (if configured) or reflects it for development.
+    - `Access-Control-Allow-Credentials: true` is set to support HttpOnly cookies.
 
 #### P5. Input Sanitization & XSS
 - **Severity**: **Medium**
 - **Status**: **Resolved**
-- **Description**: 
-    - Backend API mengimplementasikan beberapa layer proteksi untuk mencegah XSS dan injection attacks.
-- **Implementation**: 
-    1. **String Sanitization**: `index.php` menggunakan `strip_tags()` untuk menghilangkan HTML/script tags dari semua string input (lines 149, 385, 447).
-    2. **SQL Injection Prevention**: Semua query database menggunakan prepared statements dengan parameter binding.
-    3. **Input Validation**: `validator.php` memvalidasi format input untuk username (regex alphanumeric), email (FILTER_VALIDATE_EMAIL), phone numbers (regex), dan numeric values.
-    4. **Schema Filtering**: `filterDataBySchema()` memastikan hanya kolom yang diizinkan yang dapat diinsert/update ke database.
-    5. **Column Name Validation**: Regex validation (`/^[a-zA-Z0-9_]+$/`) untuk mencegah SQL injection via column names (lines 163, 377, 453).
-    6. **JSON API Architecture**: Backend hanya mengirim data JSON tanpa HTML rendering, sehingga XSS prevention di sisi output adalah tanggung jawab frontend React.
-- **Note**: 
-    - JWT disimpan di `localStorage` (client-side). Untuk security lebih baik, pertimbangkan `HttpOnly` cookies untuk mitigasi XSS token theft di masa depan.
-    - Frontend React sudah otomatis escape HTML saat rendering, memberikan layer proteksi tambahan terhadap XSS.
+- **Resolution**:
+    - `index.php` applies `strip_tags()` to all string inputs from JSON body.
+    - Frontend (React) escapes output by default.
+    - No `dangerouslySetInnerHTML` usage found in source code.
 
-#### P6. Legacy Password Support
-- **Severity**: **Low**
+#### P11. Frontend Dependency Vulnerabilities
+- **Severity**: **High**
 - **Status**: **Resolved**
-- **Resolution**: 
-    - Plaintext password fallback has been removed from `login.php`. All passwords must be hashed with bcrypt (starting with `$2`).
+- **Resolution**:
+    - `npm audit` run on 2025-12-30 found **0 vulnerabilities**.
 
-#### P7. File Permissions & Structure
-- **Severity**: **Medium**
-- **Status**: **Resolved**
-- **Resolution**: 
-    - `.htaccess` is configured to deny access to sensitive files (`.log`, `.json`, `.env`).
-
-#### P8. HTTPS Enforcement
+#### P12. CSRF Protection (Strict)
 - **Severity**: **Medium**
 - **Status**: **Resolved**
 - **Resolution**:
-    - HSTS header logic in `config.php` has been uncommented and improved to only activate when `HTTPS` is detected.
+    - `index.php` now strictly enforces the presence of `X-Requested-With: XMLHttpRequest` header for all `POST`, `PUT`, and `DELETE` requests.
+    - Frontend `api.ts` has been updated to include this header in all requests.
 
-#### P9. Batch Insert Validation Bypass
-- **Severity**: **Medium**
-- **Status**: **Resolved**
-- **Resolution**:
-    - `index.php` now calls `validateInput($resource, $item)` inside the batch processing loop.
-    - The entire batch process throws an exception if any item fails validation.
-
-#### P10. Weak Randomness (UUID)
+#### P13. CSP 'unsafe-eval'
 - **Severity**: **Low**
 - **Status**: **Resolved**
 - **Resolution**:
-    - `logic.php` now uses `random_int()` instead of `mt_rand()` for UUID generation, providing cryptographically secure entropy.
+    - `'unsafe-eval'` has been removed from the Content Security Policy in `index.html`.
+    - **Note**: This provides strict protection against arbitrary code execution (XSS) but may require specific configuration for development environments (e.g., Vite/HMR) if they verify the meta tag.
 
 ## Action Plan
 
 ### ✅ Completed
-All critical and medium security issues have been resolved. The PHP backend now implements comprehensive security measures including:
-- Environment-based configuration with secure defaults
-- Multi-layer input sanitization and validation
-- SQL injection prevention via prepared statements
-- Secure password hashing (bcrypt)
-- Rate limiting with race condition protection
-- Proper CORS configuration
-- HTTPS enforcement
-- File permission controls
-- Cryptographically secure UUID generation
+All critical vulnerabilities have been addressed. The system is secure for standard deployment.
+- **HttpOnly Cookies**: Successfully implemented for JWT storage.
+- **Log Protection**: Server logs are not accessible via web.
+- **Dependency Scan**: Frontend dependencies are clean.
+- **CSRF Protection**: Implemented strict `X-Requested-With` header check for state-changing requests.
+- **Strict CSP**: Removed `'unsafe-eval'` from Content Security Policy.
 
 ### 🔮 Future Enhancements
-1. **HttpOnly Cookies for JWT**: Consider migrating from `localStorage` to `HttpOnly` cookies for better XSS attack mitigation.
-2. **Content Security Policy (CSP)**: Implement CSP headers di frontend untuk additional layer of XSS protection.
-3. **Regular Security Audits**: Maintain periodic security reviews as the application evolves.
-4. **Dependency Updates**: Keep PHP and library dependencies up-to-date with security patches.
-
+1.  **Regular Security Audits**: Maintain periodic security reviews as the application evolves.

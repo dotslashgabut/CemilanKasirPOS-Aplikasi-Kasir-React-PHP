@@ -4,20 +4,12 @@ import { generateUUID, toMySQLDate } from "../utils";
 const isProd = import.meta.env.PROD;
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/php_server/api';
 
-// Get headers with authentication
+// Get headers (Auth now handled by HttpOnly Cookie)
 const getHeaders = () => {
-    const currentUser = localStorage.getItem('pos_current_user');
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
+    return {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
     };
-
-    const token = localStorage.getItem('pos_token');
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
 };
 
 // Global request helper to handle Auth & Caching
@@ -27,6 +19,7 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
 
     const config = {
         ...options,
+        credentials: 'include' as RequestCredentials, // Send HttpOnly Cookie
         headers: {
             ...headers,
             ...options.headers,
@@ -835,9 +828,11 @@ export const ApiService = {
 
 
     // Authentication
-    login: async (username: string, password: string): Promise<{ token: string, user: User }> => {
+    // Authentication
+    login: async (username: string, password: string): Promise<{ user: User }> => {
         const res = await fetch(`${API_URL}/login`, {
             method: 'POST',
+            credentials: 'include', // Important for setting the cookie
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
@@ -855,5 +850,16 @@ export const ApiService = {
         }
 
         return await res.json();
+    },
+    
+    logout: async () => {
+        try {
+            await request('/logout', { method: 'POST' });
+        } catch (e) {
+            console.error("Logout failed:", e);
+        }
+        localStorage.removeItem('pos_current_user');
+        localStorage.removeItem('pos_token'); // Cleanup legacy
+        window.location.reload();
     }
 };

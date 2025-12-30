@@ -71,17 +71,17 @@ function verifyJWT($token) {
     return $payload;
 }
 
-function getUserFromHeaders() {
-    // Get Authorization header
+function getUserFromRequest() {
+    // 1. Check HttpOnly Cookie (Priority for Security)
+    if (isset($_COOKIE['pos_token']) && !empty($_COOKIE['pos_token'])) {
+        return verifyJWT($_COOKIE['pos_token']);
+    }
+
+    // 2. Fallback: Check Authorization Header (For legacy or non-browser clients)
     $headers = getallheaders();
     $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
     
-    if (empty($authHeader)) {
-        return null;
-    }
-    
-    // Expected format: "Bearer {jwt_token}"
-    if (strpos($authHeader, 'Bearer ') === 0) {
+    if (!empty($authHeader) && strpos($authHeader, 'Bearer ') === 0) {
         $token = substr($authHeader, 7);
         return verifyJWT($token);
     }
@@ -90,7 +90,7 @@ function getUserFromHeaders() {
 }
 
 function requireAuth() {
-    $user = getUserFromHeaders();
+    $user = getUserFromRequest();
     if (!$user) {
         http_response_code(401);
         echo json_encode(['error' => 'Unauthorized. Invalid or expired token.']);

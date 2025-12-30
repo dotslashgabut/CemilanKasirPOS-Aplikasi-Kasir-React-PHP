@@ -64,11 +64,11 @@ const App: React.FC = () => {
    const handleLogin = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-         const { token, user } = await ApiService.login(username, password);
+         const { user } = await ApiService.login(username, password);
 
          setCurrentUser(user);
          localStorage.setItem('pos_current_user', JSON.stringify(user));
-         localStorage.setItem('pos_token', token);
+         // localStorage.setItem('pos_token', token); // Removed for HttpOnly Cookie Security
 
          setError('');
          // Reset form
@@ -80,10 +80,10 @@ const App: React.FC = () => {
       }
    };
 
-   const handleLogout = () => {
+   const handleLogout = async () => {
+      // Use API Service to clear cookie
+      await ApiService.logout();
       setCurrentUser(null);
-      localStorage.removeItem('pos_current_user');
-      localStorage.removeItem('pos_token');
       setCurrentPage('dashboard');
    };
 

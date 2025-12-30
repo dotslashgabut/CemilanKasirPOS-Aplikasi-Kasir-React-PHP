@@ -13,6 +13,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// CSRF Protection: Enforce X-Requested-With header
+if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
+    if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+        http_response_code(403);
+        echo json_encode(['error' => 'CSRF Failure: Missing X-Requested-With header']);
+        exit();
+    }
+}
+
 // Helper function to get JSON input
 function getJsonInput() {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -62,6 +71,12 @@ $id = $parts[1] ?? null;
 // Handle Login Route
 if ($resource === 'login') {
     require 'login.php';
+    exit();
+}
+
+// Handle Logout Route
+if ($resource === 'logout') {
+    require 'logout.php';
     exit();
 }
 

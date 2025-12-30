@@ -8,30 +8,33 @@ Dokumen ini mencakup panduan konfigurasi untuk dua skenario deployment yang umum
 
 ---
 
-## 🔐 1. Implementasi JWT (JSON Web Token)
+## 🔐 1. Implementasi JWT (JSON Web Token) dengan HttpOnly Cookie
 
-JWT digunakan untuk mengamankan komunikasi antara Frontend (React) dan Backend (PHP). Sistem ini bersifat *stateless*, artinya server tidak perlu menyimpan sesi di database untuk setiap request.
+JWT digunakan untuk mengamankan komunikasi antara Frontend (React) dan Backend (PHP). Sistem ini bersifat *stateless*.
+
+**Pembaruan Keamanan (Desember 2025):**
+Metode penyimpanan token telah ditingkatkan dari **LocalStorage** menjadi **HttpOnly Cookies**. Ini memberikan perlindungan yang jauh lebih baik terhadap serangan XSS (Cross-Site Scripting) karena JavaScript di browser tidak dapat membaca token tersebut.
 
 ### Alur Kerja Autentikasi
 
 1.  **Login**:
     *   User mengirim `username` dan `password` ke endpoint `/login`.
-    *   Backend memverifikasi kredensial (mendukung hash `bcrypt`).
-    *   Jika valid, Backend membuat **Token JWT** yang berisi data user (ID, Username, Role) dan waktu kadaluarsa (default 24 jam).
-    *   Backend mengirim token ini kembali ke Frontend.
+    *   Backend memverifikasi kredensial.
+    *   Jika valid, Backend membuat **Token JWT**.
+    *   Backend mengirim token ini sebagai **HttpOnly Cookie** (bukan di body response JSON).
 
-2.  **Penyimpanan Token (Frontend)**:
-    *   Frontend menerima token dan menyimpannya di **LocalStorage** browser dengan key `pos_token`.
-    *   *Catatan: Penyimpanan di LocalStorage memudahkan implementasi namun rentan XSS. Untuk keamanan tingkat tinggi, pertimbangkan HttpOnly Cookies di masa depan.*
+2.  **Penyimpanan Token (Browser)**:
+    *   Browser secara otomatis menyimpan cookie tersebut.
+    *   Frontend React **TIDAK** perlu menyimpan token secara manual.
 
 3.  **Mengirim Request (Authenticated)**:
-    *   Setiap kali Frontend melakukan request ke API (misal: ambil data transaksi), Frontend menyisipkan token ke dalam **Header HTTP**.
-    *   Format Header: `Authorization: Bearer <token_jwt_anda>`
+    *   Frontend mengirim request dengan opsi `credentials: 'include'`.
+    *   Browser secara otomatis menyisipkan cookie `pos_token` ke dalam request ke domain yang sama (atau cross-origin yang diizinkan).
 
 4.  **Validasi Token (Backend)**:
-    *   Backend (`auth.php`) membaca header `Authorization`.
-    *   Token didecode dan divalidasi tanda tangannya menggunakan **JWT Secret**.
-    *   Jika valid dan belum expired, request diproses. Jika tidak, server merespon dengan `401 Unauthorized`.
+    *   Backend (`auth.php`) membaca `$_COOKIE['pos_token']`.
+    *   Jika cookie tidak ada, backend fall back mengecek header `Authorization` (untuk kompatibilitas).
+    *   Token didecode dan divalidasi. Valid/Expired status menentukan response (200 OK atau 401 Unauthorized).
 
 ### Konfigurasi JWT di Backend
 
@@ -144,8 +147,10 @@ Skenario ini memisahkan Frontend dan Backend di domain atau subdomain berbeda. I
     VITE_API_URL=https://api.tokocemilan.com
     ```
 
-3.  **Cookies (Opsional)**:
-    Jika Anda berencana menggunakan Cookies di masa depan (bukan LocalStorage), Anda wajib set `Access-Control-Allow-Credentials: true` dan `Access-Control-Allow-Origin` tidak boleh `*`.
+3.  **Cookies (Wajib)**:
+    Karena menggunakan HttpOnly Cookies, Anda **WAJIB** set:
+    *   `Access-Control-Allow-Credentials: true` (Sudah default di config.php)
+    *   `Access-Control-Allow-Origin` **TIDAK BOLEH** `*`. Harus spesifik domain frontend (Set di `.env`).
 
 ---
 
