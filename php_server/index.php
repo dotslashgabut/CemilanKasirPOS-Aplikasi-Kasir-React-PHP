@@ -15,9 +15,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // CSRF Protection: Enforce X-Requested-With header
 if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
-    if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+    
+    // Helper to get header case-insensitively
+    function getHeader($name) {
+        $name = strtolower($name);
+        $headers = [];
+        if (function_exists('apache_request_headers')) {
+            $headers = apache_request_headers();
+        }
+        
+        foreach ($headers as $key => $value) {
+            if (strtolower($key) === $name) {
+                return $value;
+            }
+        }
+        
+        // Check $_SERVER
+        $serverKey = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+        if (isset($_SERVER[$serverKey])) {
+            return $_SERVER[$serverKey];
+        }
+        
+        return null;
+    }
+
+    $xRequestedWith = getHeader('X-Requested-With');
+
+    if (!$xRequestedWith || strtolower($xRequestedWith) !== 'xmlhttprequest') {
         http_response_code(403);
-        echo json_encode(['error' => 'CSRF Failure: Missing X-Requested-With header']);
+        echo json_encode([
+            'error' => 'CSRF Failure: Missing X-Requested-With header',
+            'debug' => [
+                'headers_received' => function_exists('apache_request_headers') ? apache_request_headers() : 'N/A',
+                'server_keys' => array_keys($_SERVER)
+            ]
+        ]);
         exit();
     }
 }

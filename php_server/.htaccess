@@ -9,6 +9,10 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Handle X-Requested-With Header (Prevent stripping)
+    RewriteCond %{HTTP:X-Requested-With} .
+    RewriteRule .* - [E=HTTP_X_REQUESTED_WITH:%{HTTP:X-Requested-With}]
+
     # Redirect Trailing Slashes
     # Remove trailing slash from URLs (except directories)
     RewriteCond %{REQUEST_FILENAME} !-d

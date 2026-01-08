@@ -833,7 +833,10 @@ export const ApiService = {
         const res = await fetch(`${API_URL}/login`, {
             method: 'POST',
             credentials: 'include', // Important for setting the cookie
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: JSON.stringify({ username, password })
         });
 

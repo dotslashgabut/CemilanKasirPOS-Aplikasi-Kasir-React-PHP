@@ -1,5 +1,13 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Handle X-Requested-With Header
+    RewriteCond %{HTTP:X-Requested-With} .
+    RewriteRule .* - [E=HTTP_X_REQUESTED_WITH:%{HTTP:X-Requested-With}]
     
     # If deployed in a subfolder (e.g. /app), set RewriteBase
     # RewriteBase /
