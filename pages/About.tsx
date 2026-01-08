@@ -97,7 +97,7 @@ export const About: React.FC = () => {
                     </div>
 
                     <div className="mt-12 text-slate-400 text-sm">
-                        <p>© {new Date().getFullYear()} Dotslashgabut. All rights reserved.</p>
+                        <p>© {new Date().getFullYear()} Dotslashgabut</p>
                     </div>
                 </div>
             </div>
