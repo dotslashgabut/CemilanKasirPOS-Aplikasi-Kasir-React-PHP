@@ -70,9 +70,21 @@ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (!empty($allowedOrigins) && in_array($origin, $allowedOrigins)) {
     header("Access-Control-Allow-Origin: $origin");
 } else {
-    // Fallback for development or if no specific origins defined
-    // In production, it is highly recommended to set ALLOWED_ORIGINS in .env
-    header("Access-Control-Allow-Origin: " . ($origin ? $origin : '*'));
+    // Fallback logic
+    if (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) {
+        // Development: Allow dynamic origin for convenience
+        if ($origin) {
+            header("Access-Control-Allow-Origin: $origin");
+        } else {
+            header("Access-Control-Allow-Origin: *");
+        }
+    } else {
+        // Production: Strict Security
+        // If the origin is not in ALLOWED_ORIGINS, we return '*'
+        // Note: Browsers will BLOCK requests because we also send 'Access-Control-Allow-Credentials: true'
+        // This is the desired secure behavior (fail-safe).
+        header("Access-Control-Allow-Origin: *"); 
+    }
 }
 
 header("Access-Control-Allow-Credentials: true");
