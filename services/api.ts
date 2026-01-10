@@ -344,7 +344,7 @@ export const ApiService = {
             body: JSON.stringify({ ...transaction, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to add transaction');
-        
+
         const data = await res.json();
         return parseTransaction(data);
     },
@@ -836,7 +836,7 @@ export const ApiService = {
         const res = await fetch(`${API_URL}/login`, {
             method: 'POST',
             credentials: 'include', // Important for setting the cookie
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
@@ -857,7 +857,7 @@ export const ApiService = {
 
         return await res.json();
     },
-    
+
     logout: async () => {
         try {
             await request('/logout', { method: 'POST' });
