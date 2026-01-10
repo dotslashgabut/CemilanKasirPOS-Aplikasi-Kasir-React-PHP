@@ -191,14 +191,15 @@ export const POS: React.FC = () => {
     };
 
     try {
-      await StorageService.addTransaction(transaction);
+      // Security Fix: Capture the returned transaction from server which contains the SANITIZED data (e.g. real cashier name)
+      const savedTransaction = await StorageService.addTransaction(transaction);
 
       // Add Cashflow Entry for Sale (if paid > 0)
       // Handled by Backend automatically now
 
-      // Print Logic
+      // Print Logic: Use savedTransaction (Server Truth) instead of local transaction (Client Potentially Spoofed)
       const settings = await StorageService.getStoreSettings();
-      printReceipt(transaction, settings);
+      printReceipt(savedTransaction, settings);
 
       // Reset
       setCart([]);

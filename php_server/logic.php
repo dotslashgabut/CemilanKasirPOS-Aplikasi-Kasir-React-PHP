@@ -28,10 +28,11 @@ function handleTransactionCreate($pdo, $data, $currentUser = null) {
         $data['type'] = $data['type'] ?? 'SALE';
         $data['isReturned'] = isset($data['isReturned']) ? ($data['isReturned'] ? 1 : 0) : 0;
 
-        // Auto-fill cashier info if available
+        // Auto-fill cashier info from verified token (Security Fix)
         if ($currentUser) {
-            if (empty($data['cashierId'])) $data['cashierId'] = $currentUser['id'];
-            if (empty($data['cashierName'])) $data['cashierName'] = $currentUser['name'];
+            // STRICTLY OVERWRITE: Do not trust frontend input for cashier identity
+            $data['cashierId'] = $currentUser['id'];
+            $data['cashierName'] = $currentUser['name'];
         }
 
         // Prepare data for insertion

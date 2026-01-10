@@ -205,3 +205,32 @@ if (isset($_SERVER['REQUEST_METHOD'])) {
 **PENTING:**
 *   **Pastikan SSL Aktif**: Jangan aktifkan HSTS jika server Anda belum memiliki sertifikat SSL (HTTPS) yang valid. Jika Anda mengaktifkannya tanpa SSL, situs Anda **tidak akan bisa diakses** sama sekali.
 *   **Max-Age**: Nilai `31536000` detik setara dengan 1 tahun. Ini memberitahu browser untuk mengingat aturan ini selama satu tahun.
+
+---
+
+## 🛡️ 5. Proteksi Data Integritas (Anti-Spoofing)
+
+### Vulnerability Sebelumnya
+Sebelumnya, identitas kasir (`cashierId`) dikirim oleh frontend melalui body request JSON. Hal ini memungkinkan pengguna yang nakal untuk memodifikasi LocalStorage (`pos_current_user`) atau memanipulasi request JSON untuk melakukan transaksi atas nama pengguna lain.
+
+### Solusi & Implementasi
+Perbaikan keamanan telah diterapkan di sisi server (`php_server/logic.php`) dengan prinsip **"Trust Token, Verify Nothing"** untuk identitas pengguna.
+
+1.  **Strict Identity Enforcement**:
+    Saat memproses transaksi atau pembelian, Backend **mengabaikan** data `cashierId`, `cashierName`, `userId`, atau `userName` yang dikirim dalam body request jika pengguna sudah terautentikasi.
+
+2.  **Identitas dari Token**:
+    Backend secara paksa menimpa field identitas dengan data yang diambil dari **JWT Token** yang valid.
+
+    ```php
+    // Logic di php_server/logic.php
+    if ($currentUser) {
+        // STRICTLY OVERWRITE: Do not trust frontend input
+        $data['cashierId'] = $currentUser['id'];
+        $data['cashierName'] = $currentUser['name'];
+    }
+    ```
+
+3.  **Implikasi**:
+    Meskipun seseorang berhasil mengedit tampilan nama pengguna di frontend (frontend spoofing), saat tombol "Proses" ditekan, data yang tercatat di database DIJAMIN tetap menggunakan identitas asli pemilik akun yang login (berdasarkan token/cookie yang valid).
+

@@ -124,12 +124,13 @@ export const StorageService = {
   getTransactions: async (): Promise<Transaction[]> => {
     return await ApiService.getTransactions();
   },
-  addTransaction: async (transaction: Transaction) => {
-    await ApiService.addTransaction(transaction);
+  addTransaction: async (transaction: Transaction): Promise<Transaction> => {
+    const savedTransaction = await ApiService.addTransaction(transaction);
     notifyListeners('transactions');
     // Transactions also affect products (stock) and cashflow
     notifyListeners('products');
     notifyListeners('cashflow');
+    return savedTransaction;
   },
   updateTransaction: async (transaction: Transaction) => {
     await ApiService.updateTransaction(transaction);

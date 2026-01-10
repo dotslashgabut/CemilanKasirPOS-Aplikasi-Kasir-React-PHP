@@ -316,7 +316,7 @@ export const ApiService = {
         const data = await res.json();
         return data.map(parseTransaction);
     },
-    addTransaction: async (transaction: Transaction) => {
+    addTransaction: async (transaction: Transaction): Promise<Transaction> => {
         // Convert ISO date to MySQL format
         const formattedDate = toMySQLDate(new Date(transaction.date));
 
@@ -344,6 +344,9 @@ export const ApiService = {
             body: JSON.stringify({ ...transaction, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to add transaction');
+        
+        const data = await res.json();
+        return parseTransaction(data);
     },
     updateTransaction: async (transaction: Transaction) => {
         // Convert ISO date to MySQL format
