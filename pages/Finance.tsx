@@ -1491,7 +1491,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in min-h-[101vh]">
             <div className="flex flex-col gap-4 border-b border-slate-200 pb-4">
                 {/* Top Controls */}
                 <div className="flex flex-wrap justify-between items-center gap-4">
