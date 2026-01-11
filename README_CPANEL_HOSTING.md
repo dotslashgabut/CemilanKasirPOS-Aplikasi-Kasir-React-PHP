@@ -27,14 +27,20 @@ Panduan ini menjelaskan cara meng-hosting aplikasi Cemilan KasirPOS menggunakan 
 3.  Buat folder baru bernama `api`.
 4.  Upload semua file dari folder `php_server` di komputer Anda ke dalam folder `public_html/api` tersebut.
     *   Pastikan file `index.php`, `config.php`, `auth.php`, dll terupload.
-5.  **Konfigurasi Database**:
-    *   Edit file `config.php` di dalam folder `api` tersebut.
-    *   Sesuaikan bagian berikut dengan database yang Anda buat di Langkah 1:
-    ```php
-    define('DB_HOST', 'localhost');
-    define('DB_NAME', 'u12345_cemilan'); // Sesuaikan nama DB
-    define('DB_USER', 'u12345_admin');   // Sesuaikan user DB
-    define('DB_PASS', 'password_anda');  // Sesuaikan password
+5.  **Konfigurasi Database (.env)**:
+    *   Di **File Manager**, masuk ke dalam folder `api` (tempat Anda upload file PHP).
+    *   Buat file baru bernama `.env`.
+    *   Salin isi dari `.env.example` ke file `.env` ini.
+    *   Edit file `.env` dan sesuaikan dengan database cPanel Anda:
+    ```ini
+    DB_HOST=localhost
+    DB_NAME=u12345_cemilan  # Sesuaikan nama DB
+    DB_USER=u12345_admin    # Sesuaikan user DB
+    DB_PASS=password_anda
+    
+    # Ganti dengan string acak
+    JWT_SECRET=rahasia_aman_12345
+    ALLOWED_ORIGINS=https://tokocemilan.com
     ```
     *   Simpan perubahan.
 

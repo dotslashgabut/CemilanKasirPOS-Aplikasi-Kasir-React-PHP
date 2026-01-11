@@ -18,39 +18,34 @@ Backend terletak di dalam folder `php_server` di root proyek.
 cd php_server
 ```
 
-### 2. Konfigurasi Database (`config.php`)
-Buka file `config.php` dan sesuaikan kredensial database Anda:
+### 2. Konfigurasi Environment (`.env`)
 
-```php
-// config.php
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'cemilankasirpos_php_v02'); // Pastikan nama database sesuai
-define('DB_USER', 'root');
-define('DB_PASS', ''); // Isi password jika ada
-```
+Backend menggunakan file `.env` untuk menyimpan konfigurasi sensitif.
 
-### 3. Konfigurasi Keamanan (`auth.php`)
-Buka file `auth.php` dan ganti `JWT_SECRET` dengan string acak yang aman untuk produksi:
+1.  Salin file `.env.example` menjadi `.env`:
+    ```bash
+    cp .env.example .env
+    # atau di Windows: copy .env.example .env
+    ```
 
-```php
-// auth.php
-// PRIORITAS: Environment Variable (Aman)
-$jwt_secret = getenv('JWT_SECRET');
+2.  Buka file `.env` dan sesuaikan konfigurasinya:
 
-// FALLBACK: Hanya untuk Development (Tidak Aman untuk Production)
-if (!$jwt_secret) {
-    if ($showDebug) {
-        $jwt_secret = 'dev_secret_key_123';
-    } else {
-        // Production tanpa Secret = FATAL ERROR
-        error_log("CRITICAL: JWT_SECRET environment variable is not set!");
-        http_response_code(500);
-        exit(json_encode(['error' => 'Server configuration error']));
-    }
-}
-```
+    ```ini
+    # Database Configuration
+    DB_HOST=localhost
+    DB_NAME=cemilankasirpos_php_v02
+    DB_USER=root
+    DB_PASS=
 
-**Penting**: Di production, Anda **WAJIB** men-set environment variable `JWT_SECRET`. Jangan mengandalkan fallback di kode.
+    # Security Configuration
+    # Ganti dengan string acak yang panjang untuk Production!
+    JWT_SECRET=rahasia_super_aman_12345
+    
+    # CORS Configuration (Production)
+    ALLOWED_ORIGINS=https://tokocemilan.com
+    ```
+
+> **Catatan**: File `config.php` akan otomatis memuat file `.env` ini. Anda tidak perlu mengedit `config.php` atau `auth.php` secara langsung kecuali ingin mengubah logika intinya.
 
 ## ▶️ Menjalankan Server
 
@@ -86,13 +81,17 @@ VITE_API_URL=http://localhost/path/ke/php_server/index.php/api
 
 ```
 php_server/
-├── config.php         # Konfigurasi Database & CORS
-├── auth.php           # Middleware Autentikasi & JWT
-├── index.php          # Router Utama & CRUD Generik
-├── logic.php          # Logika Bisnis Kompleks (Transaksi, Stok, dll)
-├── login.php          # Handler Login
-├── validator.php      # Validasi Input
-└── ...
+├── .env               # File konfigurasi (TIDAK DITRACK GIT)
+├── .env.example       # Template konfigurasi environment
+├── .htaccess          # Routing Apache & Security Rules
+├── config.php         # Handler Konfigurasi (.env loader + CORS)
+├── index.php          # Router Utama (API Gateway)
+├── auth.php           # Middleware (JWT & Role Check)
+├── login.php          # Endpoint Autentikasi
+├── logic.php          # Business Logic Layer (Transaksi/Stok)
+├── validator.php      # Helper Validasi/Sanitasi Input
+├── rate_limit.php     # Logic Rate Limiting (Brute-Force Protection)
+└── php_error.log      # Log error server (tersembunyi dari publik)
 ```
 
 ## 🔐 Fitur Utama

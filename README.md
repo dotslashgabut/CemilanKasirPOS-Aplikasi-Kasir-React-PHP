@@ -246,15 +246,13 @@ The application uses the following tables:
    
    ### 2. Backend Setup (PHP)
 
-3.  **Configure Database**:
-    *   Open `php_server/config.php`.
-    *   Update the database credentials:
-        ```php
-        define('DB_HOST', 'localhost');
-        define('DB_USER', 'root');
-        define('DB_PASS', '');
-        define('DB_NAME', 'cemilankasirpos_php_v02');
+3.  **Configure Database & Environment**:
+    *   Navigate to `php_server/`.
+    *   Copy `.env.example` to `.env`:
+        ```bash
+        cp .env.example .env
         ```
+    *   Open `.env` and update the database credentials and JWT secret.
 
 4.  **Start PHP Server**:
     *   If you have PHP installed locally:
@@ -419,9 +417,11 @@ cemilan-kasirpos/
 ├── src/                # Source code Frontend (React)
 ├── public/             # Aset statis (icon, logo)
 ├── php_server/         # Source code Backend (PHP API)
-│   ├── config.php      # Koneksi DB & Settings
+│   ├── .env            # Konfigurasi Environment (DB & Security)
+│   ├── .htaccess       # Apache Routing & Security Rules
 │   ├── index.php       # Main Router
-│   ├── auth.php        # Middleware Auth
+│   ├── config.php      # Config Handler
+│   ├── auth.php        # Middleware Auth (JWT)
 │   ├── logic.php       # Business Logic
 │   └── ...
 ├── dist/               # Hasil build Frontend (setelah npm run build)
@@ -491,6 +491,12 @@ Untuk memulai lingkungan pengembangan:
      
      ```bash
      cd php_server
+     ```
+   
+   * **Konfigurasi Environment**:
+     Salin `.env.example` ke `.env` dan sesuaikan setting database/security:
+     ```bash
+     cp .env.example .env
      ```
    
    * Jalankan server:

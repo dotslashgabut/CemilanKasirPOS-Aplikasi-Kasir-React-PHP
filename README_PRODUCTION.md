@@ -17,22 +17,18 @@ CORS adalah fitur keamanan browser yang membatasi bagaimana web page di satu dom
     *   **Tindakan:** Anda **WAJIB** mengatur CORS agar frontend diizinkan mengakses backend.
 
 ### Cara Mengatur CORS
-
-Buka file `php_server/config.php` dan edit konfigurasi CORS.
-Secara default, aplikasi dikonfigurasi untuk menerima request dari `http://localhost:5173` (development).
-
-```php
-// php_server/config.php
-
-// Izinkan domain tertentu
-$allowed_origins = ['https://toko-saya.com'];
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-
-if (in_array($origin, $allowed_origins)) {
-    header("Access-Control-Allow-Origin: $origin");
-}
-header("Access-Control-Allow-Credentials: true"); // Wajib true untuk Cookie Auth
-```
+ 
+ 1.  Pastikan Anda menggunakan file `.env` di folder `php_server`.
+ 2.  Edit variabel `ALLOWED_ORIGINS` dengan daftar domain frontend Anda (pisahkan dengan koma).
+ 
+ ```ini
+ # php_server/.env
+ 
+ # Izinkan domain tertentu
+ ALLOWED_ORIGINS=https://toko-saya.com,https://admin.toko-saya.com
+ ```
+ 
+ Backend akan otomatis membaca nilai ini dan mengatur header CORS yang sesuai.
 
 > **Penting:** Jangan gunakan wildcard `*` di produksi. Anda **WAJIB** menspesifikasikan domain secara eksplisit agar `Access-Control-Allow-Credentials: true` berfungsi dengan aman.
 
@@ -47,9 +43,10 @@ Sebelum menjalankan perintah build, pastikan konfigurasi aplikasi sudah benar.
 1. **Backend (PHP Native)**:
     
     *   **Opsi A: Shared Hosting/cPanel**
-        *   Edit file `php_server/config.php` (atau sesuaikan saat upload nanti).
-        *   Pastikan `SHOW_DEBUG_ERRORS` diset ke `false` untuk keamanan.
-        *   Konfigurasi database dilakukan langsung di file `config.php`.
+        *   Masuk ke folder `php_server` di File Manager.
+        *   Salin `.env.example` ke `.env`.
+        *   Edit `.env` untuk mengatur `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, dan `JWT_SECRET`.
+        *   Pastikan `SHOW_DEBUG_ERRORS=false` di `.env` untuk keamanan.
 
 2. **Frontend (React)**:
    

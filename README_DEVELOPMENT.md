@@ -36,14 +36,19 @@ Jika Anda berencana men-deploy aplikasi ke shared hosting (cPanel), opsi ini pal
     *   Buat database baru bernama `cemilankasirpos_php_v02`.
     *   Import file `cemilankasirpos_php_v02.sql` ke database tersebut.
 
-3.  **Konfigurasi**:
-    *   Buka file `php_server/config.php`.
-    *   Sesuaikan konfigurasi database:
-        ```php
-        define('DB_HOST', 'localhost');
-        define('DB_USER', 'root'); // Sesuaikan user DB lokal Anda
-        define('DB_PASS', '');     // Sesuaikan password DB lokal Anda
-        define('DB_NAME', 'cemilankasirpos_php_v02');
+3.  **Konfigurasi Environment**:
+    *   Masuk ke folder `php_server`.
+    *   Salin `.env.example` ke `.env`:
+        ```bash
+        cp .env.example .env
+        # atau di windows: copy .env.example .env
+        ```
+    *   Buka `.env` dan sesuaikan koneksi database:
+        ```ini
+        DB_HOST=localhost
+        DB_USER=root
+        DB_PASS=
+        DB_NAME=cemilankasirpos_php_v02
         ```
 
 4.  **Jalankan Server**:
@@ -109,6 +114,12 @@ Aplikasi akan berjalan di `http://localhost:5173`.
 
 ```
 cemilan-kasirpos/
+├── php_server/               # Backend PHP Native
+│   ├── .env                 # Environment config
+│   ├── .htaccess            # Routing & Security
+│   ├── index.php            # Entry point
+│   ├── config.php           # Config loader
+│   └── ...
 ├── components/               # Komponen UI reusable
 ├── pages/                    # Halaman aplikasi
 │   ├── Login.tsx
@@ -194,7 +205,7 @@ Error: connect ECONNREFUSED 127.0.0.1:3306
 ```
 **Solusi**:
 - Pastikan MySQL service berjalan
-- Cek kredensial di `php_server/config.php`
+- Cek kredensial di file `.env` dalam folder `php_server`
 - Verifikasi database sudah dibuat
 - Test koneksi: `mysql -u root -p`
 
@@ -211,8 +222,9 @@ Error: listen EADDRINUSE: address already in use :::8000
 Access to fetch at 'http://localhost:8000/api/...' has been blocked by CORS policy
 ```
 **Solusi**:
-- Cek konfigurasi CORS di `php_server/config.php`
-- Pastikan `http://localhost:5173` diizinkan
+- Cek `ALLOWED_ORIGINS` di file `.env` folder `php_server`
+- Pastikan url frontend (misal `http://localhost:5173`) terdaftar di situ
+- Cek network tab di browser untuk detail error
 
 ### Frontend Issues
 

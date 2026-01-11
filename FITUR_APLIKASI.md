@@ -97,7 +97,7 @@ OWNER:
 - Password: admin
 - Role: OWNER
 
-CASHIER:
+OWNER:
 - Username: owner
 - Password: owner
 - Role: OWNER

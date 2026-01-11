@@ -29,16 +29,22 @@ Pastikan komputer Anda sudah terinstall:
 
 Backend aplikasi ini menggunakan PHP Native dan terletak di folder `php_server`.
 
-### 1. Konfigurasi Koneksi Database
-Buka file `php_server/config.php` dengan text editor (VS Code, Notepad, dll) dan sesuaikan bagian ini:
+### 1. Konfigurasi Environment (`.env`)
+1.  Masuk ke folder `php_server`.
+2.  Duplikat file `.env.example` dan ubah namanya menjadi `.env`.
+3.  Buka file `.env` tersebut dan sesuaikan bagian ini:
 
-```php
-// php_server/config.php
+```ini
+# php_server/.env
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'cemilankasirpos_php_v02'); // Pastikan nama DB sesuai
-define('DB_USER', 'root');            // User default XAMPP/Laragon biasanya 'root'
-define('DB_PASS', '');                // Password default biasanya kosong
+DB_HOST=localhost
+DB_NAME=cemilankasirpos_php_v02
+DB_USER=root            # User default XAMPP/Laragon
+DB_PASS=                # Password default biasanya kosong
+
+# Ganti jika perlu
+JWT_SECRET=rahasia_lokal_123
+ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 ### 2. Menjalankan Server Backend

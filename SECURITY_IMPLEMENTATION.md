@@ -47,11 +47,12 @@ File terkait: `php_server/auth.php`
 **PENTING:** Anda **WAJIB** mengganti `JWT_SECRET` di production agar token tidak bisa dipalsukan.
 
 **Cara Mengganti Secret:**
-1.  Buka file `.env` di folder backend (atau set environment variable server).
-2.  Tambahkan/Edit baris:
-    ```env
+1.  Pastikan file `.env` sudah dibuat di folder `php_server` (copy dari `.env.example`).
+2.  Edit baris `JWT_SECRET`:
+    ```ini
     JWT_SECRET=GantiStringIniDenganKarakterAcakYangSangatPanjangDanRumit!@#123
     ```
+3.  Simpan file. Backend otomatis akan menggunakan value ini.
 
 ---
 
@@ -140,26 +141,25 @@ Skenario ini memisahkan Frontend dan Backend di domain atau subdomain berbeda. I
     **Sangat Disarankan** untuk membatasi origin hanya ke domain Frontend Anda demi keamanan. Jangan gunakan `*`.
 
     ```php
-    // php_server/config.php
+    // php_server/config.php (Otomatis membaca dari .env)
     
-    // Daftar domain yang diizinkan
-    $allowed_origins = [
-        'https://app.tokocemilan.com',
-        'https://tokocemilan.vercel.app'
-    ];
+    // Ambil dari .env, default ke array kosong jika tidak ada
+    $allowed_origins_env = getenv('ALLOWED_ORIGINS');
+    $allowed_origins = $allowed_origins_env ? explode(',', $allowed_origins_env) : [];
 
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
     if (in_array($origin, $allowed_origins)) {
         header("Access-Control-Allow-Origin: $origin");
-    } else {
-        // Opsional: Tolak request atau biarkan tanpa header CORS (browser akan blokir)
-        // header("HTTP/1.1 403 Forbidden");
-        // exit();
     }
     
     header("Access-Control-Allow-Credentials: true");
-    // ... header lainnya tetap sama
+    // ...
+    ```
+
+    **Cara Setting di .env:**
+    ```ini
+    ALLOWED_ORIGINS=https://app.tokocemilan.com,https://tokocemilan.vercel.app
     ```
 
 2.  **Frontend (`.env.production`)**:
