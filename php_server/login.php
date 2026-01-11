@@ -55,21 +55,27 @@ try {
         // Generate JWT Token
         $token = generateJWT($user);
         
-        // Set HttpOnly Cookie
-        // Note: For cross-origin (different ports on localhost), SameSite=Lax usually works.
-        // If your frontend and backend are on different domains in production, you might need SameSite=None + Secure.
-        setcookie('pos_token', $token, [
-            'expires' => time() + (24 * 60 * 60), // 24 hours
-            'path' => '/',
-            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
-            'httponly' => true,
-            'samesite' => 'Lax'
-        ]);
-        
         // Reset rate limit on successful login
         resetLoginRateLimit($ip);
+
+        // Set HttpOnly Cookie (Security Upgrade F1)
+        // Expires: same as JWT (24h)
+        $cookieParams = [
+            'expires' => time() + (24 * 60 * 60),
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Lax' // Allow navigation from same site
+        ];
+        
+        // If HTTPS, enable Secure flag
+        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+            $cookieParams['secure'] = true;
+        }
+        
+        setcookie('pos_token', $token, $cookieParams);
         
         echo json_encode([
+            'token' => $token, // Still send token for non-browser clients (if any)
             'user' => $user
         ]);
     } else {

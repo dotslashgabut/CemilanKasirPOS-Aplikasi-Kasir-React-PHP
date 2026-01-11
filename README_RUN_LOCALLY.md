@@ -17,10 +17,10 @@ Pastikan komputer Anda sudah terinstall:
 
 1.  Buka aplikasi manajemen database Anda (phpMyAdmin, HeidiSQL, DBeaver, dll).
     *   **phpMyAdmin**: Biasanya di `http://localhost/phpmyadmin`.
-2.  Buat database baru dengan nama: `cemilankasirpos_php`.
+2.  Buat database baru dengan nama: `cemilankasirpos_php_v02`.
 3.  Import file SQL:
-    *   Cari file `cemilankasirpos_php.sql` di folder utama project ini.
-    *   Import file tersebut ke dalam database `cemilankasirpos_php` yang baru dibuat.
+    *   Cari file `cemilankasirpos_php_v02.sql` di folder utama project ini.
+    *   Import file tersebut ke dalam database `cemilankasirpos_php_v02` yang baru dibuat.
 
 ---
 
@@ -29,17 +29,15 @@ Pastikan komputer Anda sudah terinstall:
 Backend aplikasi ini menggunakan PHP Native dan terletak di folder `php_server`.
 
 ### 1. Konfigurasi Koneksi Database
-1.  Masuk ke folder `php_server`.
-2.  Salin file `.env.example` menjadi `.env`.
-3.  Buka file `.env` dengan text editor dan sesuaikan:
+Buka file `php_server/config.php` dengan text editor (VS Code, Notepad, dll) dan sesuaikan bagian ini:
 
-```env
-# php_server/.env
+```php
+// php_server/config.php
 
-DB_HOST=localhost
-DB_NAME=cemilankasirpos_php
-DB_USER=root
-DB_PASS=
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'cemilankasirpos_php_v02'); // Pastikan nama DB sesuai
+define('DB_USER', 'root');            // User default XAMPP/Laragon biasanya 'root'
+define('DB_PASS', '');                // Password default biasanya kosong
 ```
 
 ### 2. Menjalankan Server Backend

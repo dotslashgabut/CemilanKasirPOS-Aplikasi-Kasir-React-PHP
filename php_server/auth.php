@@ -5,19 +5,23 @@
 // JWT Secret Key (Change this in production!)
 // JWT Secret Key
 // In production, this MUST be set in environment variables.
-$jwt_secret = getenv('JWT_SECRET');
+if (defined('JWT_SECRET')) {
+    $jwt_secret = JWT_SECRET;
+} else {
+    $jwt_secret = getenv('JWT_SECRET');
 
-if (!$jwt_secret) {
-    // Default for Development ONLY
-    if (defined('SHOW_DEBUG_ERRORS') && !SHOW_DEBUG_ERRORS) {
-        // In production (debug off), we should ideally fail if no secret is set
-        // But to prevent breaking existing setups without .env, we'll use a fallback but log a critical warning
-        error_log("CRITICAL SECURITY WARNING: Using default JWT secret in production. Please set JWT_SECRET in .env!");
+    if (!$jwt_secret) {
+        // Default for Development ONLY
+        if (defined('SHOW_DEBUG_ERRORS') && !SHOW_DEBUG_ERRORS) {
+            // In production (debug off), we should ideally fail if no secret is set
+            // But to prevent breaking existing setups without .env, we'll use a fallback but log a critical warning
+            error_log("CRITICAL SECURITY WARNING: Using default JWT secret in production. Please set JWT_SECRET in .env!");
+        }
+        $jwt_secret = 'edit_your_jwt_secret_key_here_for_cemilankasirpos';
     }
-    $jwt_secret = 'rahasia_dapur_cemilan_kasirpos_2025_secure_key_backend_php_dev_fallback';
-}
 
-define('JWT_SECRET', $jwt_secret);
+    define('JWT_SECRET', $jwt_secret);
+}
 
 // Helper: URL Safe Base64 Encode
 function base64UrlEncode($data) {
@@ -71,26 +75,31 @@ function verifyJWT($token) {
     return $payload;
 }
 
-function getUserFromRequest() {
-    // 1. Check HttpOnly Cookie (Priority for Security)
-    if (isset($_COOKIE['pos_token']) && !empty($_COOKIE['pos_token'])) {
-        return verifyJWT($_COOKIE['pos_token']);
-    }
-
-    // 2. Fallback: Check Authorization Header (For legacy or non-browser clients)
+function getUserFromHeaders() {
+    // Get Authorization header
     $headers = getallheaders();
     $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
     
-    if (!empty($authHeader) && strpos($authHeader, 'Bearer ') === 0) {
+
+    
+    // Expected format: "Bearer {jwt_token}"
+    if (strpos($authHeader, 'Bearer ') === 0) {
         $token = substr($authHeader, 7);
-        return verifyJWT($token);
+        $verified = verifyJWT($token);
+        if ($verified) return $verified;
+    }
+
+    // Check Cookie (HttpOnly) - Added for Security Upgrade
+    if (isset($_COOKIE['pos_token'])) {
+        $verified = verifyJWT($_COOKIE['pos_token']);
+        if ($verified) return $verified;
     }
     
     return null;
 }
 
 function requireAuth() {
-    $user = getUserFromRequest();
+    $user = getUserFromHeaders();
     if (!$user) {
         http_response_code(401);
         echo json_encode(['error' => 'Unauthorized. Invalid or expired token.']);
@@ -115,5 +124,7 @@ function requireRole($allowedRoles) {
 define('ROLE_SUPERADMIN', 'SUPERADMIN');
 define('ROLE_OWNER', 'OWNER');
 define('ROLE_CASHIER', 'CASHIER');
+define('ROLE_ADMIN', 'ADMIN');
+define('ROLE_WAREHOUSE', 'GUDANG');
 
 ?>

@@ -1,6 +1,6 @@
 # Dokumentasi Backend PHP - Cemilan KasirPOS
 
-Dokumen ini menjelaskan cara instalasi, konfigurasi, dan penggunaan backend **PHP Native** untuk aplikasi Cemilan KasirPOS. Backend ini adalah **backend standar** yang digunakan oleh aplikasi ini karena kemudahan deployment dan kompatibilitas yang luas.
+Dokumen ini menjelaskan cara instalasi, konfigurasi, dan penggunaan backend **PHP Native** untuk aplikasi Cemilan KasirPOS. Backend ini adalah **opsi utama** yang direkomendasikan untuk pengguna shared hosting (cPanel) karena kemudahan deployment dan kompatibilitas yang luas.
 
 ## 📋 Prasyarat
 
@@ -18,29 +18,23 @@ Backend terletak di dalam folder `php_server` di root proyek.
 cd php_server
 ```
 
-### 2. Konfigurasi Database (`.env`)
-Salin file `.env.example` menjadi `.env` di dalam folder `php_server`, lalu sesuaikan kredensial database Anda:
+### 2. Konfigurasi Database (`config.php`)
+Buka file `config.php` dan sesuaikan kredensial database Anda:
 
-```bash
-cp .env.example .env
+```php
+// config.php
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'cemilankasirpos_php_v02'); // Pastikan nama database sesuai
+define('DB_USER', 'root');
+define('DB_PASS', ''); // Isi password jika ada
 ```
 
-Edit file `.env`:
+### 3. Konfigurasi Keamanan (`auth.php`)
+Buka file `auth.php` dan ganti `JWT_SECRET` dengan string acak yang aman untuk produksi:
 
-```env
-# Database Configuration
-DB_HOST=localhost
-DB_NAME=cemilankasirpos_php
-DB_USER=root
-DB_PASS=
-```
-
-### 3. Konfigurasi Keamanan (`.env`)
-Di file `.env` yang sama, ganti `JWT_SECRET` dengan string acak yang aman untuk produksi:
-
-```env
-# Security Configuration
-JWT_SECRET=ganti_dengan_string_rahasia_yang_panjang_dan_acak
+```php
+// auth.php
+$jwt_secret = getenv('JWT_SECRET') ?: 'ganti_dengan_string_rahasia_yang_panjang_dan_acak';
 ```
 
 ## ▶️ Menjalankan Server
@@ -77,9 +71,7 @@ VITE_API_URL=http://localhost/path/ke/php_server/index.php/api
 
 ```
 php_server/
-├── .env               # Konfigurasi Environment (Database, JWT, dll)
-├── .env.example       # Template Konfigurasi
-├── config.php         # Loader Konfigurasi & CORS
+├── config.php         # Konfigurasi Database & CORS
 ├── auth.php           # Middleware Autentikasi & JWT
 ├── index.php          # Router Utama & CRUD Generik
 ├── logic.php          # Logika Bisnis Kompleks (Transaksi, Stok, dll)
@@ -93,18 +85,28 @@ php_server/
 ### 1. Kompatibilitas Penuh dengan Frontend
 Backend PHP ini dirancang untuk menyediakan API yang dibutuhkan oleh frontend React.
 
-### 2. Logika Bisnis (`logic.php`)
-File `logic.php` menangani operasi kompleks seperti:
-*   **Transaksi Penjualan**: Mengurangi stok otomatis & mencatat arus kas.
-*   **Pembelian Stok**: Menambah stok otomatis & mencatat pengeluaran.
-*   **Cascade Delete**: Menghapus transaksi akan otomatis menghapus data arus kas terkait.
+### 2. Logika Bisnis (`logic.php` & `index.php`)
+Backend menangani logika bisnis krusial untuk menjaga integritas data:
+*   **Transaksi Penjualan**: 
+    *   Mengurangi stok produk secara otomatis.
+    *   Mencatat arus kas masuk (Cash In).
+    *   Mendukung pembayaran parsial (Tempo) dan multi-payment history.
+*   **Pembelian Stok**: 
+    *   Menambah stok produk otomatis.
+    *   Mencatat arus kas keluar (Cash Out) atau hutang supplier.
+*   **Stock Opname**: 
+    *   Menggunakan tabel `stock_adjustments` untuk melacak koreksi stok manual (selisih stok fisik vs sistem).
+*   **Batch Operations**: 
+    *   Endpoint khusus untuk insert data dalam jumlah besar (Bulk Import) dengan validasi per item.
 
 ### 3. Keamanan (Diperbarui)
-*   **JWT Authentication**: Menggunakan token JSON Web Token untuk sesi login.
-*   **Password Hashing**: Mendukung verifikasi password `bcrypt`.
-*   **Rate Limiting**: Mencegah brute-force pada endpoint login dengan mekanisme *file locking* untuk mencegah race condition.
-*   **Data Sanitization**: Log transaksi tidak lagi mencatat data sensitif (PII) secara lengkap.
-*   **Secure Logging**: File log (`php_error.log`) dan data rate limit (`login_attempts.json`) dilindungi dari akses publik via browser.
+*   **JWT Authentication**: Token JWT ditandatangani dengan algoritma HS256. Mendukung lewat Header `Authorization: Bearer` atau `HttpOnly Cookies`.
+*   **RBAC (Role-Based Access Control)**:
+    *   `SUPERADMIN`: Akses penuh.
+    *   `OWNER`: Akses manajemen tapi tidak bisa hapus user critical.
+    *   `CASHIER` & `GUDANG`: Restricted access. Hanya bisa lihat data transaksi mereka sendiri (Data Isolation) dan tidak bisa ubah master data.
+*   **Rate Limiting**: `rate_limit.php` menggunakan mekanisme *file locking* (`flock`) pada `login_attempts.json` untuk mencegah brute-force login tanpa race condition.
+*   **Input Validation**: Semua input JSON dibersihkan (`strip_tags`), divalidasi tipe datanya, dan dicocokkan dengan Schema putih (`filterDataBySchema`).
 
 ## 🛠 Troubleshooting
 

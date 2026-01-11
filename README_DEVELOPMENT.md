@@ -26,25 +26,24 @@ cd cemilan-kasirpos
 
 ### 2. Setup Backend (PHP Native)
 
-Backend aplikasi ini menggunakan **PHP Native**. Berikut cara setupnya:
+Jika Anda berencana men-deploy aplikasi ke shared hosting (cPanel), opsi ini paling mudah.
 
 1.  **Prasyarat**:
     *   Pastikan PHP (versi 7.4 atau 8.x) dan MySQL terinstall (bisa via XAMPP, Laragon, atau install manual).
     *   Pastikan ekstensi `pdo_mysql` aktif di `php.ini`.
 
 2.  **Setup Database**:
-    *   Buat database baru bernama `cemilankasirpos_php`.
-    *   Import file `cemilankasirpos_php.sql` ke database tersebut.
+    *   Buat database baru bernama `cemilankasirpos_php_v02`.
+    *   Import file `cemilankasirpos_php_v02.sql` ke database tersebut.
 
 3.  **Konfigurasi**:
-    *   Masuk ke folder `php_server`.
-    *   Salin `.env.example` menjadi `.env`.
-    *   Edit `.env` dan sesuaikan konfigurasi database:
-        ```env
-        DB_HOST=localhost
-        DB_USER=root
-        DB_PASS=
-        DB_NAME=cemilankasirpos_php
+    *   Buka file `php_server/config.php`.
+    *   Sesuaikan konfigurasi database:
+        ```php
+        define('DB_HOST', 'localhost');
+        define('DB_USER', 'root'); // Sesuaikan user DB lokal Anda
+        define('DB_PASS', '');     // Sesuaikan password DB lokal Anda
+        define('DB_NAME', 'cemilankasirpos_php_v02');
         ```
 
 4.  **Jalankan Server**:
@@ -81,7 +80,6 @@ Frontend menggunakan:
 - **Tailwind CSS** - Styling
 - **Lucide React** - Icons
 - **Recharts** - Charts & graphs
-- **Dexie** - IndexedDB wrapper
 
 #### B. Konfigurasi Environment
 
@@ -176,14 +174,14 @@ cemilan-kasirpos/
 
 2. **Reset Database**:
    ```sql
-   DROP DATABASE cemilankasirpos_php;
-   CREATE DATABASE cemilankasirpos_php;
+   DROP DATABASE cemilankasirpos_php_v02;
+   CREATE DATABASE cemilankasirpos_php_v02;
    -- Import ulang file .sql
    ```
 
 3. **Backup Database**:
    ```bash
-   mysqldump -u root -p cemilankasirpos_php > backup.sql
+   mysqldump -u root -p cemilankasirpos_php_v02 > backup.sql
    ```
 
 ## 🐛 Troubleshooting

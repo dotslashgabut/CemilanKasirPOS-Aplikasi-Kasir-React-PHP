@@ -3,7 +3,7 @@ function validateInput($resource, $data) {
     $errors = [];
 
     // Common validations
-    if (isset($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+    if (!empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
         $errors[] = "Invalid email format";
     }
 
@@ -29,7 +29,7 @@ function validateInput($resource, $data) {
 
         case 'customers':
         case 'suppliers':
-            if (isset($data['phone']) && !preg_match('/^[0-9\-\+\(\)\s]{5,20}$/', $data['phone'])) {
+            if (!empty($data['phone']) && !preg_match('/^[0-9\-\+\(\)\s]{5,20}$/', $data['phone'])) {
                 $errors[] = "Invalid phone number format";
             }
             break;

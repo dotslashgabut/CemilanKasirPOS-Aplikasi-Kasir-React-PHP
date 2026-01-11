@@ -11,6 +11,42 @@ function generateUuid() {
     );
 }
 
+function generateInvoiceNumber($pdo, $type) {
+    // INV = Penjualan (SALE), PO = Pembelian (PURCHASE)
+    $prefix = ($type === 'SALE') ? 'INV' : 'PO';
+    $year = date('y'); // 2 digits year, e.g. 25
+    $prefixYear = $prefix . $year . '-';
+
+    $table = ($type === 'SALE') ? 'transactions' : 'purchases';
+    
+    // Find the latest invoice number for this year
+    // We search for invoiceNumber starting with the prefix
+    try {
+        $stmt = $pdo->prepare("SELECT invoiceNumber FROM $table WHERE invoiceNumber LIKE ? ORDER BY length(invoiceNumber) DESC, invoiceNumber DESC LIMIT 1 FOR UPDATE");
+        $stmt->execute([$prefixYear . '%']);
+        $lastInvoice = $stmt->fetchColumn();
+
+        if ($lastInvoice) {
+            // Format: INV25-1234567890
+            $parts = explode('-', $lastInvoice);
+            if (isset($parts[1])) {
+                $lastSeq = intval($parts[1]);
+                $newSeq = $lastSeq + 1;
+            } else {
+                $newSeq = 1;
+            }
+        } else {
+            $newSeq = 1;
+        }
+
+        // 10 digits sequential number
+        return $prefixYear . str_pad($newSeq, 10, '0', STR_PAD_LEFT);
+    } catch (Exception $e) {
+        // Fallback if column doesn't exist yet or other error, though we expect it to exist
+        return null; 
+    }
+}
+
 function handleTransactionCreate($pdo, $data, $currentUser = null) {
     try {
         $pdo->beginTransaction();
@@ -28,15 +64,20 @@ function handleTransactionCreate($pdo, $data, $currentUser = null) {
         $data['type'] = $data['type'] ?? 'SALE';
         $data['isReturned'] = isset($data['isReturned']) ? ($data['isReturned'] ? 1 : 0) : 0;
 
-        // Auto-fill cashier info from verified token (Security Fix)
+        // SECURITY FIX: Always enforce server-side user identity if available
+        // Do not trust client-side cashierId/cashierName
         if ($currentUser) {
-            // STRICTLY OVERWRITE: Do not trust frontend input for cashier identity
             $data['cashierId'] = $currentUser['id'];
             $data['cashierName'] = $currentUser['name'];
         }
 
+        // Generate Invoice Number if for SALE and not set
+        if (($data['type'] === 'SALE') && empty($data['invoiceNumber'])) {
+             $data['invoiceNumber'] = generateInvoiceNumber($pdo, 'SALE');
+        }
+
         // Prepare data for insertion
-        $columns = ['id', 'type', 'originalTransactionId', 'date', 'items', 'totalAmount', 'amountPaid', 'change', 'paymentStatus', 'paymentMethod', 'paymentNote', 'returnNote', 'bankId', 'bankName', 'customerId', 'customerName', 'cashierId', 'cashierName', 'paymentHistory', 'isReturned', 'createdAt', 'updatedAt'];
+        $columns = ['id', 'type', 'originalTransactionId', 'date', 'items', 'totalAmount', 'amountPaid', 'change', 'paymentStatus', 'paymentMethod', 'paymentNote', 'returnNote', 'bankId', 'bankName', 'customerId', 'customerName', 'cashierId', 'cashierName', 'paymentHistory', 'isReturned', 'createdAt', 'updatedAt', 'invoiceNumber', 'discount', 'discountType', 'discountAmount'];
         
         $insertData = [];
         foreach ($columns as $col) {
@@ -116,9 +157,11 @@ function handleTransactionCreate($pdo, $data, $currentUser = null) {
                     }
                 }
 
+                $refStr = !empty($data['invoiceNumber']) ? $data['invoiceNumber'] : "Tx: " . $txIdShort;
+                
                 $description = ($isReturn 
-                    ? "Refund Retur Transaksi #$txIdShort"
-                    : "Penjualan ke $customerName (Tx: $txIdShort)") . $bankInfo;
+                    ? "Refund Retur $refStr"
+                    : "Penjualan ke $customerName ($refStr)") . $bankInfo;
 
                 $cfData = [
                     'id' => (string)(microtime(true) * 10000), // Simple ID
@@ -168,13 +211,18 @@ function handlePurchaseCreate($pdo, $data, $currentUser = null) {
         $data['type'] = $data['type'] ?? 'PURCHASE';
         $data['isReturned'] = isset($data['isReturned']) ? ($data['isReturned'] ? 1 : 0) : 0;
         
-        // Auto-fill user info if available
+        // SECURITY FIX: Always enforce server-side user identity if available
         if ($currentUser) {
             $data['userId'] = $currentUser['id'];
             $data['userName'] = $currentUser['name'];
         }
 
-        $columns = ['id', 'type', 'originalPurchaseId', 'date', 'supplierId', 'supplierName', 'description', 'items', 'totalAmount', 'amountPaid', 'paymentStatus', 'paymentMethod', 'returnNote', 'bankId', 'bankName', 'paymentHistory', 'isReturned', 'userId', 'userName', 'createdAt', 'updatedAt'];
+        // Generate Invoice Number if for PURCHASE and not set
+        if (($data['type'] === 'PURCHASE') && empty($data['invoiceNumber'])) {
+             $data['invoiceNumber'] = generateInvoiceNumber($pdo, 'PURCHASE');
+        }
+
+        $columns = ['id', 'type', 'originalPurchaseId', 'date', 'supplierId', 'supplierName', 'description', 'items', 'totalAmount', 'amountPaid', 'paymentStatus', 'paymentMethod', 'returnNote', 'bankId', 'bankName', 'paymentHistory', 'isReturned', 'userId', 'userName', 'createdAt', 'updatedAt', 'invoiceNumber'];
         
         $insertData = [];
         foreach ($columns as $col) {
@@ -240,9 +288,11 @@ function handlePurchaseCreate($pdo, $data, $currentUser = null) {
                     }
                 }
 
+                $refStr = !empty($data['invoiceNumber']) ? "(" . $data['invoiceNumber'] . ")" : "";
+                
                 $description = ($isReturn
-                    ? "Refund Retur Pembelian dari $supplierName"
-                    : "Pembelian dari $supplierName: $descText") . $bankInfo;
+                    ? "Refund Retur Pembelian dari $supplierName $refStr"
+                    : "Pembelian dari $supplierName $refStr: $descText") . $bankInfo;
 
                 $cfData = [
                     'id' => (string)(microtime(true) * 10000),
@@ -284,7 +334,7 @@ function handleTransactionDelete($pdo, $id) {
         $pdo->beginTransaction();
 
         // 1. Find Transaction
-        $stmt = $pdo->prepare("SELECT * FROM transactions WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM transactions WHERE id = ? FOR UPDATE");
         $stmt->execute([$id]);
         $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -293,24 +343,106 @@ function handleTransactionDelete($pdo, $id) {
             sendJson(['error' => 'Transaction not found'], 404);
         }
 
-        // 2. Delete associated CashFlow
-        $delCf = $pdo->prepare("DELETE FROM cashflows WHERE referenceId = ?");
-        $delCf->execute([$id]);
+        $items = json_decode($transaction['items'], true) ?? [];
+        $type = $transaction['type'];
+        $originalTxId = $transaction['originalTransactionId'];
+        $amountPaid = floatval($transaction['amountPaid']);
 
-        // 3. Find child transactions (Returns)
-        $stmtRet = $pdo->prepare("SELECT * FROM transactions WHERE originalTransactionId = ?");
+        // --- LOGIC A: RESTORE DEBT (If deleting a RETURN transaction) ---
+        if ($type === 'RETURN' && $originalTxId) {
+            // Find original transaction
+            $stmtOrig = $pdo->prepare("SELECT * FROM transactions WHERE id = ? FOR UPDATE");
+            $stmtOrig->execute([$originalTxId]);
+            $originalTx = $stmtOrig->fetch(PDO::FETCH_ASSOC);
+
+            if ($originalTx) {
+                $paymentHistory = json_decode($originalTx['paymentHistory'], true) ?? [];
+                
+                // Find "Potong Utang" entry
+                $foundIndex = -1;
+                foreach ($paymentHistory as $index => $ph) {
+                    // Match by approximate time (within same day) and note 'Potong Utang'
+                    if (isset($ph['note']) && (strpos($ph['note'], 'Potong Utang') !== false) && abs($ph['amount'] - $amountPaid) < 1) {
+                         $foundIndex = $index;
+                         break;
+                    }
+                }
+
+                if ($foundIndex !== -1) {
+                    $entryToRemove = $paymentHistory[$foundIndex];
+                    unset($paymentHistory[$foundIndex]);
+                    $paymentHistory = array_values($paymentHistory); // Reindex
+
+                    $origTotal = floatval($originalTx['totalAmount']);
+                    $origPaid = floatval($originalTx['amountPaid']) - floatval($entryToRemove['amount']);
+                    
+                    $newStatus = ($origPaid >= $origTotal) ? 'PAID' : (($origPaid > 0) ? 'PARTIAL' : 'UNPAID');
+
+                    // Check if other returns exist to update isReturned flag
+                    $stmtCheckReturns = $pdo->prepare("SELECT COUNT(*) FROM transactions WHERE originalTransactionId = ? AND id != ? AND type = 'RETURN'");
+                    $stmtCheckReturns->execute([$originalTxId, $id]);
+                    $otherReturnsCount = $stmtCheckReturns->fetchColumn();
+                    $isReturned = ($otherReturnsCount > 0) ? 1 : 0;
+
+                    $updateOrig = $pdo->prepare("UPDATE transactions SET amountPaid = ?, paymentStatus = ?, paymentHistory = ?, isReturned = ? WHERE id = ?");
+                    $updateOrig->execute([$origPaid, $newStatus, json_encode($paymentHistory), $isReturned, $originalTxId]);
+                }
+            }
+        }
+
+        // --- LOGIC B: CASCADE DELETE (If deleting a SALE transaction) ---
+        // Find and delete all RETURN transactions linked to this transaction
+        $stmtRet = $pdo->prepare("SELECT * FROM transactions WHERE originalTransactionId = ? AND type = 'RETURN'");
         $stmtRet->execute([$id]);
         $returns = $stmtRet->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($returns as $ret) {
-            // Delete CashFlow for return
-            $delCf->execute([$ret['id']]);
-            // Delete the return transaction
-            $delTx = $pdo->prepare("DELETE FROM transactions WHERE id = ?");
-            $delTx->execute([$ret['id']]);
+            $retItems = json_decode($ret['items'], true) ?? [];
+            
+            // Revert Stock for Return Transaction (Return added stock, so we subtract it back)
+            foreach ($retItems as $item) {
+                if (isset($item['id']) && isset($item['qty'])) {
+                    $qty = floatval($item['qty']);
+                    $updateStock = $pdo->prepare("UPDATE products SET stock = stock - ? WHERE id = ?");
+                    $updateStock->execute([$qty, $item['id']]);
+                }
+            }
+
+            // Delete cashflows related to this return transaction
+            $delCfRet = $pdo->prepare("DELETE FROM cashflows WHERE referenceId = ?");
+            $delCfRet->execute([$ret['id']]);
+
+            // Delete the return transaction itself
+            $delTxRet = $pdo->prepare("DELETE FROM transactions WHERE id = ?");
+            $delTxRet->execute([$ret['id']]);
         }
 
-        // 4. Delete the transaction itself
+
+        // --- LOGIC C: REVERT STOCK FOR MAIN TRANSACTION ---
+        if (!empty($items)) {
+            foreach ($items as $item) {
+                if (isset($item['id']) && isset($item['qty'])) {
+                    $qty = floatval($item['qty']);
+                    
+                    if ($type === 'RETURN') {
+                         // Return: stock was increased, so subtract
+                         $sqlStock = "UPDATE products SET stock = stock - ? WHERE id = ?";
+                    } else {
+                         // Sale: stock was decreased, so add back
+                         $sqlStock = "UPDATE products SET stock = stock + ? WHERE id = ?";
+                    }
+                    
+                    $updateStock = $pdo->prepare($sqlStock);
+                    $updateStock->execute([$qty, $item['id']]);
+                }
+            }
+        }
+
+        // --- LOGIC D: DELETE RELATED CASHFLOWS ---
+        $delCf = $pdo->prepare("DELETE FROM cashflows WHERE referenceId = ?");
+        $delCf->execute([$id]);
+
+        // --- LOGIC E: DELETE TRANSACTION ---
         $delTx = $pdo->prepare("DELETE FROM transactions WHERE id = ?");
         $delTx->execute([$id]);
 
@@ -330,7 +462,7 @@ function handlePurchaseDelete($pdo, $id) {
         $pdo->beginTransaction();
 
         // 1. Find Purchase
-        $stmt = $pdo->prepare("SELECT * FROM purchases WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM purchases WHERE id = ? FOR UPDATE");
         $stmt->execute([$id]);
         $purchase = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -339,24 +471,107 @@ function handlePurchaseDelete($pdo, $id) {
             sendJson(['error' => 'Purchase not found'], 404);
         }
 
-        // 2. Delete associated CashFlow
-        $delCf = $pdo->prepare("DELETE FROM cashflows WHERE referenceId = ?");
-        $delCf->execute([$id]);
+        $items = json_decode($purchase['items'], true) ?? [];
+        $type = $purchase['type'];
+        $originalPurchaseId = $purchase['originalPurchaseId'];
+        $amountPaid = floatval($purchase['amountPaid']);
 
-        // 3. Find child purchases (Returns)
-        $stmtRet = $pdo->prepare("SELECT * FROM purchases WHERE originalPurchaseId = ?");
-        $stmtRet->execute([$id]);
+        // --- LOGIC A: RESTORE DEBT (If deleting a RETURN purchase) ---
+        if ($type === 'RETURN' && $originalPurchaseId) {
+            $stmtOrig = $pdo->prepare("SELECT * FROM purchases WHERE id = ? FOR UPDATE");
+            $stmtOrig->execute([$originalPurchaseId]);
+            $originalPurchase = $stmtOrig->fetch(PDO::FETCH_ASSOC);
+
+            if ($originalPurchase) {
+                $paymentHistory = json_decode($originalPurchase['paymentHistory'], true) ?? [];
+                
+                $foundIndex = -1;
+                foreach ($paymentHistory as $index => $ph) {
+                    if (isset($ph['note']) && (strpos($ph['note'], 'Potong Utang') !== false) && abs($ph['amount'] - $amountPaid) < 1) {
+                         $foundIndex = $index;
+                         break;
+                    }
+                }
+
+                if ($foundIndex !== -1) {
+                    $entryToRemove = $paymentHistory[$foundIndex];
+                    unset($paymentHistory[$foundIndex]);
+                    $paymentHistory = array_values($paymentHistory);
+
+                    $origTotal = floatval($originalPurchase['totalAmount']);
+                    $origPaid = floatval($originalPurchase['amountPaid']) - floatval($entryToRemove['amount']);
+                    
+                    $newStatus = ($origPaid >= $origTotal) ? 'PAID' : (($origPaid > 0) ? 'PARTIAL' : 'UNPAID');
+
+                    // Check if other returns exist
+                    $stmtCheckReturns = $pdo->prepare("SELECT COUNT(*) FROM purchases WHERE originalPurchaseId = ? AND id != ? AND type = 'RETURN'");
+                    $stmtCheckReturns->execute([$originalPurchaseId, $id]);
+                    $otherReturnsCount = $stmtCheckReturns->fetchColumn();
+                    $isReturned = ($otherReturnsCount > 0) ? 1 : 0;
+
+                    $updateOrig = $pdo->prepare("UPDATE purchases SET amountPaid = ?, paymentStatus = ?, paymentHistory = ?, isReturned = ? WHERE id = ?");
+                    $updateOrig->execute([$origPaid, $newStatus, json_encode($paymentHistory), $isReturned, $originalPurchaseId]);
+                }
+            }
+        }
+
+        // --- LOGIC B: CASCADE DELETE (If deleting a PURCHASE) ---
+        // Find and delete all RETURN purchases linked to this purchase
+        // Link can be originalPurchaseId OR via description (legacy)
+        $stmtRet = $pdo->prepare("SELECT * FROM purchases WHERE originalPurchaseId = ? OR (type = 'RETURN' AND description LIKE ?)");
+        $legacyDescMatch = "%" . substr($id, 0, 6) . "%";
+        $stmtRet->execute([$id, $legacyDescMatch]);
         $returns = $stmtRet->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($returns as $ret) {
+            // Avoid infinite loop if self-reference (should not happen but safe check)
+            if ($ret['id'] === $id) continue;
+
+            $retItems = json_decode($ret['items'], true) ?? [];
+            
+            // Revert Stock for Return Purchase (Return DESC stocks, so we ADD back)
+            foreach ($retItems as $item) {
+                if (isset($item['id']) && isset($item['qty'])) {
+                    $qty = floatval($item['qty']);
+                    $updateStock = $pdo->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
+                    $updateStock->execute([$qty, $item['id']]);
+                }
+            }
+
             // Delete CashFlow for return
-            $delCf->execute([$ret['id']]);
+            $delCfRet = $pdo->prepare("DELETE FROM cashflows WHERE referenceId = ?");
+            $delCfRet->execute([$ret['id']]);
+
             // Delete the return purchase
-            $delPur = $pdo->prepare("DELETE FROM purchases WHERE id = ?");
-            $delPur->execute([$ret['id']]);
+            $delPurRet = $pdo->prepare("DELETE FROM purchases WHERE id = ?");
+            $delPurRet->execute([$ret['id']]);
         }
 
-        // 4. Delete the purchase itself
+        // --- LOGIC C: REVERT STOCK FOR MAIN PURCHASE ---
+        if (!empty($items)) {
+            foreach ($items as $item) {
+                if (isset($item['id']) && isset($item['qty'])) {
+                    $qty = floatval($item['qty']);
+                    
+                    if ($type === 'RETURN') {
+                         // Return Purchase: stock was decreased, so add back
+                         $sqlStock = "UPDATE products SET stock = stock + ? WHERE id = ?";
+                    } else {
+                         // Purchase: stock was increased, so subtract
+                         $sqlStock = "UPDATE products SET stock = stock - ? WHERE id = ?";
+                    }
+                    
+                    $updateStock = $pdo->prepare($sqlStock);
+                    $updateStock->execute([$qty, $item['id']]);
+                }
+            }
+        }
+
+        // --- LOGIC D: DELETE RELATED CASHFLOWS ---
+        $delCf = $pdo->prepare("DELETE FROM cashflows WHERE referenceId = ?");
+        $delCf->execute([$id]);
+
+        // --- LOGIC E: DELETE PURCHASE ---
         $delPur = $pdo->prepare("DELETE FROM purchases WHERE id = ?");
         $delPur->execute([$id]);
 
@@ -370,4 +585,73 @@ function handlePurchaseDelete($pdo, $id) {
         sendJson(['error' => (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) ? $e->getMessage() : 'Internal Server Error'], 500);
     }
 }
+
+function handleStockAdjustmentCreate($pdo, $data, $currentUser = null) {
+    try {
+        $pdo->beginTransaction();
+
+        // 1. Create Stock Adjustment
+        if (empty($data['id'])) {
+            $data['id'] = generateUuid();
+        }
+
+        // Fill defaults
+        $data['userId'] = $currentUser ? $currentUser['id'] : ($data['userId'] ?? null);
+        $data['userName'] = $currentUser ? $currentUser['name'] : ($data['userName'] ?? null);
+        if (empty($data['createdAt'])) $data['createdAt'] = date('Y-m-d H:i:s');
+        if (empty($data['updatedAt'])) $data['updatedAt'] = date('Y-m-d H:i:s');
+
+        // PREPARE DATA - We need to calculate stocks FIRST before inserting
+        $previousStock = 0;
+        $currentStock = 0;
+
+        if (!empty($data['productId'])) {
+            $stmtProd = $pdo->prepare("SELECT stock FROM products WHERE id = ? FOR UPDATE"); // Lock row
+            $stmtProd->execute([$data['productId']]);
+            $product = $stmtProd->fetch(PDO::FETCH_ASSOC);
+
+            if ($product) {
+                $previousStock = floatval($product['stock']);
+                $qty = floatval($data['qty']);
+                
+                if ($data['type'] === 'INCREASE') {
+                    $currentStock = $previousStock + $qty;
+                } else {
+                    $currentStock = $previousStock - $qty;
+                }
+            }
+        }
+
+        $data['previousStock'] = $previousStock;
+        $data['currentStock'] = $currentStock;
+
+        $columns = ['id', 'date', 'productId', 'productName', 'type', 'reason', 'qty', 'previousStock', 'currentStock', 'note', 'userId', 'userName', 'createdAt', 'updatedAt'];
+        
+        $insertData = [];
+        foreach ($columns as $col) {
+            $insertData[$col] = $data[$col] ?? null;
+        }
+
+        $sql = "INSERT INTO stock_adjustments (" . implode(', ', array_map(function($c){return "`$c`";}, $columns)) . ") 
+                VALUES (" . implode(', ', array_fill(0, count($columns), '?')) . ")";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(array_values($insertData));
+
+        // 2. Update Product Stock (using the already calculated value)
+        if (!empty($data['productId'])) { // We already did the calc above
+            $updateProd = $pdo->prepare("UPDATE products SET stock = ? WHERE id = ?");
+            $updateProd->execute([$currentStock, $data['productId']]);
+        }
+
+        $pdo->commit();
+        sendJson($data, 201);
+
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        file_put_contents('php_error.log', date('[Y-m-d H:i:s] ') . "Stock Adjustment Error: " . $e->getMessage() . "\n", FILE_APPEND);
+        sendJson(['error' => (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) ? $e->getMessage() : 'Internal Server Error'], 500);
+    }
+}
+
 ?>

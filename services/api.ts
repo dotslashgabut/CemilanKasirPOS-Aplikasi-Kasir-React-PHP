@@ -4,26 +4,34 @@ import { generateUUID, toMySQLDate } from "../utils";
 const isProd = import.meta.env.PROD;
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/php_server/api';
 
-// Get headers (Auth now handled by HttpOnly Cookie)
+// Get headers with authentication
 const getHeaders = () => {
-    return {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
+    const currentUser = localStorage.getItem('pos_current_user');
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
     };
+
+    const token = localStorage.getItem('pos_token');
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return headers;
 };
 
 // Global request helper to handle Auth & Caching
-const request = async (endpoint: string, options: RequestInit = {}) => {
+const request = async (endpoint: string, options: RequestInit = {}, skipAuthRedirect = false) => {
     const url = `${API_URL}${endpoint}`;
     const headers = getHeaders();
 
     const config = {
         ...options,
-        credentials: 'include' as RequestCredentials, // Send HttpOnly Cookie
         headers: {
             ...headers,
             ...options.headers,
         },
+        credentials: 'include' as RequestCredentials, // Enable Cookie Support (F1)
     };
 
     // Add cache buster for GET requests to prevent stale data
@@ -39,7 +47,7 @@ const request = async (endpoint: string, options: RequestInit = {}) => {
 
         // Handle Session Expiry / Unauthorized
         // (Fixes issue where page doesn't reload on session expiry)
-        if (res.status === 401 || res.status === 403) {
+        if ((res.status === 401 || res.status === 403) && !skipAuthRedirect) {
             console.warn("Session expired or unauthorized. Redirecting to login...");
             localStorage.removeItem('pos_current_user');
             localStorage.removeItem('pos_token');
@@ -134,7 +142,17 @@ export const ApiService = {
             const res = await request('/store_settings/settings');
             if (!res.ok) return defaultSettings;
             const settings = await res.json();
-            return { ...defaultSettings, ...settings };
+
+            // Fix boolean parsing issues (PHP returns 0/1 or "0"/"1" often)
+            return {
+                ...defaultSettings,
+                ...settings,
+                showAddress: settings.showAddress !== undefined ? parseBoolean(settings.showAddress) : defaultSettings.showAddress,
+                showJargon: settings.showJargon !== undefined ? parseBoolean(settings.showJargon) : defaultSettings.showJargon,
+                showBank: settings.showBank !== undefined ? parseBoolean(settings.showBank) : defaultSettings.showBank,
+                autoSyncMySQL: settings.autoSyncMySQL !== undefined ? parseBoolean(settings.autoSyncMySQL) : defaultSettings.autoSyncMySQL,
+                useMySQLPrimary: settings.useMySQLPrimary !== undefined ? parseBoolean(settings.useMySQLPrimary) : defaultSettings.useMySQLPrimary
+            };
         } catch (error) {
             console.error("Failed to fetch settings:", error);
             return defaultSettings;
@@ -171,7 +189,7 @@ export const ApiService = {
         return await res.json();
     },
     saveBank: async (bank: BankAccount) => {
-        if (!bank.id) bank.id = generateUUID();
+        // if (!bank.id) bank.id = generateUUID(); // Handled by backend (F3)
         const res = await request('/banks', {
             method: 'POST',
             body: JSON.stringify(bank)
@@ -195,7 +213,7 @@ export const ApiService = {
         return await res.json();
     },
     saveCategory: async (category: Category) => {
-        if (!category.id) category.id = generateUUID();
+        // if (!category.id) category.id = generateUUID(); // Handled by backend (F3)
         const res = await request('/categories', {
             method: 'POST',
             body: JSON.stringify(category)
@@ -220,7 +238,7 @@ export const ApiService = {
         return data.map(parseProduct);
     },
     saveProduct: async (product: Product) => {
-        if (!product.id) product.id = generateUUID();
+        // if (!product.id) product.id = generateUUID(); // Handled by backend (F3)
         const res = await request('/products', {
             method: 'POST',
             body: JSON.stringify(product)
@@ -238,11 +256,16 @@ export const ApiService = {
         if (!res.ok) throw new Error('Failed to delete product');
     },
     saveProductsBulk: async (newProducts: Product[]) => {
-        const productsWithIds = newProducts.map(p => ({ ...p, id: p.id || generateUUID() }));
-        await request('/products/batch', {
+        // const productsWithIds = newProducts.map(p => ({ ...p, id: p.id || generateUUID() })); // Handled by backend
+        const productsWithIds = newProducts;
+        const res = await request('/products/batch', {
             method: 'POST',
             body: JSON.stringify(productsWithIds)
         });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Failed to save products bulk');
+        }
     },
 
     // Customers
@@ -251,7 +274,7 @@ export const ApiService = {
         return await res.json();
     },
     saveCustomer: async (cust: Customer) => {
-        if (!cust.id) cust.id = generateUUID();
+        // if (!cust.id) cust.id = generateUUID(); // Handled by backend (F3)
         const res = await request('/customers', {
             method: 'POST',
             body: JSON.stringify(cust)
@@ -269,12 +292,16 @@ export const ApiService = {
         if (!res.ok) throw new Error('Failed to delete customer');
     },
     saveCustomersBulk: async (newCustomers: Customer[]) => {
-        const customersWithIds = newCustomers.map(c => ({ ...c, id: c.id || generateUUID() }));
+        // const customersWithIds = newCustomers.map(c => ({ ...c, id: c.id || generateUUID() }));
+        const customersWithIds = newCustomers;
         const res = await request('/customers/batch', {
             method: 'POST',
             body: JSON.stringify(customersWithIds)
         });
-        if (!res.ok) throw new Error('Failed to save customers bulk');
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Failed to save customers bulk');
+        }
     },
 
     // Suppliers
@@ -283,7 +310,7 @@ export const ApiService = {
         return await res.json();
     },
     saveSupplier: async (sup: Supplier) => {
-        if (!sup.id) sup.id = generateUUID();
+        // if (!sup.id) sup.id = generateUUID(); // Handled by backend (F3)
         const res = await request('/suppliers', {
             method: 'POST',
             body: JSON.stringify(sup)
@@ -301,12 +328,16 @@ export const ApiService = {
         if (!res.ok) throw new Error('Failed to delete supplier');
     },
     saveSuppliersBulk: async (newSuppliers: Supplier[]) => {
-        const suppliersWithIds = newSuppliers.map(s => ({ ...s, id: s.id || generateUUID() }));
+        // const suppliersWithIds = newSuppliers.map(s => ({ ...s, id: s.id || generateUUID() }));
+        const suppliersWithIds = newSuppliers;
         const res = await request('/suppliers/batch', {
             method: 'POST',
             body: JSON.stringify(suppliersWithIds)
         });
-        if (!res.ok) throw new Error('Failed to save suppliers bulk');
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Failed to save suppliers bulk');
+        }
     },
 
     // Transactions (Sales)
@@ -316,7 +347,7 @@ export const ApiService = {
         const data = await res.json();
         return data.map(parseTransaction);
     },
-    addTransaction: async (transaction: Transaction): Promise<Transaction> => {
+    addTransaction: async (transaction: Transaction) => {
         // Convert ISO date to MySQL format
         const formattedDate = toMySQLDate(new Date(transaction.date));
 
@@ -344,9 +375,7 @@ export const ApiService = {
             body: JSON.stringify({ ...transaction, date: formattedDate })
         });
         if (!res.ok) throw new Error('Failed to add transaction');
-
-        const data = await res.json();
-        return parseTransaction(data);
+        return await res.json();
     },
     updateTransaction: async (transaction: Transaction) => {
         // Convert ISO date to MySQL format
@@ -367,166 +396,9 @@ export const ApiService = {
         if (!res.ok) throw new Error('Failed to update transaction');
     },
     deleteTransaction: async (id: string) => {
-        // 1. Get all transactions to find related returns and original transaction
-        const res = await request('/transactions');
-        if (!res.ok) throw new Error('Failed to fetch transactions for deletion');
-        const transactions = await res.json();
-        const transaction = transactions.find((t: any) => t.id === id);
-
-        if (!transaction) {
-            throw new Error('Transaction not found');
-        }
-
-        const parsedTx = parseTransaction(transaction);
-
-        // --- LOGIC A: RESTORE DEBT (If deleting a RETURN transaction) ---
-        if (parsedTx.type === 'RETURN' && parsedTx.originalTransactionId) {
-            try {
-                const originalTxRaw = transactions.find((t: any) => t.id === parsedTx.originalTransactionId);
-
-                if (originalTxRaw) {
-                    const originalTx = parseTransaction(originalTxRaw);
-
-                    // Find "Potong Utang" entry in payment history
-                    if (originalTx.paymentHistory && originalTx.paymentHistory.length > 0) {
-                        // Match by approximate time (within 5s) or exact date string
-                        const historyIndex = originalTx.paymentHistory.findIndex(ph =>
-                            ph.note?.includes('Potong Utang') &&
-                            (ph.date === parsedTx.date || Math.abs(new Date(ph.date).getTime() - new Date(parsedTx.date).getTime()) < 5000)
-                        );
-
-                        if (historyIndex !== -1) {
-                            const entryToRemove = originalTx.paymentHistory[historyIndex];
-                            console.log(`Reverting debt cut of ${entryToRemove.amount} from transaction ${originalTx.id}`);
-
-                            const newHistory = [...originalTx.paymentHistory];
-                            newHistory.splice(historyIndex, 1);
-
-                            const newAmountPaid = originalTx.amountPaid - entryToRemove.amount;
-                            const newStatus = newAmountPaid >= originalTx.totalAmount ? PaymentStatus.PAID :
-                                (newAmountPaid > 0 ? PaymentStatus.PARTIAL : PaymentStatus.UNPAID);
-
-                            // Check if other returns exist
-                            const otherReturns = transactions.some((t: any) =>
-                                t.type === 'RETURN' &&
-                                t.originalTransactionId === originalTx.id &&
-                                t.id !== parsedTx.id
-                            );
-
-                            const updatedOriginalTx = {
-                                ...originalTx,
-                                amountPaid: newAmountPaid,
-                                paymentStatus: newStatus,
-                                paymentHistory: newHistory,
-                                isReturned: otherReturns
-                            };
-
-                            await ApiService.updateTransaction(updatedOriginalTx);
-                            console.log("Original transaction debt restored successfully.");
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to restore original transaction debt:", error);
-            }
-        }
-
-        // --- LOGIC B: CASCADE DELETE (If deleting a SALE transaction) ---
-        // Find and delete all RETURN transactions linked to this transaction
-        const returnTransactions = transactions.filter((t: any) =>
-            t.type === 'RETURN' && t.originalTransactionId === id
-        );
-
-        if (returnTransactions.length > 0) {
-            console.log(`Found ${returnTransactions.length} return transaction(s) to cascade delete`);
-
-            for (const returnTx of returnTransactions) {
-                try {
-                    const parsedReturn = parseTransaction(returnTx);
-
-                    // Revert Stock for Return Transaction (Return adds stock, so we subtract it back)
-                    if (parsedReturn.items && parsedReturn.items.length > 0) {
-                        for (const item of parsedReturn.items) {
-                            try {
-                                const productRes = await request(`/products/${item.id}`);
-                                if (productRes.ok) {
-                                    const product = await productRes.json();
-                                    const parsedProduct = parseProduct(product);
-                                    parsedProduct.stock -= item.qty;
-                                    await request(`/products/${parsedProduct.id}`, {
-                                        method: 'PUT',
-                                        body: JSON.stringify(parsedProduct)
-                                    });
-                                }
-                            } catch (e) {
-                                console.warn(`Failed to revert stock for return item ${item.id}`, e);
-                            }
-                        }
-                    }
-
-                    // Delete cashflows related to this return transaction
-                    const cfRes = await request('/cashflow');
-                    if (cfRes.ok) {
-                        const cashflows = await cfRes.json();
-                        const returnCfs = cashflows.filter((cf: any) =>
-                            cf.description.includes(returnTx.id.substring(0, 6))
-                        );
-                        for (const cf of returnCfs) {
-                            await request(`/cashflow/${cf.id}`, {
-                                method: 'DELETE'
-                            });
-                        }
-                    }
-
-                    // Delete the return transaction itself
-                    await request(`/transactions/${returnTx.id}`, {
-                        method: 'DELETE'
-                    });
-
-                    console.log(`Deleted return transaction ${returnTx.id}`);
-                } catch (e) {
-                    console.error(`Failed to delete return transaction ${returnTx.id}:`, e);
-                }
-            }
-        }
-
-        // --- LOGIC C: REVERT STOCK FOR MAIN TRANSACTION ---
-        if (parsedTx.items && parsedTx.items.length > 0) {
-            const isReturn = parsedTx.type === 'RETURN';
-            for (const item of parsedTx.items) {
-                try {
-                    const productRes = await request(`/products/${item.id}`);
-                    if (productRes.ok) {
-                        const product = await productRes.json();
-                        const parsedProduct = parseProduct(product);
-
-                        if (isReturn) {
-                            parsedProduct.stock -= item.qty; // Return: stock was increased, so subtract
-                        } else {
-                            parsedProduct.stock += item.qty; // Sale: stock was decreased, so add back
-                        }
-
-                        await request(`/products/${parsedProduct.id}`, {
-                            method: 'PUT',
-                            body: JSON.stringify(parsedProduct)
-                        });
-                    }
-                } catch (e) {
-                    console.warn(`Failed to revert stock for transaction item ${item.id}`, e);
-                }
-            }
-        }
-
-        // --- LOGIC D: DELETE RELATED CASHFLOWS ---
-        // Handled by Backend (Cascading Delete via referenceId)
-
-        // --- LOGIC E: DELETE TRANSACTION ---
-        const deleteRes = await request(`/transactions/${id}`, {
-            method: 'DELETE'
-        });
-        if (!deleteRes.ok) throw new Error('Failed to delete transaction');
-
-        console.log(`Successfully deleted transaction ${id} and all related data`);
+        const res = await request(`/transactions/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete transaction');
+        console.log(`Successfully deleted transaction ${id}`);
     },
 
     // Purchases (Stock In)
@@ -584,129 +456,9 @@ export const ApiService = {
         if (!res.ok) throw new Error('Failed to update purchase');
     },
     deletePurchase: async (id: string) => {
-        // 0. Cascade Delete: Find and delete all returns linked to this purchase
-        try {
-            const allPurchasesRes = await request('/purchases');
-            if (allPurchasesRes.ok) {
-                const allPurchases = await allPurchasesRes.json();
-                // Find returns that are linked to this purchase via originalPurchaseId OR description (legacy)
-                const children = allPurchases.filter((p: any) =>
-                    p.originalPurchaseId === id ||
-                    (p.type === 'RETURN' && p.description && p.description.includes(id.substring(0, 6)))
-                );
-
-                if (children.length > 0) {
-                    console.log(`Found ${children.length} return(s) linked to purchase ${id}. Deleting them first...`);
-                    for (const child of children) {
-                        // Avoid infinite recursion if something is wrong
-                        if (child.id === id) continue;
-
-                        console.log(`Cascade deleting return purchase ${child.id}`);
-                        await ApiService.deletePurchase(child.id);
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn("Error during cascade delete check:", e);
-            // Continue with main deletion even if cascade check fails (though ideally it shouldn't)
-        }
-
-        // 1. Get Purchase to revert stock
-        const res = await request('/purchases');
-        if (!res.ok) throw new Error('Failed to fetch purchases for deletion');
-        const purchases = await res.json();
-        const purchase = purchases.find((p: any) => p.id === id);
-
-        if (purchase) {
-            const parsedPurchase = parsePurchase(purchase);
-
-            // --- LOGIC A: RESTORE DEBT (If deleting a RETURN purchase) ---
-            if (parsedPurchase.type === 'RETURN' && parsedPurchase.originalPurchaseId) {
-                try {
-                    const originalPurchaseRaw = purchases.find((p: any) => p.id === parsedPurchase.originalPurchaseId);
-
-                    if (originalPurchaseRaw) {
-                        const originalPurchase = parsePurchase(originalPurchaseRaw);
-
-                        // Find "Potong Utang" entry in payment history
-                        if (originalPurchase.paymentHistory && originalPurchase.paymentHistory.length > 0) {
-                            // Match by approximate time (within 5s) or exact date string
-                            const historyIndex = originalPurchase.paymentHistory.findIndex(ph =>
-                                ph.note?.includes('Potong Utang') &&
-                                (ph.date === parsedPurchase.date || Math.abs(new Date(ph.date).getTime() - new Date(parsedPurchase.date).getTime()) < 5000)
-                            );
-
-                            if (historyIndex !== -1) {
-                                const entryToRemove = originalPurchase.paymentHistory[historyIndex];
-                                console.log(`Reverting debt cut of ${entryToRemove.amount} from purchase ${originalPurchase.id}`);
-
-                                const newHistory = [...originalPurchase.paymentHistory];
-                                newHistory.splice(historyIndex, 1);
-
-                                const newAmountPaid = originalPurchase.amountPaid - entryToRemove.amount;
-                                const newStatus = newAmountPaid >= originalPurchase.totalAmount ? PaymentStatus.PAID :
-                                    (newAmountPaid > 0 ? PaymentStatus.PARTIAL : PaymentStatus.UNPAID);
-
-                                // Check if other returns exist
-                                const otherReturns = purchases.some((p: any) =>
-                                    p.type === 'RETURN' &&
-                                    p.originalPurchaseId === originalPurchase.id &&
-                                    p.id !== parsedPurchase.id
-                                );
-
-                                const updatedOriginalPurchase = {
-                                    ...originalPurchase,
-                                    amountPaid: newAmountPaid,
-                                    paymentStatus: newStatus,
-                                    paymentHistory: newHistory,
-                                    isReturned: otherReturns
-                                };
-
-                                await ApiService.updatePurchase(updatedOriginalPurchase);
-                                console.log("Original purchase debt restored successfully.");
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error("Failed to restore original purchase debt:", error);
-                }
-            }
-            // Revert Stock
-            if (parsedPurchase.items && parsedPurchase.items.length > 0) {
-                const isReturn = parsedPurchase.type === 'RETURN';
-                for (const item of parsedPurchase.items) {
-                    try {
-                        const productRes = await request(`/products/${item.id}`);
-                        if (productRes.ok) {
-                            const product = await productRes.json();
-                            const parsedProduct = parseProduct(product);
-                            // Logic reversed from addPurchase
-                            if (isReturn) {
-                                parsedProduct.stock += item.qty; // Return: stock was decreased, so add back
-                            } else {
-                                parsedProduct.stock -= item.qty; // Purchase: stock was increased, so subtract
-                            }
-                            await request(`/products/${parsedProduct.id}`, {
-                                method: 'PUT',
-                                body: JSON.stringify(parsedProduct)
-                            });
-                        }
-                    } catch (e) {
-                        console.warn(`Failed to revert stock for purchase item ${item.id}`, e);
-                    }
-                }
-            }
-
-            // 2. Delete Related CashFlows
-            // Handled by Backend (Cascading Delete via referenceId)
-            // Legacy cleanup is skipped as description matching is unreliable for purchases
-        }
-
-        // 3. Delete Purchase
-        const deleteRes = await request(`/purchases/${id}`, {
-            method: 'DELETE'
-        });
-        if (!deleteRes.ok) throw new Error('Failed to delete purchase');
+        const res = await request(`/purchases/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete purchase');
+        console.log(`Successfully deleted purchase ${id}`);
     },
 
     // Cash Flow
@@ -720,13 +472,100 @@ export const ApiService = {
         const formattedDate = toMySQLDate(new Date(cf.date));
         const res = await request('/cashflow', {
             method: 'POST',
-            body: JSON.stringify({ ...cf, id: cf.id || generateUUID(), date: formattedDate })
+            body: JSON.stringify({ ...cf, date: formattedDate }) // ID generated by backend if missing
         });
         if (!res.ok) throw new Error('Failed to add cashflow');
     },
     deleteCashFlow: async (id: string) => {
-        const res = await request(`/cashflow/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Failed to delete cashflow');
+        // 1. Get the cashflow to be deleted
+        const res = await request('/cashflow');
+        if (!res.ok) throw new Error('Failed to fetch cashflows');
+        const cashflows = await res.json();
+        const cf = cashflows.find((c: any) => c.id === id);
+
+        if (!cf) throw new Error('Cashflow not found');
+
+        const parsedCf = parseCashFlow(cf);
+
+        // 2. Check if it is a Repayment (Pelunasan)
+        if (parsedCf.referenceId && (parsedCf.category.includes('Pelunasan') || parsedCf.category.includes('Cicilan'))) {
+            if (parsedCf.category.includes('Piutang') || parsedCf.category.includes('Pelanggan')) {
+                // Handle Transaction (Receivable)
+                try {
+                    const txRes = await request(`/transactions/${parsedCf.referenceId}`);
+                    if (txRes.ok) {
+                        const tx = await txRes.json();
+                        const parsedTx = parseTransaction(tx);
+
+                        // Revert amountPaid
+                        const newPaid = Math.max(0, parsedTx.amountPaid - parsedCf.amount);
+                        const newStatus = newPaid >= parsedTx.totalAmount ? PaymentStatus.PAID : (newPaid > 0 ? PaymentStatus.PARTIAL : PaymentStatus.UNPAID);
+
+                        // Remove from paymentHistory
+                        let newHistory = parsedTx.paymentHistory || [];
+                        const historyIndex = newHistory.findIndex(ph =>
+                            Math.abs(ph.amount - parsedCf.amount) < 1 &&
+                            (Math.abs(new Date(ph.date).getTime() - new Date(parsedCf.date).getTime()) < 60000) // 1 minute tolerance
+                        );
+
+                        if (historyIndex !== -1) {
+                            newHistory.splice(historyIndex, 1);
+                        }
+
+                        const updatedTx = {
+                            ...parsedTx,
+                            amountPaid: newPaid,
+                            paymentStatus: newStatus,
+                            paymentHistory: newHistory
+                        };
+
+                        await ApiService.updateTransaction(updatedTx);
+                        console.log("Reverted transaction payment linked to cashflow");
+                    }
+                } catch (e) {
+                    console.error("Failed to revert transaction payment:", e);
+                }
+            } else if (parsedCf.category.includes('Utang') || parsedCf.category.includes('Supplier')) {
+                // Handle Purchase (Payable)
+                try {
+                    const purRes = await request(`/purchases/${parsedCf.referenceId}`);
+                    if (purRes.ok) {
+                        const pur = await purRes.json();
+                        const parsedPur = parsePurchase(pur);
+
+                        // Revert amountPaid
+                        const newPaid = Math.max(0, parsedPur.amountPaid - parsedCf.amount);
+                        const newStatus = newPaid >= parsedPur.totalAmount ? PaymentStatus.PAID : (newPaid > 0 ? PaymentStatus.PARTIAL : PaymentStatus.UNPAID);
+
+                        // Remove from paymentHistory
+                        let newHistory = parsedPur.paymentHistory || [];
+                        const historyIndex = newHistory.findIndex(ph =>
+                            Math.abs(ph.amount - parsedCf.amount) < 1 &&
+                            (Math.abs(new Date(ph.date).getTime() - new Date(parsedCf.date).getTime()) < 60000)
+                        );
+
+                        if (historyIndex !== -1) {
+                            newHistory.splice(historyIndex, 1);
+                        }
+
+                        const updatedPur = {
+                            ...parsedPur,
+                            amountPaid: newPaid,
+                            paymentStatus: newStatus,
+                            paymentHistory: newHistory
+                        };
+
+                        await ApiService.updatePurchase(updatedPur);
+                        console.log("Reverted purchase payment linked to cashflow");
+                    }
+                } catch (e) {
+                    console.error("Failed to revert purchase payment:", e);
+                }
+            }
+        }
+
+        const delRes = await request(`/cashflow/${id}`, { method: 'DELETE' });
+        if (!delRes.ok) throw new Error('Failed to delete cashflow');
     },
 
     // Users
@@ -741,7 +580,7 @@ export const ApiService = {
         }
     },
     saveUser: async (user: User) => {
-        if (!user.id) user.id = generateUUID();
+        // if (!user.id) user.id = generateUUID();
         const res = await request('/users', {
             method: 'POST',
             body: JSON.stringify(user)
@@ -761,10 +600,38 @@ export const ApiService = {
 
     // Reset Functions
     resetProducts: async () => {
+        // Also reset stock adjustments to avoid orphaned data
+        try {
+            await ApiService.resetStockAdjustments();
+        } catch (e) {
+            console.error("Failed to reset stock adjustments during products reset", e);
+        }
+
         const products = await ApiService.getProducts();
         for (const product of products) {
             await ApiService.deleteProduct(product.id);
         }
+    },
+
+    // Stock Adjustments
+    getStockAdjustments: async (): Promise<any[]> => {
+        const res = await request('/stock_adjustments');
+        if (!res.ok) return [];
+        return await res.json();
+    },
+    addStockAdjustment: async (adjustment: any) => {
+        const formattedDate = toMySQLDate(new Date(adjustment.date));
+        const res = await request('/stock_adjustments', {
+            method: 'POST',
+            body: JSON.stringify({ ...adjustment, date: formattedDate })
+        });
+        if (!res.ok) throw new Error('Failed to add stock adjustment');
+    },
+    resetStockAdjustments: async () => {
+        const res = await request('/stock_adjustments/reset', {
+            method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Failed to reset stock adjustments');
     },
     resetTransactions: async () => {
         const transactions = await ApiService.getTransactions();
@@ -802,6 +669,7 @@ export const ApiService = {
         // So we should run them, then clean up any remaining cashflow
         await ApiService.resetTransactions();
         await ApiService.resetPurchases();
+        await ApiService.resetStockAdjustments();
         await ApiService.resetCashFlow();
     },
     resetMasterData: async () => {
@@ -826,20 +694,18 @@ export const ApiService = {
     resetAllData: async () => {
         // Nuclear option: Reset EVERYTHING (Financial + Master Data)
         await ApiService.resetAllFinancialData();
+        // Explicitly call resetStockAdjustments again just in case, though covered by above
+        // resetAllFinancialData already calls it.
         await ApiService.resetMasterData();
     },
 
 
     // Authentication
-    // Authentication
-    login: async (username: string, password: string): Promise<{ user: User }> => {
+    login: async (username: string, password: string): Promise<{ token: string, user: User }> => {
         const res = await fetch(`${API_URL}/login`, {
             method: 'POST',
-            credentials: 'include', // Important for setting the cookie
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // Enable Cookie support
             body: JSON.stringify({ username, password })
         });
 
@@ -862,10 +728,13 @@ export const ApiService = {
         try {
             await request('/logout', { method: 'POST' });
         } catch (e) {
-            console.error("Logout failed:", e);
+            console.error("Logout failed", e);
         }
-        localStorage.removeItem('pos_current_user');
-        localStorage.removeItem('pos_token'); // Cleanup legacy
-        window.location.reload();
+    },
+
+    getMe: async (): Promise<User> => {
+        const res = await request('/auth/me', {}, true);
+        if (!res.ok) throw new Error('Not authenticated');
+        return await res.json();
     }
 };

@@ -124,13 +124,13 @@ export const StorageService = {
   getTransactions: async (): Promise<Transaction[]> => {
     return await ApiService.getTransactions();
   },
-  addTransaction: async (transaction: Transaction): Promise<Transaction> => {
-    const savedTransaction = await ApiService.addTransaction(transaction);
+  addTransaction: async (transaction: Transaction) => {
+    const result = await ApiService.addTransaction(transaction);
     notifyListeners('transactions');
     // Transactions also affect products (stock) and cashflow
     notifyListeners('products');
     notifyListeners('cashflow');
-    return savedTransaction;
+    return result;
   },
   updateTransaction: async (transaction: Transaction) => {
     await ApiService.updateTransaction(transaction);
@@ -181,6 +181,16 @@ export const StorageService = {
     notifyListeners('cashflow');
   },
 
+  // Stock Adjustments
+  getStockAdjustments: async (): Promise<any[]> => {
+    return await ApiService.getStockAdjustments();
+  },
+  addStockAdjustment: async (adjustment: any) => {
+    await ApiService.addStockAdjustment(adjustment);
+    notifyListeners('stock_adjustments');
+    notifyListeners('products'); // Stock changed
+  },
+
   // Users
   getUsers: async (): Promise<User[]> => {
     return await ApiService.getUsers();
@@ -199,6 +209,7 @@ export const StorageService = {
   resetProducts: async () => {
     await ApiService.resetProducts();
     notifyListeners('products');
+    notifyListeners('stock_adjustments');
   },
   resetTransactions: async () => {
     await ApiService.resetTransactions();
@@ -216,12 +227,17 @@ export const StorageService = {
     await ApiService.resetCashFlow();
     notifyListeners('cashflow');
   },
+  resetStockAdjustments: async () => {
+    await ApiService.resetStockAdjustments();
+    notifyListeners('stock_adjustments');
+  },
   resetAllFinancialData: async () => {
     await ApiService.resetAllFinancialData();
     notifyListeners('transactions');
     notifyListeners('purchases');
     notifyListeners('cashflow');
     notifyListeners('products');
+    notifyListeners('stock_adjustments');
   },
   resetMasterData: async () => {
     await ApiService.resetMasterData();

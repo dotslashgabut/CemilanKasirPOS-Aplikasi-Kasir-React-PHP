@@ -1,10 +1,81 @@
-# Cemilan KasirPOS Nusantara
+<p align="center">
+  <img src="./public/favicon.svg" width="128" height="128" />
+</p>
+<h1 align="center">CemilanKasirPOS Nusantara</h1>
+<p align="center">CemilanKasirPOS adalah aplikasi kasir dengan fitur yang cukup lengkap dan mudah digunakan.</p>
 
-![Static Badge](https://img.shields.io/badge/build-passing-green?style=for-the-badge)
+<p align="center">
+    <img src="https://img.shields.io/badge/build-passing-green?style=for-the-badge" />
+</p>
 
-**Bug:** Unknown
+<table align="center">
+  <tr>
+    <td><a href="./screenshots/screenshot_01.jpg" target="_blank"><img src="./screenshots/screenshot_01.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_02.jpg" target="_blank"><img src="./screenshots/screenshot_02.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_03.jpg" target="_blank"><img src="./screenshots/screenshot_03.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_04.jpg" target="_blank"><img src="./screenshots/screenshot_04.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_05.jpg" target="_blank"><img src="./screenshots/screenshot_05.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_06.jpg" target="_blank"><img src="./screenshots/screenshot_06.jpg" width="200" /></a></td>
+  </tr>
+  <tr>
+    <td><a href="./screenshots/screenshot_07.jpg" target="_blank"><img src="./screenshots/screenshot_07.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_08.jpg" target="_blank"><img src="./screenshots/screenshot_08.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_09.jpg" target="_blank"><img src="./screenshots/screenshot_09.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_10.jpg" target="_blank"><img src="./screenshots/screenshot_10.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_11.jpg" target="_blank"><img src="./screenshots/screenshot_11.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_12.jpg" target="_blank"><img src="./screenshots/screenshot_12.jpg" width="200" /></a></td>
+  </tr>
+  <tr>
+    <td><a href="./screenshots/screenshot_13.jpg" target="_blank"><img src="./screenshots/screenshot_13.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_14.jpg" target="_blank"><img src="./screenshots/screenshot_14.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_15.jpg" target="_blank"><img src="./screenshots/screenshot_15.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_16.jpg" target="_blank"><img src="./screenshots/screenshot_16.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_17.jpg" target="_blank"><img src="./screenshots/screenshot_17.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_18.jpg" target="_blank"><img src="./screenshots/screenshot_18.jpg" width="200" /></a></td>
+  </tr>
+  <tr>
+    <td><a href="./screenshots/screenshot_19.jpg" target="_blank"><img src="./screenshots/screenshot_19.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_20.jpg" target="_blank"><img src="./screenshots/screenshot_20.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_21.jpg" target="_blank"><img src="./screenshots/screenshot_21.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_22.jpg" target="_blank"><img src="./screenshots/screenshot_22.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_23.jpg" target="_blank"><img src="./screenshots/screenshot_23.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_24.jpg" target="_blank"><img src="./screenshots/screenshot_24.jpg" width="200" /></a></td>
+  </tr>
+  <tr>
+    <td><a href="./screenshots/screenshot_25.jpg" target="_blank"><img src="./screenshots/screenshot_25.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_26.jpg" target="_blank"><img src="./screenshots/screenshot_26.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_27.jpg" target="_blank"><img src="./screenshots/screenshot_27.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_28.jpg" target="_blank"><img src="./screenshots/screenshot_28.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_29.jpg" target="_blank"><img src="./screenshots/screenshot_29.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_30.jpg" target="_blank"><img src="./screenshots/screenshot_30.jpg" width="200" /></a></td>
+  </tr>
+  <tr>
+    <td><a href="./screenshots/screenshot_31.jpg" target="_blank"><img src="./screenshots/screenshot_31.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_32.jpg" target="_blank"><img src="./screenshots/screenshot_32.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_33.jpg" target="_blank"><img src="./screenshots/screenshot_33.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_34.jpg" target="_blank"><img src="./screenshots/screenshot_34.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_35.jpg" target="_blank"><img src="./screenshots/screenshot_35.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_36.jpg" target="_blank"><img src="./screenshots/screenshot_36.jpg" width="200" /></a></td>
+  </tr>
+  <tr>
+    <td><a href="./screenshots/screenshot_37.jpg" target="_blank"><img src="./screenshots/screenshot_37.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_38.jpg" target="_blank"><img src="./screenshots/screenshot_38.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_39.jpg" target="_blank"><img src="./screenshots/screenshot_39.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_40.jpg" target="_blank"><img src="./screenshots/screenshot_40.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_41.jpg" target="_blank"><img src="./screenshots/screenshot_41.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_42.jpg" target="_blank"><img src="./screenshots/screenshot_42.jpg" width="200" /></a></td>
+  </tr>
+  <tr>
+    <td><a href="./screenshots/screenshot_43.jpg" target="_blank"><img src="./screenshots/screenshot_43.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_44.jpg" target="_blank"><img src="./screenshots/screenshot_44.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_45.jpg" target="_blank"><img src="./screenshots/screenshot_45.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_46.jpg" target="_blank"><img src="./screenshots/screenshot_46.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_47.jpg" target="_blank"><img src="./screenshots/screenshot_47.jpg" width="200" /></a></td>
+    <td><a href="./screenshots/screenshot_48.jpg" target="_blank"><img src="./screenshots/screenshot_48.jpg" width="200" /></a></td>
+  </tr>
+</table>
 
-**🍬 Cemilan KasirPOS Nusantara**
+**🍬 Aplikasi Kasir - CemilanKasirPOS React-PHP**
 
 - **Frontend Framework**: [React 19](https://react.dev/)
 - **Build Tool**: [Vite](https://vitejs.dev/)
@@ -19,13 +90,15 @@ Dibuat dengan bantuan [Google AI Studio App](https://aistudio.google.com/apps), 
 
 Fitur AI di aplikasi ini yang menggunakan Gemini API, kami belum sempat mencobanya.
 
-> Untuk versi Cemilan KasirPOS dengan pendekatan database yang berbeda, seperti localStorage, IndexedDB-Dexie, hybrid database (IndexedDB-Dexie + MySQL), dapat dicek di laman rilis repo Cemilan KasirPOS Nusantara - Testing https://github.com/dotslashgabut/cemilan-kasirpos-test/releases
+> Untuk versi Cemilan KasirPOS dengan pendekatan database yang berbeda, seperti localStorage, IndexedDB-Dexie, hybrid database (IndexedDB-Dexie + MySQL), dapat dicek di laman rilis repo Cemilan KasirPOS Nusantara - Testing https://github.com/dotslashgabut/CemilanKasirPOS-Aplikasi-Kasir-React-NodeJS/releases
 
 > Video tutorialnya cek aja nanti di [DotSlashGabut YouTube](https://www.youtube.com/@dotslashgabut), _belum sempet bikin_
 
 **🍵 Traktir Kami Cendol**
 
 > via Saweria [**https://saweria.co/dotslashgabut**](https://saweria.co/dotslashgabut)
+
+> via Trakteer [**https://trakteer.id/dotslashgabut**](https://trakteer.id/dotslashgabut)
 
 > via Ko-fi [**https://ko-fi.com/dotslashgabut**](https://ko-fi.com/dotslashgabut)
 
@@ -38,15 +111,6 @@ Aplikasi ini dirilis dalam dua file arsip berbeda. Untuk file arsip dengan nama 
 Panduan instalasi dan penggunaan untuk Development, selengkapnya bisa dibaca di **[README_DEVELOPMENT.md](./README_DEVELOPMENT.md)**, dan untuk Production bisa dibaca di **[README_PRODUCTION.md](./README_PRODUCTION.md)**
 
 ## 🍬 Cemilan KasirPOS Nusantara
-
-| | | | | | | | |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| <a href="./screenshots/01.jpg" target="_blank"><img src="./screenshots/01.jpg" width="100%" /></a> | <a href="./screenshots/02.jpg" target="_blank"><img src="./screenshots/02.jpg" width="100%" /></a> | <a href="./screenshots/02b.jpg" target="_blank"><img src="./screenshots/02b.jpg" width="100%" /></a> | <a href="./screenshots/03.jpg" target="_blank"><img src="./screenshots/03.jpg" width="100%" /></a> | <a href="./screenshots/03a.jpg" target="_blank"><img src="./screenshots/03a.jpg" width="100%" /></a> | <a href="./screenshots/03b.jpg" target="_blank"><img src="./screenshots/03b.jpg" width="100%" /></a> | <a href="./screenshots/03c.jpg" target="_blank"><img src="./screenshots/03c.jpg" width="100%" /></a> | <a href="./screenshots/04.jpg" target="_blank"><img src="./screenshots/04.jpg" width="100%" /></a> |
-| <a href="./screenshots/05.jpg" target="_blank"><img src="./screenshots/05.jpg" width="100%" /></a> | <a href="./screenshots/06.jpg" target="_blank"><img src="./screenshots/06.jpg" width="100%" /></a> | <a href="./screenshots/07.jpg" target="_blank"><img src="./screenshots/07.jpg" width="100%" /></a> | <a href="./screenshots/08.jpg" target="_blank"><img src="./screenshots/08.jpg" width="100%" /></a> | <a href="./screenshots/08a.jpg" target="_blank"><img src="./screenshots/08a.jpg" width="100%" /></a> | <a href="./screenshots/09.jpg" target="_blank"><img src="./screenshots/09.jpg" width="100%" /></a> | <a href="./screenshots/10.jpg" target="_blank"><img src="./screenshots/10.jpg" width="100%" /></a> | <a href="./screenshots/11.jpg" target="_blank"><img src="./screenshots/11.jpg" width="100%" /></a> |
-| <a href="./screenshots/12.jpg" target="_blank"><img src="./screenshots/12.jpg" width="100%" /></a> | <a href="./screenshots/13.jpg" target="_blank"><img src="./screenshots/13.jpg" width="100%" /></a> | <a href="./screenshots/14.jpg" target="_blank"><img src="./screenshots/14.jpg" width="100%" /></a> | <a href="./screenshots/15.jpg" target="_blank"><img src="./screenshots/15.jpg" width="100%" /></a> | <a href="./screenshots/16.jpg" target="_blank"><img src="./screenshots/16.jpg" width="100%" /></a> | <a href="./screenshots/17.jpg" target="_blank"><img src="./screenshots/17.jpg" width="100%" /></a> | <a href="./screenshots/18.jpg" target="_blank"><img src="./screenshots/18.jpg" width="100%" /></a> | <a href="./screenshots/19.jpg" target="_blank"><img src="./screenshots/19.jpg" width="100%" /></a> |
-| <a href="./screenshots/20.jpg" target="_blank"><img src="./screenshots/20.jpg" width="100%" /></a> | <a href="./screenshots/21.jpg" target="_blank"><img src="./screenshots/21.jpg" width="100%" /></a> | <a href="./screenshots/22.jpg" target="_blank"><img src="./screenshots/22.jpg" width="100%" /></a> | <a href="./screenshots/23.jpg" target="_blank"><img src="./screenshots/23.jpg" width="100%" /></a> | <a href="./screenshots/24.jpg" target="_blank"><img src="./screenshots/24.jpg" width="100%" /></a> | <a href="./screenshots/25.jpg" target="_blank"><img src="./screenshots/25.jpg" width="100%" /></a> | <a href="./screenshots/26.jpg" target="_blank"><img src="./screenshots/26.jpg" width="100%" /></a> | <a href="./screenshots/27.jpg" target="_blank"><img src="./screenshots/27.jpg" width="100%" /></a> |
-| <a href="./screenshots/28.jpg" target="_blank"><img src="./screenshots/28.jpg" width="100%" /></a> | <a href="./screenshots/29.jpg" target="_blank"><img src="./screenshots/29.jpg" width="100%" /></a> | <a href="./screenshots/31.jpg" target="_blank"><img src="./screenshots/31.jpg" width="100%" /></a> | <a href="./screenshots/32.jpg" target="_blank"><img src="./screenshots/32.jpg" width="100%" /></a> | <a href="./screenshots/33.jpg" target="_blank"><img src="./screenshots/33.jpg" width="100%" /></a> | <a href="./screenshots/34.jpg" target="_blank"><img src="./screenshots/34.jpg" width="100%" /></a> | <a href="./screenshots/35.jpg" target="_blank"><img src="./screenshots/35.jpg" width="100%" /></a> | <a href="./screenshots/36.jpg" target="_blank"><img src="./screenshots/36.jpg" width="100%" /></a> |
-| <a href="./screenshots/37.jpg" target="_blank"><img src="./screenshots/37.jpg" width="100%" /></a> | <a href="./screenshots/38.jpg" target="_blank"><img src="./screenshots/38.jpg" width="100%" /></a> | <a href="./screenshots/39.jpg" target="_blank"><img src="./screenshots/39.jpg" width="100%" /></a> | <a href="./screenshots/40.jpg" target="_blank"><img src="./screenshots/40.jpg" width="100%" /></a> | <a href="./screenshots/41.jpg" target="_blank"><img src="./screenshots/41.jpg" width="100%" /></a> | <a href="./screenshots/42.jpg" target="_blank"><img src="./screenshots/42.jpg" width="100%" /></a> | <a href="./screenshots/43.jpg" target="_blank"><img src="./screenshots/43.jpg" width="100%" /></a> | <a href="./screenshots/44.jpg" target="_blank"><img src="./screenshots/44.jpg" width="100%" /></a> |
 
 Cemilan KasirPOS is a modern, feature-rich Point of Sale (POS) application designed for small to medium-sized businesses in Indonesia. Built with React, TypeScript, and Vite, it offers a fast and responsive interface for managing sales, inventory, customers, and finances.
 
@@ -93,6 +157,10 @@ Cemilan KasirPOS is a modern, feature-rich Point of Sale (POS) application desig
 - **Store Profile**: Customize store name, address, contact info, and receipt footer.
 - **Print Layouts**: Support for various receipt formats (58mm, 80mm, A4) for invoices and delivery notes.
 - **Bank Accounts**: Manage bank accounts for transfer payments.
+- **Themes & Appearance**:
+  - **Dynamic Theming**: Customize the primary app color (Hue & Saturation) to match your brand.
+  - **Login Customization**: Choose from preset gradients, upload your own background image, or match the login screen to your theme.
+  - **Branding**: "Cemilan" inspired default theme (Red Spicy) and custom Candy favicon.
 
 ## 🛠️ Tech Stack
 
@@ -172,9 +240,9 @@ The application uses the following tables:
 * **MySQL**: Ensure MySQL server is installed and running.
   
   ### 1. Database Setup
-1. Create a new MySQL database (e.g., `cemilankasirpos_php`).
+1. Create a new MySQL database (e.g., `cemilankasirpos_php_v02`).
 
-2. Import the schema from `cemilankasirpos_php.sql` (optional, as Sequelize will sync tables, but good for initial structure).
+2. Import the schema from `cemilankasirpos_php_v02.sql` (optional, as Sequelize will sync tables, but good for initial structure).
    
    ### 2. Backend Setup (PHP)
 
@@ -185,7 +253,7 @@ The application uses the following tables:
         define('DB_HOST', 'localhost');
         define('DB_USER', 'root');
         define('DB_PASS', '');
-        define('DB_NAME', 'cemilankasirpos_php');
+        define('DB_NAME', 'cemilankasirpos_php_v02');
         ```
 
 4.  **Start PHP Server**:
@@ -231,7 +299,7 @@ See [README_DEVELOPMENT.md](./README_DEVELOPMENT.md) for detailed setup instruct
 ├── App.tsx       # Main application component
 ├── index.tsx     # Entry point
 ├── vite.config.ts
-└── cemilankasirpos_php.sql # Database schema
+└── cemilankasirpos_php_v02.sql # Database schema
 ```
 
 ## 👥 User Roles
@@ -336,17 +404,40 @@ Cemilan KasirPOS adalah aplikasi Point of Sale (POS) modern yang kaya fitur, dir
 - **Profil Toko**: Sesuaikan nama toko, alamat, info kontak, dan footer struk.
 - **Layout Cetak**: Dukungan untuk berbagai format struk (58mm, 80mm, A4) untuk faktur dan surat jalan.
 - **Akun Bank**: Kelola akun bank untuk pembayaran transfer.
+- **Tema & Tampilan**:
+  - **Tema Dinamis**: Sesuaikan warna utama aplikasi (Hue & Saturation) agar cocok dengan brand Anda.
+  - **Kustomisasi Login**: Pilih dari gradien preset, unggah gambar latar sendiri, atau sesuaikan layar login dengan tema Anda.
+  - **Branding**: Tema bawaan terinspirasi "Cemilan" (Merah Pedas) dan ikon Permen kustom.
 
 ## 🛠️ Teknologi yang Digunakan
 
-- **Frontend Framework**: [React 19](https://react.dev/)
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **Bahasa**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Ikon**: [Lucide React](https://lucide.dev/)
-- **Grafik**: [Recharts](https://recharts.org/)
-- **Backend**: PHP Native
-- **Database**: MySQL
+*   **Frontend**: [React](https://reactjs.org/) (v18+) + [Vite](https://vitejs.dev/) + [TypeScript](https://www.typescriptlang.org/)
+    *   State Management: React Hooks & Context
+    *   Styling: [Tailwind CSS](https://tailwindcss.com/)
+    *   Icons: [Lucide React](https://lucide.dev/)
+*   **Backend**: **PHP Native** (Tanpa Framework)
+    *   Lokasi: Folder `php_server/`
+    *   Database: **MySQL**
+    *   Auth: JWT (JSON Web Tokens) & HttpOnly Cookies
+    *   Security: RBAC, Rate Limiting, Input Validation, CSRF Protection via SameSite Cookies
+*   **Deployment**: Kompatibel penuh dengan cPanel / Shared Hosting (Apache/Nginx)
+
+## 📂 Struktur Folder
+
+```
+cemilan-kasirpos/
+├── src/                # Source code Frontend (React)
+├── public/             # Aset statis (icon, logo)
+├── php_server/         # Source code Backend (PHP API)
+│   ├── config.php      # Koneksi DB & Settings
+│   ├── index.php       # Main Router
+│   ├── auth.php        # Middleware Auth
+│   ├── logic.php       # Business Logic
+│   └── ...
+├── dist/               # Hasil build Frontend (setelah npm run build)
+├── screenshots/        # Aset gambar untuk dokumentasi
+└── ... config files
+```
 
 ## 💾 Penyimpanan Data
 

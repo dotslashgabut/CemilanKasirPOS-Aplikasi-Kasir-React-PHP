@@ -1,7 +1,7 @@
 {
   "name": "cemilan-kasirpos",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,17 +10,15 @@
   },
   "dependencies": {
     "@google/genai": "^1.31.0",
-    "@types/jsbarcode": "^3.11.4",
-    "dexie": "^4.2.1",
-    "dexie-react-hooks": "^4.2.0",
     "jsbarcode": "^3.12.1",
-    "lucide-react": "^0.554.0",
+    "lucide-react": "^0.562.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "recharts": "^3.5.1",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@types/jsbarcode": "^3.11.4",
     "@types/node": "^22.19.1",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.22",

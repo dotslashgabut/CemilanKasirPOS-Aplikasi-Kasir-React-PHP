@@ -49,7 +49,7 @@ public_html/                # ← Root domain (https://yourdomain.com)
 1. Buka **phpMyAdmin** di cPanel
 2. Pilih database yang baru dibuat
 3. Tab **Import**
-4. Choose file: `cemilankasirpos_php.sql`
+4. Choose file: `cemilankasirpos_php_v02.sql`
 5. Klik **Go**
 6. Wait sampai import selesai ✅
 
@@ -57,7 +57,7 @@ public_html/                # ← Root domain (https://yourdomain.com)
 ```bash
 # Upload .sql file ke folder /home/username/
 # Lalu SSH ke server:
-mysql -u username_cemilan_admin -p username_cemilan_pos < cemilankasirpos_php.sql
+mysql -u username_cemilan_admin -p username_cemilan_pos < cemilankasirpos_php_v02.sql
 ```
 
 ---
@@ -96,7 +96,7 @@ Upload php_server/ → /public_html/php_server/
 ### 2.2 Konfigurasi .env Backend
 
 1. Di File Manager, masuk ke `public_html/php_server/`
-2. Buat file baru: `.env` (atau rename `.env.example` menjadi `.env`)
+2. Buat file baru: `.env`
 3. Isi dengan:
 
 ```env

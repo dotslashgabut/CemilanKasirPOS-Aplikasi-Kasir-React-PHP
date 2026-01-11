@@ -131,6 +131,7 @@ CREATE TABLE `customers` (
   `name` varchar(255) NOT NULL,
   `phone` varchar(255) DEFAULT NULL,
   `address` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
   `image` longtext,
   `defaultPriceType` varchar(255) DEFAULT NULL,
   `createdAt` datetime NOT NULL,
@@ -262,6 +263,7 @@ CREATE TABLE `products` (
   `priceWholesale` float DEFAULT '0',
   `pricePromo` float DEFAULT NULL,
   `image` longtext,
+  `unit` varchar(50) DEFAULT 'Pcs',
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -800,7 +802,33 @@ CREATE TABLE `purchases` (
   `isReturned` tinyint(1) DEFAULT '0',
   `returnNote` text,
   `userId` varchar(255) DEFAULT NULL,
-  `userName` varchar(255) DEFAULT NULL
+  `userName` varchar(255) DEFAULT NULL,
+  `invoiceNumber` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `stock_adjustments`
+--
+
+CREATE TABLE `stock_adjustments` (
+  `id` varchar(255) NOT NULL,
+  `date` datetime DEFAULT NULL,
+  `productId` varchar(255) NOT NULL,
+  `productName` varchar(255) DEFAULT NULL,
+  `type` varchar(50) NOT NULL COMMENT 'INCREASE, DECREASE',
+  `reason` varchar(255) NOT NULL,
+  `qty` int NOT NULL,
+  `previousStock` int NOT NULL DEFAULT '0',
+  `currentStock` int NOT NULL DEFAULT '0',
+  `note` text,
+  `userId` varchar(255) DEFAULT NULL,
+  `userName` varchar(255) DEFAULT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -844,6 +872,7 @@ CREATE TABLE `suppliers` (
   `name` varchar(255) NOT NULL,
   `phone` varchar(255) DEFAULT NULL,
   `address` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
   `image` longtext,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
@@ -933,7 +962,11 @@ CREATE TABLE `transactions` (
   `isReturned` tinyint(1) DEFAULT '0',
   `returnNote` text,
   `createdAt` datetime NOT NULL,
-  `updatedAt` datetime NOT NULL
+  `updatedAt` datetime NOT NULL,
+  `invoiceNumber` varchar(50) DEFAULT NULL,
+  `discount` float DEFAULT 0,
+  `discountType` varchar(20) DEFAULT 'FIXED',
+  `discountAmount` float DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -1008,6 +1041,12 @@ ALTER TABLE `products`
 -- Indexes for table `purchases`
 --
 ALTER TABLE `purchases`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `stock_adjustments`
+--
+ALTER TABLE `stock_adjustments`
   ADD PRIMARY KEY (`id`);
 
 --

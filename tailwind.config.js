@@ -11,9 +11,11 @@ export default {
     theme: {
         extend: {
             colors: {
-                primary: '#0f172a', // Slate 900
+                primary: 'hsl(var(--primary-h) var(--primary-s) var(--primary-l) / <alpha-value>)', // Custom Dynamic
+                'primary-hover': 'hsl(var(--primary-h) var(--primary-s) var(--primary-l-hover) / <alpha-value>)',
+                'primary-active': 'hsl(var(--primary-h) var(--primary-s) var(--primary-l-active) / <alpha-value>)',
                 secondary: '#334155', // Slate 700
-                accent: '#3b82f6', // Blue 500
+                accent: 'hsl(var(--primary-h) var(--primary-s) var(--primary-l) / <alpha-value>)', // Matching Dynamic
                 success: '#10b981', // Emerald 500
                 warning: '#f59e0b', // Amber 500
                 danger: '#ef4444', // Red 500

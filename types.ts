@@ -1,7 +1,9 @@
 export enum UserRole {
   SUPERADMIN = 'SUPERADMIN',
   OWNER = 'OWNER',
-  CASHIER = 'CASHIER'
+  ADMIN = 'ADMIN',
+  CASHIER = 'CASHIER',
+  WAREHOUSE = 'GUDANG'
 }
 
 export interface User {
@@ -30,6 +32,7 @@ export interface Customer {
   name: string;
   phone: string;
   address?: string;
+  email?: string;
   image?: string;
   defaultPriceType?: PriceType; // Default pricing tier for this customer
 }
@@ -39,6 +42,7 @@ export interface Supplier {
   name: string;
   phone: string;
   address?: string;
+  email?: string;
   image?: string;
 }
 
@@ -55,6 +59,7 @@ export interface Product {
   priceWholesale: number;
   pricePromo?: number; // Optional promo price
   image?: string;
+  unit?: string; // e.g. Pcs, Kg, Box
 }
 
 export interface CartItem extends Product {
@@ -112,12 +117,17 @@ export interface Transaction {
   bankName?: string; // New: Snapshot of bank name
   customerId?: string; // Optional link to registered customer
   customerName: string; // Required for debt (snapshotted or manual)
+  customerAddress?: string; // New: Snapshot of customer address
   cashierId: string;
   cashierName: string;
   paymentHistory?: PaymentHistoryItem[]; // Track installments
   isReturned?: boolean; // Flag if transaction has been returned
   returnNote?: string; // Note for return transaction
   skipCashFlow?: boolean; // Optional flag to skip backend auto-cashflow
+  invoiceNumber?: string; // New: Generated Invoice Number (INVXX-XXXX)
+  discount?: number;
+  discountType?: 'PERCENTAGE' | 'FIXED';
+  discountAmount?: number;
 }
 
 export enum PurchaseType {
@@ -145,6 +155,9 @@ export interface Purchase {
   isReturned?: boolean; // Flag if purchase has been returned
   returnNote?: string; // Note for return purchase
   skipCashFlow?: boolean; // Optional flag to skip backend auto-cashflow
+  invoiceNumber?: string; // New: Generated Invoice Number (POXX-XXXX)
+  userId?: string; // New: User who recorded this purchase
+  userName?: string; // New: Name of user who recorded this purchase
 }
 
 export enum CashFlowType {
@@ -205,4 +218,19 @@ export interface SyncQueueItem {
 // Add updatedAt to all interfaces for sync logic
 export interface BaseEntity {
   updatedAt?: string;
+}
+
+export interface StockAdjustment {
+  id: string;
+  date: string;
+  productId: string;
+  productName: string;
+  type: 'INCREASE' | 'DECREASE';
+  reason: string;
+  qty: number;
+  previousStock?: number;
+  currentStock?: number;
+  note?: string;
+  userId?: string;
+  userName?: string;
 }

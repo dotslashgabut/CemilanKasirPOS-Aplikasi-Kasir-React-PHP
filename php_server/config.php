@@ -57,7 +57,7 @@ if (SHOW_DEBUG_ERRORS) {
 }
 
 if (!defined('DB_HOST')) define('DB_HOST', 'localhost');
-if (!defined('DB_NAME')) define('DB_NAME', 'cemilankasirpos_php');
+if (!defined('DB_NAME')) define('DB_NAME', 'cemilankasirpos_php_v02');
 if (!defined('DB_USER')) define('DB_USER', 'root');
 if (!defined('DB_PASS')) define('DB_PASS', '');
 
@@ -69,26 +69,25 @@ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
 if (!empty($allowedOrigins) && in_array($origin, $allowedOrigins)) {
     header("Access-Control-Allow-Origin: $origin");
-    header("Access-Control-Allow-Credentials: true");
 } else {
     // Fallback logic
     if (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) {
         // Development: Allow dynamic origin for convenience
         if ($origin) {
             header("Access-Control-Allow-Origin: $origin");
-            header("Access-Control-Allow-Credentials: true");
         } else {
             header("Access-Control-Allow-Origin: *");
         }
     } else {
         // Production: Strict Security
-        // If the origin is not in ALLOWED_ORIGINS, we return '*' and NO credentials
+        // If the origin is not in ALLOWED_ORIGINS, we return '*'
+        // Note: Browsers will BLOCK requests because we also send 'Access-Control-Allow-Credentials: true'
+        // This is the desired secure behavior (fail-safe).
         header("Access-Control-Allow-Origin: *"); 
     }
 }
 
-// Ensure Content-Type is set (moved down from original position to group headers)
-// header("Access-Control-Allow-Credentials: true"); // REMOVED: Managed conditionally above
+header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Max-Age: 3600");

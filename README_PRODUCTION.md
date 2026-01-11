@@ -22,10 +22,10 @@ Buka file `php_server/config.php` dan edit konfigurasi CORS.
 Secara default, aplikasi dikonfigurasi untuk menerima request dari `http://localhost:5173` (development).
 
 ```php
-// php_server/.env
+// php_server/config.php
 
-# Izinkan domain tertentu (pisahkan dengan koma)
-ALLOWED_ORIGINS=https://toko-saya.com
+// Izinkan domain tertentu
+header("Access-Control-Allow-Origin: https://toko-saya.com");
 ```
 
 > **Penting:** Jangan gunakan wildcard `*` di produksi karena kurang aman. Spesifikasikan domain Anda secara eksplisit.
@@ -41,10 +41,9 @@ Sebelum menjalankan perintah build, pastikan konfigurasi aplikasi sudah benar.
 1. **Backend (PHP Native)**:
     
     *   **Opsi A: Shared Hosting/cPanel**
-        *   Buat file `.env` di folder `php_server` (copy dari `.env.example`).
-        *   Set `SHOW_DEBUG_ERRORS=false`.
-        *   Isi `ALLOWED_ORIGINS` dengan domain frontend Anda.
-        *   Konfigurasi database dilakukan di file `.env` ini.
+        *   Edit file `php_server/config.php` (atau sesuaikan saat upload nanti).
+        *   Pastikan `SHOW_DEBUG_ERRORS` diset ke `false` untuk keamanan.
+        *   Konfigurasi database dilakukan langsung di file `config.php`.
 
 2. **Frontend (React)**:
    
@@ -79,15 +78,14 @@ Folder `dist` inilah yang berisi aplikasi frontend Anda yang sudah jadi.
 
 ## 3. Langkah Deployment
 
-### Opsi A: Deployment Backend PHP (Shared Hosting / cPanel)
+### Opsi A: Deployment Backend PHP (Shared Hosting / cPanel) - REKOMENDASI
     
 Metode ini paling mudah dan murah, cocok untuk shared hosting standar.
 
 1.  **Upload Backend**:
     *   Upload isi folder `php_server` ke folder publik di hosting Anda (misal `public_html/api`).
 2.  **Konfigurasi Database**:
-    *   Buat file `.env` dari `.env.example`.
-    *   Isi kredensial database hosting di `.env`.
+    *   Edit `config.php` dengan kredensial database hosting.
 3.  **Frontend**:
     *   Build frontend (`npm run build`).
     *   Upload folder `dist` ke hosting (misal ke `public_html`).
@@ -113,8 +111,8 @@ Jika Anda menggunakan VPS atau server lain untuk PHP:
 ## 4. Setup Database Produksi
 
 1.  Buat database MySQL baru di server produksi.
-2.  Import file `cemilankasirpos_php.sql` atau `cemilankasirpos_big_dummy_data.sql`.
-3.  Pastikan kredensial database di `php_server/.env` sudah benar.
+2.  Import file `cemilankasirpos_php_v02.sql` atau `cemilankasirpos_big_dummy_data.sql`.
+3.  Pastikan kredensial database di `php_server/config.php` sudah benar.
 4.  Verifikasi koneksi database dengan menjalankan backend dan cek log.
 
 ---
@@ -124,10 +122,10 @@ Jika Anda menggunakan VPS atau server lain untuk PHP:
 Before launching, pastikan:
 
 ### Backend (PHP)
-- [ ] File `.env` sudah dibuat dan dikonfigurasi dengan benar.
-- [ ] `JWT_SECRET` di `.env` menggunakan string random yang kuat.
-- [ ] `ALLOWED_ORIGINS` di `.env` hanya mengizinkan domain produksi Anda.
-- [ ] `SHOW_DEBUG_ERRORS=false` di `.env`.
+- [ ] File `config.php` sudah dikonfigurasi dengan benar.
+- [ ] `JWT_SECRET` di `auth.php` menggunakan string random yang kuat (via Environment Variable atau edit file).
+- [ ] CORS hanya mengizinkan domain produksi Anda.
+- [ ] `SHOW_DEBUG_ERRORS` diset ke `false`.
 - [ ] File log dan json sensitif dilindungi dari akses publik.
 
 ### Frontend
@@ -163,14 +161,14 @@ Before launching, pastikan:
 ### Backend Tidak Bisa Diakses
 - Cek log error PHP (biasanya `error_log` di folder yang sama atau log server).
 - **Note**: Jika `php_error.log` tidak bisa dibuka di browser (403 Forbidden), itu normal (fitur keamanan). Cek via File Manager/FTP.
-- Verifikasi konfigurasi database di `.env`.
+- Verifikasi konfigurasi database di `config.php`.
 
 ### CORS Error
-- Pastikan domain frontend sudah ditambahkan di `ALLOWED_ORIGINS` pada file `.env`.
+- Pastikan domain frontend sudah ditambahkan di `config.php`.
 - Cek apakah HTTPS/HTTP konsisten (jangan mix).
 
 ### Database Connection Error
-- Verifikasi kredensial di `.env`.
+- Verifikasi kredensial di `config.php`.
 - Cek apakah MySQL service berjalan.
 - Pastikan user database punya privilege yang cukup.
 

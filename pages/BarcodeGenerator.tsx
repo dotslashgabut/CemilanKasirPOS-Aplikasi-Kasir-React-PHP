@@ -46,26 +46,27 @@ export const BarcodeGenerator: React.FC = () => {
             Array(item.count).fill(item.product)
         );
 
-        // Pre-generate SVG strings inside the main app context
-        const itemsWithSvg = barcodeItems.map(p => {
-            const svgNode = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const itemsHtml = barcodeItems.map((p) => {
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             try {
-                JsBarcode(svgNode, p.sku, {
+                JsBarcode(svg, p.sku, {
                     format: "CODE128",
                     displayValue: true,
                     fontSize: 12,
                     height: 30,
                     margin: 0
                 });
-                return {
-                    ...p,
-                    svgHtml: new XMLSerializer().serializeToString(svgNode)
-                };
             } catch (error) {
-                console.error("Error generating barcode for", p.sku, error);
-                return { ...p, svgHtml: '<div style="color:red; font-size:10px;">Error Barcode</div>' };
+                console.error(`Failed to generate barcode for SKU ${p.sku}`, error);
             }
-        });
+            return `
+              <div class="barcode-item">
+                <div class="product-name">${p.name}</div>
+                ${svg.outerHTML}
+                <div class="product-price">${formatIDR(p.priceRetail)} / ${p.unit || 'Pcs'}</div>
+              </div>
+            `;
+        }).join('');
 
         const html = `
       <html>
@@ -111,13 +112,7 @@ export const BarcodeGenerator: React.FC = () => {
         </head>
         <body>
           <div class="barcode-container">
-            ${itemsWithSvg.map((p) => `
-              <div class="barcode-item">
-                <div class="product-name">${p.name}</div>
-                ${p.svgHtml}
-                <div class="product-price">${formatIDR(p.priceRetail)}</div>
-              </div>
-            `).join('')}
+            ${itemsHtml}
           </div>
           <script>
             window.onload = () => {
@@ -136,7 +131,7 @@ export const BarcodeGenerator: React.FC = () => {
         <div className="space-y-6 animate-fade-in">
             <div>
                 <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                    <Barcode className="text-purple-600" />
+                    <Barcode className="text-primary" />
                     Cetak Barcode
                 </h2>
                 <p className="text-slate-500 text-sm mt-1">Pilih produk untuk dicetak barcodenya.</p>
@@ -150,10 +145,19 @@ export const BarcodeGenerator: React.FC = () => {
                         <input
                             type="text"
                             placeholder="Cari produk..."
-                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full pl-10 pr-10 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full p-1"
+                                title="Hapus pencarian"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
                     </div>
 
                     <div className="h-[500px] overflow-y-auto pr-2 space-y-2">
@@ -161,11 +165,11 @@ export const BarcodeGenerator: React.FC = () => {
                             <div key={p.id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg hover:bg-slate-50">
                                 <div>
                                     <div className="font-medium text-slate-800">{p.name}</div>
-                                    <div className="text-xs text-slate-500">SKU: {p.sku} | Stok: {p.stock}</div>
+                                    <div className="text-xs text-slate-500">SKU: {p.sku} | Stok: {p.stock} {p.unit || 'Pcs'}</div>
                                 </div>
                                 <button
                                     onClick={() => handleAddProduct(p)}
-                                    className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100"
+                                    className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20"
                                 >
                                     Tambah
                                 </button>
@@ -221,7 +225,7 @@ export const BarcodeGenerator: React.FC = () => {
                         <button
                             onClick={handlePrint}
                             disabled={selectedProducts.length === 0}
-                            className="w-full py-2.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             <Printer size={18} /> Cetak Barcode
                         </button>

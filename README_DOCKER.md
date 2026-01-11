@@ -128,7 +128,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: cemilankasirpos_php
+      MYSQL_DATABASE: cemilankasirpos_php_v02
     ports:
       - "3306:3306"
     volumes:
@@ -146,7 +146,7 @@ services:
       DB_HOST: mysql
       DB_USER: root
       DB_PASS: ${MYSQL_ROOT_PASSWORD:-root}
-      DB_NAME: cemilankasirpos_php
+      DB_NAME: cemilankasirpos_php_v02
     depends_on:
       - mysql
     networks:
@@ -182,7 +182,7 @@ volumes:
         define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
         define('DB_USER', getenv('DB_USER') ?: 'root');
         define('DB_PASS', getenv('DB_PASS') ?: '');
-        define('DB_NAME', getenv('DB_NAME') ?: 'cemilankasirpos_php');
+        define('DB_NAME', getenv('DB_NAME') ?: 'cemilankasirpos_php_v02');
         ```
 
 2.  **Jalankan Docker Compose**:

@@ -75,6 +75,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
             const query = searchQuery.toLowerCase();
             items = items.filter(p =>
                 p.id.toLowerCase().includes(query) ||
+                (p.invoiceNumber && p.invoiceNumber.toLowerCase().includes(query)) ||
                 p.supplierName.toLowerCase().includes(query) ||
                 p.description.toLowerCase().includes(query)
             );
@@ -129,9 +130,10 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
 
 
     const handleExport = () => {
-        const headers = ['ID Pembelian', 'Tanggal', 'Supplier', 'Deskripsi', 'Total', 'Dibayar', 'Sisa', 'Status', 'Metode'];
+        const headers = ['ID Pembelian', 'No Faktur', 'Tanggal', 'Supplier', 'Deskripsi', 'Total', 'Dibayar', 'Sisa', 'Status', 'Metode'];
         const rows = filteredPurchases.map(p => [
             p.id,
+            p.invoiceNumber || '-',
             formatDate(p.date),
             p.supplierName,
             p.description,
@@ -147,6 +149,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
     const handleExportExcel = () => {
         const data = filteredPurchases.map(p => ({
             'ID Pembelian': p.id,
+            'No Faktur': p.invoiceNumber || '-',
             'Tanggal': formatDate(p.date),
             'Supplier': p.supplierName,
             'Deskripsi': p.description,
@@ -164,6 +167,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
         // Auto-width
         worksheet['!cols'] = [
             { wch: 15 }, // ID
+            { wch: 20 }, // Faktur
             { wch: 15 }, // Tanggal
             { wch: 20 }, // Supplier
             { wch: 30 }, // Deskripsi
@@ -186,6 +190,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                 <td>${idx + 1}</td>
                 <td>${formatDate(p.date)}</td>
                 <td>${p.id.substring(0, 8)}</td>
+                <td>${p.invoiceNumber || '-'}</td>
                 <td>${p.supplierName}</td>
                 <td>${p.description}</td>
                 <td style="text-align:right">${formatIDR(p.totalAmount)}</td>
@@ -223,6 +228,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                                 <th>No</th>
                                 <th>Tanggal</th>
                                 <th>ID</th>
+                                <th>Faktur</th>
                                 <th>Supplier</th>
                                 <th>Deskripsi</th>
                                 <th>Total</th>
@@ -260,7 +266,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                 <div className="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                            <TruckIcon className="text-orange-600" />
+                            <TruckIcon className="text-primary" />
                             Riwayat Supplier
                         </h1>
                         <p className="text-slate-500 text-sm mt-1">Lacak riwayat pembelian dan aktivitas supplier</p>
@@ -281,9 +287,9 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                 {/* Summary Cards */}
                 {selectedSupplierId && (
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                            <p className="text-xs text-blue-600 mb-1">Total Pembelian</p>
-                            <p className="text-lg font-bold text-blue-700">{formatIDR(totals.totalPurchases)}</p>
+                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
+                            <p className="text-xs text-primary mb-1">Total Pembelian</p>
+                            <p className="text-lg font-bold text-primary">{formatIDR(totals.totalPurchases)}</p>
                         </div>
                         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                             <p className="text-xs text-green-600 mb-1">Total Dibayar</p>
@@ -353,8 +359,8 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Cari ID pembelian, supplier, deskripsi..."
-                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm text-slate-700"
+                            placeholder="Cari ID, faktur, supplier, deskripsi..."
+                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
@@ -382,6 +388,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                             <tr>
                                 <th className="p-4 font-medium">Tanggal</th>
                                 <th className="p-4 font-medium">ID Pembelian</th>
+                                <th className="p-4 font-medium">Faktur</th>
                                 <th className="p-4 font-medium">Supplier</th>
                                 <th className="p-4 font-medium">Deskripsi</th>
                                 <th className="p-4 font-medium">Total</th>
@@ -395,7 +402,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                         <tbody className="divide-y divide-slate-100">
                             {filteredPurchases.length === 0 && (
                                 <tr>
-                                    <td colSpan={10} className="p-8 text-center text-slate-400">Tidak ada pembelian.</td>
+                                    <td colSpan={11} className="p-8 text-center text-slate-400">Tidak ada pembelian.</td>
                                 </tr>
                             )}
                             {visiblePurchases.map(p => (
@@ -407,6 +414,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                                         </div>
                                     </td>
                                     <td className="p-4 font-mono text-xs text-slate-400">#{p.id.substring(0, 6)}</td>
+                                    <td className="p-4 font-mono text-sm text-slate-700">{p.invoiceNumber || '-'}</td>
                                     <td className="p-4 font-medium text-slate-800">{p.supplierName}</td>
                                     <td className="p-4 text-slate-600">{p.description}</td>
                                     <td className="p-4 font-semibold text-slate-700">{formatIDR(p.totalAmount)}</td>
@@ -438,7 +446,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                             ))}
                             {visiblePurchases.length < filteredPurchases.length && (
                                 <tr>
-                                    <td colSpan={10} className="p-4 text-center text-slate-400">
+                                    <td colSpan={11} className="p-4 text-center text-slate-400">
                                         <div ref={loadMoreRef}>Loading more...</div>
                                     </td>
                                 </tr>
@@ -453,7 +461,9 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                 <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
                     <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
                         <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="font-bold text-slate-800">Detail Pembelian #{detailPurchase.id.substring(0, 8)}</h3>
+                            <h3 className="font-bold text-slate-800">
+                                Detail Pembelian {detailPurchase.invoiceNumber ? `(${detailPurchase.invoiceNumber})` : `#${detailPurchase.id.substring(0, 8)}`}
+                            </h3>
                             <button onClick={() => setDetailPurchase(null)}><X size={20} className="text-slate-400" /></button>
                         </div>
                         <div className="p-6 max-h-[70vh] overflow-y-auto">
@@ -474,9 +484,9 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                                     {(() => {
                                         if (detailPurchase.bankId) {
                                             const bank = banks.find(b => b.id === detailPurchase.bankId);
-                                            if (bank) return <span className="block text-xs text-blue-600">via {bank.bankName} {bank.accountNumber}</span>;
+                                            if (bank) return <span className="block text-xs text-primary">via {bank.bankName} {bank.accountNumber}</span>;
                                         }
-                                        if (detailPurchase.bankName) return <span className="block text-xs text-blue-600">via {detailPurchase.bankName}</span>;
+                                        if (detailPurchase.bankName) return <span className="block text-xs text-primary">via {detailPurchase.bankName}</span>;
                                         return null;
                                     })()}
                                 </div>
@@ -501,7 +511,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                                             <div key={i} className="flex justify-between p-3 border-b last:border-0 text-sm">
                                                 <div>
                                                     <span className="block font-medium text-slate-700">{item.name}</span>
-                                                    <span className="text-xs text-slate-500">{item.qty} x {formatIDR(item.finalPrice)}</span>
+                                                    <span className="text-xs text-slate-500">{item.qty} {item.unit || 'Pcs'} x {formatIDR(item.finalPrice)}</span>
                                                 </div>
                                                 <span className="font-medium text-slate-800">{formatIDR(item.finalPrice * item.qty)}</span>
                                             </div>
@@ -554,7 +564,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                             {detailPurchase.type === PurchaseType.RETURN && (
                                 <div className="mt-6">
                                     <h4 className="font-bold text-sm text-slate-800 mb-2">Info Pembelian Induk</h4>
-                                    <div className="bg-blue-50 rounded-lg p-3 text-sm border border-blue-100">
+                                    <div className="bg-primary/5 rounded-lg p-3 text-sm border border-primary/10">
                                         {(() => {
                                             // 1. Coba cari via originalPurchaseId (Prioritas)
                                             let originalTx = detailPurchase.originalPurchaseId
@@ -572,7 +582,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
 
                                             if (originalTx) {
                                                 return (
-                                                    <div className="flex justify-between items-center cursor-pointer hover:bg-blue-100 p-2 rounded transition-colors" onClick={() => setDetailPurchase(originalTx)}>
+                                                    <div className="flex justify-between items-center cursor-pointer hover:bg-primary/10 p-2 rounded transition-colors" onClick={() => setDetailPurchase(originalTx)}>
                                                         <div>
                                                             <div className="flex gap-1 text-xs text-slate-500">
                                                                 <span>{new Date(originalTx.date).toLocaleDateString('id-ID')}</span>
@@ -581,7 +591,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                                                             <span className="text-xs text-slate-600">Total: {formatIDR(originalTx.totalAmount)}</span>
                                                         </div>
                                                         <div className="text-right">
-                                                            <span className="text-xs bg-white border border-blue-200 px-2 py-1 rounded text-blue-600 flex items-center gap-1">
+                                                            <span className="text-xs bg-white border border-primary/20 px-2 py-1 rounded text-primary flex items-center gap-1">
                                                                 <Eye size={10} /> Lihat
                                                             </span>
                                                         </div>
@@ -608,9 +618,9 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                                             {(() => {
                                                 if (ph.bankId) {
                                                     const bank = banks.find(b => b.id === ph.bankId);
-                                                    if (bank) return <span className="text-[10px] text-blue-600 italic">via {bank.bankName} {bank.accountNumber}</span>;
+                                                    if (bank) return <span className="text-[10px] text-primary italic">via {bank.bankName} {bank.accountNumber}</span>;
                                                 }
-                                                if (ph.bankName) return <span className="text-[10px] text-blue-600 italic">via {ph.bankName}</span>;
+                                                if (ph.bankName) return <span className="text-[10px] text-primary italic">via {ph.bankName}</span>;
                                                 return null;
                                             })()}
                                         </div>
@@ -637,7 +647,7 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                             <button onClick={() => printPurchaseDetail(detailPurchase)} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-slate-50">
                                 <Printer size={16} /> Cetak Detail
                             </button>
-                            <button onClick={() => setDetailPurchase(null)} className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold">Tutup</button>
+                            <button onClick={() => setDetailPurchase(null)} className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold">Tutup</button>
                         </div>
                     </div>
                 </div>,

@@ -37,9 +37,11 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ currentUser })
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [cashflows, banks] = await Promise.all([
+            const [cashflows, banks, transactions, purchases] = await Promise.all([
                 ApiService.getCashFlow(),
-                ApiService.getBanks()
+                ApiService.getBanks(),
+                ApiService.getTransactions(),
+                ApiService.getPurchases()
             ]);
 
             // Create a map of bankId -> accountNumber for quick lookup
@@ -55,12 +57,34 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ currentUser })
                         type = 'PURCHASE';
                     }
 
+                    let description = c.description;
+                    let invoiceRef = '';
+
+                    // Logic to find invoice number for specific categories
+                    if ((c.category === 'Pelunasan Piutang' || c.category === 'Pelunasan Utang Supplier') && c.referenceId) {
+                        if (type === 'TRANSACTION') {
+                            const tx = transactions.find(t => t.id === c.referenceId);
+                            if (tx && tx.invoiceNumber) {
+                                invoiceRef = tx.invoiceNumber;
+                            }
+                        } else if (type === 'PURCHASE') {
+                            const pur = purchases.find(p => p.id === c.referenceId);
+                            if (pur && pur.invoiceNumber) {
+                                invoiceRef = pur.invoiceNumber;
+                            }
+                        }
+                    }
+
+                    if (invoiceRef) {
+                        description += ` (Faktur: ${invoiceRef})`;
+                    }
+
                     return {
                         id: c.id,
                         date: c.date,
                         type: type,
                         subType: c.category,
-                        description: c.description,
+                        description: description,
                         amount: c.amount,
                         flow: c.type === 'MASUK' ? 'IN' : 'OUT',
                         bankName: c.bankName || 'Unknown Bank',
@@ -206,7 +230,7 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ currentUser })
                 <div className="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                            <ArrowRightLeft className="text-blue-600" />
+                            <ArrowRightLeft className="text-primary" />
                             Riwayat Transfer
                         </h1>
                         <p className="text-slate-500 text-sm mt-1">Lacak semua transaksi via Transfer Bank & E-Wallet</p>
@@ -269,8 +293,8 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ currentUser })
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Cari ID, deskripsi, bank, nomor rekening, atau tipe..."
-                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm text-slate-700"
+                            placeholder="Cari ID, faktur, deskripsi, bank, nomor rekening, atau tipe..."
+                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />

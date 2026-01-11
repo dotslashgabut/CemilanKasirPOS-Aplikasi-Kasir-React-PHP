@@ -42,6 +42,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
 
     const filteredSales = salesReturns.filter(item => {
         const matchesSearch = item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.invoiceNumber && item.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
             item.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (item.returnNote || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (item.items || []).some((i: any) => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -55,6 +56,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
 
     const filteredPurchases = purchaseReturns.filter(item => {
         const matchesSearch = item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.invoiceNumber && item.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())) ||
             item.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (item.returnNote || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (item.items || []).some((i: any) => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -73,11 +75,12 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
     const handleExport = () => {
         const isSales = activeTab === 'sales';
         const items = isSales ? filteredSales : filteredPurchases;
-        const headers = ['Tanggal', 'ID', isSales ? 'Pelanggan' : 'Supplier', 'Barang', 'Catatan', 'Nilai Retur'];
+        const headers = ['Tanggal', 'ID', 'No Faktur', isSales ? 'Pelanggan' : 'Supplier', 'Barang', 'Catatan', 'Nilai Retur'];
 
         const rows = items.map((item: any) => [
             formatDate(item.date),
             item.id,
+            item.invoiceNumber || '-',
             isSales ? item.customerName : item.supplierName,
             item.items.map((i: any) => `${i.name} (${i.qty})`).join('; '),
             item.returnNote || item.paymentNote || '-',
@@ -94,6 +97,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
         const data = items.map((item: any) => ({
             'Tanggal': formatDate(item.date),
             'ID': item.id,
+            'No Faktur': item.invoiceNumber || '-',
             [isSales ? 'Pelanggan' : 'Supplier']: isSales ? item.customerName : item.supplierName,
             'Barang': item.items.map((i: any) => `${i.name} (${i.qty})`).join('; '),
             'Catatan': item.returnNote || item.paymentNote || '-',
@@ -108,6 +112,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
         worksheet['!cols'] = [
             { wch: 20 }, // Tanggal
             { wch: 15 }, // ID
+            { wch: 20 }, // Faktur
             { wch: 20 }, // Name
             { wch: 40 }, // Barang
             { wch: 30 }, // Catatan
@@ -129,6 +134,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                 <td>${idx + 1}</td>
                 <td>${formatDate(item.date)}</td>
                 <td>${item.id.substring(0, 8)}</td>
+                <td>${item.invoiceNumber || '-'}</td>
                 <td>${isSales ? item.customerName : item.supplierName}</td>
                 <td>
                     <ul style="margin: 0; padding-left: 15px;">
@@ -162,6 +168,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                                 <th>No</th>
                                 <th>Tanggal</th>
                                 <th>ID</th>
+                                <th>Faktur</th>
                                 <th>${isSales ? 'Pelanggan' : 'Supplier'}</th>
                                 <th>Barang</th>
                                 <th>Catatan</th>
@@ -212,7 +219,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                     <button
                         onClick={() => setActiveTab('sales')}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'sales'
-                            ? 'border-blue-600 text-blue-600'
+                            ? 'border-primary text-primary'
                             : 'border-transparent text-slate-500 hover:text-slate-700'
                             }`}
                     >
@@ -222,7 +229,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                     <button
                         onClick={() => setActiveTab('purchases')}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'purchases'
-                            ? 'border-blue-600 text-blue-600'
+                            ? 'border-primary text-primary'
                             : 'border-transparent text-slate-500 hover:text-slate-700'
                             }`}
                     >
@@ -276,8 +283,8 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
-                            placeholder={activeTab === 'sales' ? "Cari ID, Pelanggan, Barang, Catatan..." : "Cari ID, Supplier, Barang, Catatan..."}
-                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm text-slate-700"
+                            placeholder={activeTab === 'sales' ? "Cari ID, Faktur, Pelanggan, Barang, Catatan..." : "Cari ID, Faktur, Supplier, Barang, Catatan..."}
+                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -304,6 +311,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                         <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
                             <tr>
                                 <th className="p-4 font-medium">Tanggal & ID</th>
+                                <th className="p-4 font-medium">Faktur</th>
                                 <th className="p-4 font-medium">
                                     {activeTab === 'sales' ? 'Pelanggan' : 'Supplier'}
                                 </th>
@@ -315,7 +323,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                         <tbody className="divide-y divide-slate-100">
                             {(activeTab === 'sales' ? filteredSales : filteredPurchases).length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-8 text-center text-slate-400">
+                                    <td colSpan={6} className="p-8 text-center text-slate-400">
                                         Tidak ada data retur.
                                     </td>
                                 </tr>
@@ -326,11 +334,14 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                                             <div className="text-sm font-medium text-slate-800">{formatDate(item.date)}</div>
                                             <div className="text-xs text-slate-500">#{item.id.substring(0, 8)}</div>
                                             {item.originalTransactionId && (
-                                                <div className="text-xs text-blue-500 mt-1">Ref: #{item.originalTransactionId.substring(0, 8)}</div>
+                                                <div className="text-xs text-primary mt-1">Ref: #{item.originalTransactionId.substring(0, 8)}</div>
                                             )}
                                             {item.originalPurchaseId && (
-                                                <div className="text-xs text-blue-500 mt-1">Ref: #{item.originalPurchaseId.substring(0, 8)}</div>
+                                                <div className="text-xs text-primary mt-1">Ref: #{item.originalPurchaseId.substring(0, 8)}</div>
                                             )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-mono text-slate-700">{item.invoiceNumber || '-'}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                                             {activeTab === 'sales' ? item.customerName : item.supplierName}

@@ -1,6 +1,6 @@
 # Panduan Hosting ke cPanel (Frontend React + Backend PHP)
 
-Panduan ini menjelaskan cara meng-hosting aplikasi Cemilan KasirPOS menggunakan **Backend PHP Native** (Standar) ke shared hosting cPanel.
+Panduan ini menjelaskan cara meng-hosting aplikasi Cemilan KasirPOS menggunakan **Backend PHP Native** (Rekomendasi Utama) ke shared hosting cPanel.
 
 
 
@@ -18,7 +18,7 @@ Panduan ini menjelaskan cara meng-hosting aplikasi Cemilan KasirPOS menggunakan 
 3.  Buat database baru (contoh: `u12345_cemilan`).
 4.  Buat user database baru (contoh: `u12345_admin`) dan passwordnya.
 5.  **PENTING**: Berikan hak akses **ALL PRIVILEGES** user tersebut ke database yang baru dibuat.
-6.  Buka **phpMyAdmin**, pilih database tadi, lalu Import file `cemilankasirpos_php.sql` (atau file sql terbaru) yang ada di folder proyek ini.
+6.  Buka **phpMyAdmin**, pilih database tadi, lalu Import file `cemilankasirpos_php_v02.sql` (atau file sql terbaru) yang ada di folder proyek ini.
 
 ## ⚙️ Langkah 2: Upload Backend (PHP)
 
@@ -26,18 +26,15 @@ Panduan ini menjelaskan cara meng-hosting aplikasi Cemilan KasirPOS menggunakan 
 2.  Masuk ke folder `public_html`.
 3.  Buat folder baru bernama `api`.
 4.  Upload semua file dari folder `php_server` di komputer Anda ke dalam folder `public_html/api` tersebut.
-    *   Pastikan file `index.php`, `config.php`, `auth.php`, `.env.example`, dll terupload.
+    *   Pastikan file `index.php`, `config.php`, `auth.php`, dll terupload.
 5.  **Konfigurasi Database**:
-    *   Buat file baru bernama `.env` di dalam folder `api` tersebut (atau rename `.env.example` menjadi `.env`).
-    *   Isi dengan konfigurasi database Anda:
-    ```env
-    DB_HOST=localhost
-    DB_NAME=u12345_cemilan
-    DB_USER=u12345_admin
-    DB_PASS=password_anda
-    
-    # Security
-    JWT_SECRET=string_random_yang_sangat_panjang
+    *   Edit file `config.php` di dalam folder `api` tersebut.
+    *   Sesuaikan bagian berikut dengan database yang Anda buat di Langkah 1:
+    ```php
+    define('DB_HOST', 'localhost');
+    define('DB_NAME', 'u12345_cemilan'); // Sesuaikan nama DB
+    define('DB_USER', 'u12345_admin');   // Sesuaikan user DB
+    define('DB_PASS', 'password_anda');  // Sesuaikan password
     ```
     *   Simpan perubahan.
 

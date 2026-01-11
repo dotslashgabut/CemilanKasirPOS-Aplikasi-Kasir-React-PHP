@@ -82,7 +82,7 @@ Aplikasi mendukung 3 level pengguna dengan akses berbeda:
 
 ### 4. Default User
 
-Default user untuk `cemilankasirpos_php.sql`
+Default user untuk `cemilankasirpos_php_v02.sql`
 
 ```
 SUPERADMIN:
@@ -287,11 +287,19 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Profit Estimation**: Estimasi laba per transaksi/produk
 - **Hide HPP for Cashier**: HPP hanya visible untuk OWNER dan SUPERADMIN
 
+### 5. Stock Opname (Real Stock Check)
+**Fitur untuk penyesuaian stok fisik dan sistem**
+
+*   **Real-time Adjustment**: Sesuaikan stok saat melakukan audit fisik.
+*   **Tracking Difference**: Mencatat selisih stok (kurang/lebih).
+*   **Reasoning**: Wajib menyertakan alasan penyesuaian (Misal: Barang rusak, hilang, atau salah hitung).
+*   **History Log**: Riwayat penyesuaian stok tercatat di tabel `stock_adjustments` dengan info user yang melakukan.
+
 ---
 
 ## Fitur Keuangan & Akuntansi
 
-### 1. Riwayat Transaksi
+### 2. Riwayat Transaksi
 
 **Pencatatan lengkap semua transaksi penjualan**
 
@@ -326,6 +334,15 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Export**: Ekspor ke CSV/Excel (Kolom 'Kembalian' dan 'Piutang' dipisah untuk kejelasan)
 - **Print**: Cetak laporan transaksi
 
+#### Smart Delete / Safe Delete (New)
+
+Fitur penghapusan transaksi yang cerdas dan aman untuk menjaga integritas data:
+
+*   **Cascade Delete**: Menghapus transaksi penjualan otomatis menghapus semua transaksi retur terkait.
+*   **Stock Reversion**: Stok produk otomatis dikembalikan (ditambah kembali) saat transaksi penjualan dihapus.
+*   **Cash Flow Cleanup**: Data arus kas terkait otomatis dihapus.
+*   **Debt Restoration**: Jika menghapus transaksi retur potong utang, saldo hutang pada transaksi asli otomatis dikembalikan.
+
 #### Pembayaran Cicilan
 
 - **Add Payment**: Tambah pembayaran untuk transaksi tempo
@@ -333,7 +350,8 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Auto Update Status**: Status otomatis update saat lunas
 - **Remaining Balance**: Sisa hutang yang harus dibayar
 
-### 2. Riwayat Pembelian (Purchases)
+
+### 3. Riwayat Pembelian (Purchases)
 
 **Pencatatan pembelian stok dari supplier**
 
@@ -366,6 +384,15 @@ Setiap produk mendukung 4 tingkatan harga:
 - **Export & Print**: Ekspor dan cetak laporan
 - **User Tracking**: Catat siapa yang input pembelian
 - **Filter by User**: Filter berdasarkan user (untuk CASHIER)
+
+#### Smart Delete / Safe Delete (New)
+
+Fitur penghapusan pembelian yang aman:
+
+*   **Cascade Delete**: Menghapus pembelian otomatis menghapus semua retur terkait.
+*   **Stock Reversion**: Stok produk otomatis dikurangi kembali saat pembelian dihapus.
+*   **Cash Flow Cleanup**: Data arus kas keluar (pembelian) atau masuk (retur) otomatis dihapus.
+*   **Debt Restoration**: Jika menghapus retur yang memotong hutang, saldo hutang pembelian asli otomatis dikembalikan.
 
 ### 3. Piutang Pelanggan (Accounts Receivable)
 

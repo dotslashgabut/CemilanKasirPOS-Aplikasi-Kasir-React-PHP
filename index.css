@@ -12,6 +12,12 @@ body {
 }
 
 /* Global Scrollbar */
+:root {
+    --primary-h: 348;
+    --primary-s: 90%;
+    --primary-l: 56%;
+}
+
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;

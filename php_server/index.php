@@ -13,47 +13,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// CSRF Protection: Enforce X-Requested-With header
-if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
-    
-    // Helper to get header case-insensitively
-    function getHeader($name) {
-        $name = strtolower($name);
-        $headers = [];
-        if (function_exists('apache_request_headers')) {
-            $headers = apache_request_headers();
-        }
-        
-        foreach ($headers as $key => $value) {
-            if (strtolower($key) === $name) {
-                return $value;
-            }
-        }
-        
-        // Check $_SERVER
-        $serverKey = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
-        if (isset($_SERVER[$serverKey])) {
-            return $_SERVER[$serverKey];
-        }
-        
-        return null;
-    }
-
-    $xRequestedWith = getHeader('X-Requested-With');
-
-    if (!$xRequestedWith || strtolower($xRequestedWith) !== 'xmlhttprequest') {
-        http_response_code(403);
-        echo json_encode([
-            'error' => 'CSRF Failure: Missing X-Requested-With header',
-            'debug' => [
-                'headers_received' => function_exists('apache_request_headers') ? apache_request_headers() : 'N/A',
-                'server_keys' => array_keys($_SERVER)
-            ]
-        ]);
-        exit();
-    }
-}
-
 // Helper function to get JSON input
 function getJsonInput() {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -106,10 +65,25 @@ if ($resource === 'login') {
     exit();
 }
 
-// Handle Logout Route
+// Handle Logout Route (F1)
 if ($resource === 'logout') {
-    require 'logout.php';
-    exit();
+    // Clear Cookie
+    setcookie('pos_token', '', [
+        'expires' => time() - 3600,
+        'path' => '/',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+    sendJson(['message' => 'Logged out successfully']);
+}
+
+// Handle Auth Check (Me) - Securely get user from Cookie
+if ($resource === 'auth' && $id === 'me') {
+    // This validates the HttpOnly cookie or Bearer token
+    $currentUser = requireAuth();
+    // Return user info (already sanitized of password by verifyJWT usually, but unsafe just in case)
+    unset($currentUser['password']); 
+    sendJson($currentUser);
 }
 
 // Map resources to table names
@@ -123,7 +97,8 @@ $tableMap = [
     'cashflow' => 'cashflows',
     'users' => 'users',
     'banks' => 'bankaccounts',
-    'store_settings' => 'storesettings'
+    'store_settings' => 'storesettings',
+    'stock_adjustments' => 'stock_adjustments'
 ];
 
 if (!$resource || !array_key_exists($resource, $tableMap)) {
@@ -137,13 +112,14 @@ $schemas = [
     'storesettings' => ['id', 'name', 'jargon', 'address', 'phone', 'bankAccount', 'footerMessage', 'notes', 'showAddress', 'showPhone', 'showJargon', 'showBank', 'printerType', 'createdAt', 'updatedAt'],
     'bankaccounts' => ['id', 'bankName', 'accountNumber', 'holderName', 'createdAt', 'updatedAt'],
     'users' => ['id', 'name', 'username', 'password', 'role', 'image', 'createdAt', 'updatedAt'],
-    'products' => ['id', 'name', 'sku', 'categoryId', 'categoryName', 'stock', 'hpp', 'priceRetail', 'priceGeneral', 'priceWholesale', 'pricePromo', 'image', 'createdAt', 'updatedAt'],
+    'products' => ['id', 'name', 'sku', 'categoryId', 'categoryName', 'stock', 'hpp', 'priceRetail', 'priceGeneral', 'priceWholesale', 'pricePromo', 'image', 'unit', 'createdAt', 'updatedAt'],
     'categories' => ['id', 'name', 'createdAt', 'updatedAt'],
-    'customers' => ['id', 'name', 'phone', 'address', 'image', 'defaultPriceType', 'createdAt', 'updatedAt'],
-    'suppliers' => ['id', 'name', 'phone', 'address', 'image', 'createdAt', 'updatedAt'],
-    'transactions' => ['id', 'type', 'originalTransactionId', 'date', 'items', 'totalAmount', 'amountPaid', 'change', 'paymentStatus', 'paymentMethod', 'paymentNote', 'bankId', 'bankName', 'customerId', 'customerName', 'cashierId', 'cashierName', 'paymentHistory', 'isReturned', 'createdAt', 'updatedAt'],
+    'customers' => ['id', 'name', 'phone', 'address', 'email', 'image', 'defaultPriceType', 'createdAt', 'updatedAt'],
+    'suppliers' => ['id', 'name', 'phone', 'address', 'email', 'image', 'createdAt', 'updatedAt'],
+    'transactions' => ['id', 'type', 'originalTransactionId', 'date', 'items', 'totalAmount', 'amountPaid', 'change', 'paymentStatus', 'paymentMethod', 'paymentNote', 'bankId', 'bankName', 'customerId', 'customerName', 'cashierId', 'cashierName', 'paymentHistory', 'isReturned', 'createdAt', 'updatedAt', 'invoiceNumber', 'discount', 'discountType', 'discountAmount'],
     'purchases' => ['id', 'type', 'originalPurchaseId', 'date', 'supplierId', 'supplierName', 'description', 'items', 'totalAmount', 'amountPaid', 'paymentStatus', 'paymentMethod', 'bankId', 'bankName', 'paymentHistory', 'isReturned', 'userId', 'userName', 'createdAt', 'updatedAt'],
-    'cashflows' => ['id', 'date', 'type', 'amount', 'category', 'description', 'paymentMethod', 'bankId', 'bankName', 'userId', 'userName', 'referenceId', 'createdAt', 'updatedAt']
+    'cashflows' => ['id', 'date', 'type', 'amount', 'category', 'description', 'paymentMethod', 'bankId', 'bankName', 'userId', 'userName', 'referenceId', 'createdAt', 'updatedAt'],
+    'stock_adjustments' => ['id', 'date', 'productId', 'productName', 'type', 'reason', 'qty', 'previousStock', 'currentStock', 'note', 'userId', 'userName', 'createdAt', 'updatedAt']
 ];
 
 // Helper to filter data against schema
@@ -165,8 +141,8 @@ if ($id === 'batch' && $method === 'POST') {
     // Require authentication for batch operations
     $currentUser = requireAuth();
     
-    // Cashiers cannot perform batch operations on restricted resources
-    if ($currentUser['role'] === ROLE_CASHIER) {
+    // Cashiers and Warehouse cannot perform batch operations on restricted resources
+    if ($currentUser['role'] === ROLE_CASHIER || $currentUser['role'] === ROLE_WAREHOUSE) {
         $restrictedResources = ['products', 'categories', 'customers', 'suppliers', 'users', 'store_settings'];
         if (in_array($resource, $restrictedResources)) {
             sendJson(['error' => 'Access denied. Cashiers cannot perform batch operations on this resource.'], 403);
@@ -182,6 +158,11 @@ if ($id === 'batch' && $method === 'POST') {
         $pdo->beginTransaction();
         foreach ($items as $item) {
             if (!is_array($item)) continue;
+
+            // Auto-generate ID if missing (F3)
+            if (empty($item['id'])) {
+                $item['id'] = generateUuid();
+            }
 
             // Prepare columns and values
             // Handle JSON fields and Sanitize
@@ -268,7 +249,7 @@ switch ($method) {
             }
 
             $stmt = null;
-            if ($currentUser['role'] === ROLE_CASHIER) {
+            if ($currentUser['role'] === ROLE_CASHIER || $currentUser['role'] === ROLE_WAREHOUSE) {
                  if ($resource === 'transactions') {
                      $stmt = $pdo->prepare("SELECT * FROM $tableName WHERE id = ? AND cashierId = ?");
                      $stmt->execute([$id, $currentUser['id']]);
@@ -296,7 +277,7 @@ switch ($method) {
 
                 // Decode JSON fields if any
                 foreach ($item as $key => $value) {
-                    if (is_string($value) && ($value[0] === '[' || $value[0] === '{')) {
+                    if (is_string($value) && !empty($value) && ($value[0] === '[' || $value[0] === '{')) {
                         $decoded = json_decode($value, true);
                         if (json_last_error() === JSON_ERROR_NONE) {
                             $item[$key] = $decoded;
@@ -318,8 +299,8 @@ switch ($method) {
             $sql = "SELECT * FROM $tableName";
             $params = [];
 
-            // FILTER FOR CASHIER: Only show their own data for financial tables
-            if ($currentUser['role'] === ROLE_CASHIER) {
+            // FILTER FOR CASHIER/WAREHOUSE: Only show their own data for financial tables
+            if ($currentUser['role'] === ROLE_CASHIER || $currentUser['role'] === ROLE_WAREHOUSE) {
                 if ($resource === 'transactions') {
                     $sql .= " WHERE cashierId = ?";
                     $params[] = $currentUser['id'];
@@ -365,8 +346,8 @@ switch ($method) {
             requireRole([ROLE_SUPERADMIN]);
         }
         
-        // Cashiers cannot create/modify master data or financial data
-        if ($currentUser['role'] === ROLE_CASHIER) {
+        // Cashiers and Warehouse cannot create/modify master data or financial data
+        if ($currentUser['role'] === ROLE_CASHIER || $currentUser['role'] === ROLE_WAREHOUSE) {
             $restrictedResources = ['products', 'categories', 'customers', 'suppliers', 'users', 'store_settings'];
             if (in_array($resource, $restrictedResources)) {
                 sendJson(['error' => 'Access denied. Cashiers can only process transactions.'], 403);
@@ -384,6 +365,14 @@ switch ($method) {
             sendJson(['error' => 'Validation failed', 'details' => $validationErrors], 400);
         }
 
+        // Auto-generate ID if missing for Generic POST (F3)
+        // Note: Specific handlers (transactions, purchases) maintain their own ID logic, 
+        // but this covers products, customers, categories, etc.
+        if (empty($data['id'])) {
+           // We can use the implementation from logic.php
+           $data['id'] = generateUuid();
+        }
+
         // --- Custom Logic for Transactions and Purchases ---
         if ($resource === 'transactions') {
             handleTransactionCreate($pdo, $data, $currentUser);
@@ -392,6 +381,10 @@ switch ($method) {
         if ($resource === 'purchases') {
             handlePurchaseCreate($pdo, $data, $currentUser);
             exit(); // handlePurchaseCreate sends response and exits
+        }
+        if ($resource === 'stock_adjustments') {
+            handleStockAdjustmentCreate($pdo, $data, $currentUser);
+            exit();
         }
         // ---------------------------------------------------
 
@@ -468,8 +461,8 @@ switch ($method) {
             requireRole([ROLE_SUPERADMIN]);
         }
         
-        // Cashiers cannot modify master data or settings
-        if ($currentUser['role'] === ROLE_CASHIER) {
+        // Cashiers and Warehouse cannot modify master data or settings
+        if ($currentUser['role'] === ROLE_CASHIER || $currentUser['role'] === ROLE_WAREHOUSE) {
             $restrictedResources = ['products', 'categories', 'customers', 'suppliers', 'users', 'store_settings'];
             if (in_array($resource, $restrictedResources)) {
                 sendJson(['error' => 'Access denied. Cashiers can only process transactions.'], 403);
@@ -567,8 +560,8 @@ switch ($method) {
             requireRole([ROLE_SUPERADMIN, ROLE_OWNER]);
         }
         
-        // Cashiers cannot delete master data
-        if ($currentUser['role'] === ROLE_CASHIER) {
+        // Cashiers and Warehouse cannot delete master data
+        if ($currentUser['role'] === ROLE_CASHIER || $currentUser['role'] === ROLE_WAREHOUSE) {
             $restrictedResources = ['products', 'categories', 'customers', 'suppliers', 'users', 'store_settings', 'banks'];
             if (in_array($resource, $restrictedResources)) {
                 sendJson(['error' => 'Access denied. Cashiers cannot delete data.'], 403);

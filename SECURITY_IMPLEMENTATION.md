@@ -8,33 +8,37 @@ Dokumen ini mencakup panduan konfigurasi untuk dua skenario deployment yang umum
 
 ---
 
-## 🔐 1. Implementasi JWT (JSON Web Token) dengan HttpOnly Cookie
+## 🔐 1. Implementasi JWT & Autentikasi
+Backend menggunakan kombinasi **JWT (JSON Web Token)** dan **HttpOnly Cookies** untuk keamanan sesi yang optimal.
 
-JWT digunakan untuk mengamankan komunikasi antara Frontend (React) dan Backend (PHP). Sistem ini bersifat *stateless*.
+### Detail Teknis (`auth.php`):
+*   **Token Storage**: Mendukung dual-mode:
+    1.  **Bearer Token**: Disimpan di LocalStorage (Header `Authorization: Bearer ...`).
+    2.  **HttpOnly Cookie**: Token disimpan di cookie bernama `pos_token` yang tidak bisa diakses oleh JavaScript (Mitigasi XSS).
+*   **Algoritma**: HS256 (`hash_hmac`).
+*   **Payload**: Menyimpan User ID, Role, dan Expiration (default 24 jam).
 
-**Pembaruan Keamanan (Desember 2025):**
-Metode penyimpanan token telah ditingkatkan dari **LocalStorage** menjadi **HttpOnly Cookies**. Ini memberikan perlindungan yang jauh lebih baik terhadap serangan XSS (Cross-Site Scripting) karena JavaScript di browser tidak dapat membaca token tersebut.
+### Rate Limiting (`rate_limit.php`):
+Untuk mencegah serangan *Brute Force* pada halaman login, sistem menggunakan mekanisme **File Locking**:
+*   **Tracking**: Mencatat IP address dan jumlah percobaan gagal di file `login_attempts.json`.
+*   **Locking**: Menggunakan `flock($fp, LOCK_EX)` untuk mencegah *Race Condition* saat penulisan file dari request yang bersamaan.
+*   **Limit**: Maksimal 5 percobaan gagal.
+*   **Penalty**: Lockout selama 15 menit jika terlampaui.
 
-### Alur Kerja Autentikasi
+## 🛡️ 2. Validasi & Sanitasi Input (`validator.php` & `index.php`)
+Setiap data yang masuk ke server melewati lapisan validasi ketat:
 
-1.  **Login**:
-    *   User mengirim `username` dan `password` ke endpoint `/login`.
-    *   Backend memverifikasi kredensial.
-    *   Jika valid, Backend membuat **Token JWT**.
-    *   Backend mengirim token ini sebagai **HttpOnly Cookie** (bukan di body response JSON).
+1.  **Schema Whitelisting**:
+    *   Hanya kolom yang didefinisikan dalam `$schemas` (di `index.php`) yang diterima. Kolom tak dikenal otomatis dibuang.
+2.  **Type Validation**:
+    *   Menggunakan `filterDataBySchema` untuk memastikan data sesuai struktur tabel.
+3.  **XSS Protection**:
+    *   String input dibersihkan menggunakan `strip_tags()` untuk menghapus potensi script berbahaya.
+4.  **SQL Injection Protection**:
+    *   **Murni menggunakan PDO Prepared Statements**.
+    *   Tidak ada query konkatenasi string untuk nilai parameter.
+    *   Nama kolom divalidasi dengan regex `/^[a-zA-Z0-9_]+$/` untuk mencegah injeksi via nama kolom dynamic.
 
-2.  **Penyimpanan Token (Browser)**:
-    *   Browser secara otomatis menyimpan cookie tersebut.
-    *   Frontend React **TIDAK** perlu menyimpan token secara manual.
-
-3.  **Mengirim Request (Authenticated)**:
-    *   Frontend mengirim request dengan opsi `credentials: 'include'`.
-    *   Browser secara otomatis menyisipkan cookie `pos_token` ke dalam request ke domain yang sama (atau cross-origin yang diizinkan).
-
-4.  **Validasi Token (Backend)**:
-    *   Backend (`auth.php`) membaca `$_COOKIE['pos_token']`.
-    *   Jika cookie tidak ada, backend fall back mengecek header `Authorization` (untuk kompatibilitas).
-    *   Token didecode dan divalidasi. Valid/Expired status menentukan response (200 OK atau 401 Unauthorized).
 
 ### Konfigurasi JWT di Backend
 
@@ -43,7 +47,7 @@ File terkait: `php_server/auth.php`
 **PENTING:** Anda **WAJIB** mengganti `JWT_SECRET` di production agar token tidak bisa dipalsukan.
 
 **Cara Mengganti Secret:**
-1.  Buka file `.env` di folder backend.
+1.  Buka file `.env` di folder backend (atau set environment variable server).
 2.  Tambahkan/Edit baris:
     ```env
     JWT_SECRET=GantiStringIniDenganKarakterAcakYangSangatPanjangDanRumit!@#123
@@ -55,7 +59,7 @@ File terkait: `php_server/auth.php`
 
 CORS adalah mekanisme keamanan browser yang membatasi bagaimana halaman web di satu domain bisa meminta resource dari domain lain.
 
-File konfigurasi: `php_server/config.php` (membaca dari `.env`)
+File konfigurasi: `php_server/config.php`
 
 ### Kode Implementasi Saat Ini
 
@@ -99,11 +103,12 @@ Pada skenario ini, Frontend dan Backend berada di domain yang sama, hanya beda f
 
 **Konfigurasi yang Disarankan:**
 
-    1.  **Backend (`php_server/.env`)**:
-        Anda bisa membatasi origin secara spesifik.
-        ```env
-        ALLOWED_ORIGINS=https://tokocemilan.com
-        ```
+1.  **Backend (`php_server/config.php`)**:
+    Anda bisa membatasi origin secara spesifik atau membiarkannya dinamis karena masih satu domain.
+    ```php
+    // Lebih aman: Spesifik
+    header("Access-Control-Allow-Origin: https://tokocemilan.com");
+    ```
 
 2.  **Frontend (`.env.production`)**:
     Set URL API relatif atau absolut.
@@ -131,14 +136,30 @@ Skenario ini memisahkan Frontend dan Backend di domain atau subdomain berbeda. I
 
 **Konfigurasi yang Disarankan:**
 
-1.  **Backend (`php_server/.env`)**:
-    **Sangat Disarankan** untuk membatasi origin hanya ke domain Frontend Anda demi keamanan.
+1.  **Backend (`php_server/config.php`)**:
+    **Sangat Disarankan** untuk membatasi origin hanya ke domain Frontend Anda demi keamanan. Jangan gunakan `*`.
 
-    ```env
-    # php_server/.env
+    ```php
+    // php_server/config.php
     
-    # Daftar domain yang diizinkan (pisahkan dengan koma)
-    ALLOWED_ORIGINS=https://app.tokocemilan.com,https://tokocemilan.vercel.app
+    // Daftar domain yang diizinkan
+    $allowed_origins = [
+        'https://app.tokocemilan.com',
+        'https://tokocemilan.vercel.app'
+    ];
+
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+    if (in_array($origin, $allowed_origins)) {
+        header("Access-Control-Allow-Origin: $origin");
+    } else {
+        // Opsional: Tolak request atau biarkan tanpa header CORS (browser akan blokir)
+        // header("HTTP/1.1 403 Forbidden");
+        // exit();
+    }
+    
+    header("Access-Control-Allow-Credentials: true");
+    // ... header lainnya tetap sama
     ```
 
 2.  **Frontend (`.env.production`)**:
@@ -147,10 +168,8 @@ Skenario ini memisahkan Frontend dan Backend di domain atau subdomain berbeda. I
     VITE_API_URL=https://api.tokocemilan.com
     ```
 
-3.  **Cookies (Wajib)**:
-    Karena menggunakan HttpOnly Cookies, Anda **WAJIB** set:
-    *   `Access-Control-Allow-Credentials: true` (Sudah default di config.php)
-    *   `Access-Control-Allow-Origin` **TIDAK BOLEH** `*`. Harus spesifik domain frontend (Set di `.env`).
+3.  **Cookies (Opsional)**:
+    Jika Anda berencana menggunakan Cookies di masa depan (bukan LocalStorage), Anda wajib set `Access-Control-Allow-Credentials: true` dan `Access-Control-Allow-Origin` tidak boleh `*`.
 
 ---
 
@@ -158,7 +177,7 @@ Skenario ini memisahkan Frontend dan Backend di domain atau subdomain berbeda. I
 
 ### 1. Error "CORS Policy: No 'Access-Control-Allow-Origin' header..."
 *   **Penyebab**: Backend tidak mengirim header CORS, atau Origin frontend tidak ada di daftar yang diizinkan backend.
-*   **Solusi**: Cek `php_server/.env`. Pastikan domain frontend Anda tertulis persis di `ALLOWED_ORIGINS`.
+*   **Solusi**: Cek `php_server/config.php`. Pastikan domain frontend Anda tertulis persis (termasuk `https://` dan tanpa slash di akhir).
 
 ### 2. Error "401 Unauthorized" padahal sudah login
 *   **Penyebab**: Token JWT tidak terkirim di header, atau Token expired, atau JWT Secret di backend berubah (misal setelah deploy ulang tanpa .env yang persisten).
@@ -205,32 +224,3 @@ if (isset($_SERVER['REQUEST_METHOD'])) {
 **PENTING:**
 *   **Pastikan SSL Aktif**: Jangan aktifkan HSTS jika server Anda belum memiliki sertifikat SSL (HTTPS) yang valid. Jika Anda mengaktifkannya tanpa SSL, situs Anda **tidak akan bisa diakses** sama sekali.
 *   **Max-Age**: Nilai `31536000` detik setara dengan 1 tahun. Ini memberitahu browser untuk mengingat aturan ini selama satu tahun.
-
----
-
-## 🛡️ 5. Proteksi Data Integritas (Anti-Spoofing)
-
-### Vulnerability Sebelumnya
-Sebelumnya, identitas kasir (`cashierId`) dikirim oleh frontend melalui body request JSON. Hal ini memungkinkan pengguna yang nakal untuk memodifikasi LocalStorage (`pos_current_user`) atau memanipulasi request JSON untuk melakukan transaksi atas nama pengguna lain.
-
-### Solusi & Implementasi
-Perbaikan keamanan telah diterapkan di sisi server (`php_server/logic.php`) dengan prinsip **"Trust Token, Verify Nothing"** untuk identitas pengguna.
-
-1.  **Strict Identity Enforcement**:
-    Saat memproses transaksi atau pembelian, Backend **mengabaikan** data `cashierId`, `cashierName`, `userId`, atau `userName` yang dikirim dalam body request jika pengguna sudah terautentikasi.
-
-2.  **Identitas dari Token**:
-    Backend secara paksa menimpa field identitas dengan data yang diambil dari **JWT Token** yang valid.
-
-    ```php
-    // Logic di php_server/logic.php
-    if ($currentUser) {
-        // STRICTLY OVERWRITE: Do not trust frontend input
-        $data['cashierId'] = $currentUser['id'];
-        $data['cashierName'] = $currentUser['name'];
-    }
-    ```
-
-3.  **Implikasi**:
-    Meskipun seseorang berhasil mengedit tampilan nama pengguna di frontend (frontend spoofing), saat tombol "Proses" ditekan, data yang tercatat di database DIJAMIN tetap menggunakan identitas asli pemilik akun yang login (berdasarkan token/cookie yang valid).
-

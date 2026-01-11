@@ -75,6 +75,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
             const query = searchQuery.toLowerCase();
             items = items.filter(t =>
                 t.id.toLowerCase().includes(query) ||
+                (t.invoiceNumber && t.invoiceNumber.toLowerCase().includes(query)) ||
                 t.customerName.toLowerCase().includes(query) ||
                 t.cashierName.toLowerCase().includes(query)
             );
@@ -134,13 +135,14 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
 
 
     const handleExport = () => {
-        const headers = ['ID Transaksi', 'Tanggal', 'Pelanggan', 'Total', 'Dibayar', 'Piutang', 'Kembalian', 'Status', 'Metode', 'Kasir'];
+        const headers = ['ID Transaksi', 'No Faktur', 'Tanggal', 'Pelanggan', 'Total', 'Dibayar', 'Piutang', 'Kembalian', 'Status', 'Metode', 'Kasir'];
         const rows = filteredTransactions.map(t => {
             const remaining = t.totalAmount - t.amountPaid;
             const piutang = remaining > 0 ? remaining : 0;
             const kembalian = remaining < 0 ? Math.abs(remaining) : 0;
             return [
                 t.id,
+                t.invoiceNumber || '-',
                 formatDate(t.date),
                 t.customerName,
                 t.totalAmount,
@@ -162,6 +164,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
             const kembalian = remaining < 0 ? Math.abs(remaining) : 0;
             return {
                 'ID Transaksi': t.id,
+                'No Faktur': t.invoiceNumber || '-',
                 'Tanggal': formatDate(t.date),
                 'Pelanggan': t.customerName,
                 'Total': t.totalAmount,
@@ -181,6 +184,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
         // Auto-width
         worksheet['!cols'] = [
             { wch: 15 }, // ID
+            { wch: 20 }, // Faktur
             { wch: 15 }, // Tanggal
             { wch: 20 }, // Pelanggan
             { wch: 15 }, // Total
@@ -208,6 +212,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                 <td>${idx + 1}</td>
                 <td>${formatDate(t.date)}</td>
                 <td>${t.id.substring(0, 8)}</td>
+                <td>${t.invoiceNumber || '-'}</td>
                 <td>${t.customerName}</td>
                 <td style="text-align:right">${formatIDR(t.totalAmount)}</td>
                 <td style="text-align:right">${formatIDR(t.amountPaid)}</td>
@@ -247,6 +252,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                 <th>No</th>
                                 <th>Tanggal</th>
                                 <th>ID</th>
+                                <th>Faktur</th>
                                 <th>Pelanggan</th>
                                 <th>Total</th>
                                 <th>Dibayar</th>
@@ -285,7 +291,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                 <div className="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                            <UserCheck className="text-blue-600" />
+                            <UserCheck className="text-primary" />
                             Riwayat Pelanggan
                         </h1>
                         <p className="text-slate-500 text-sm mt-1">Lacak riwayat transaksi dan aktivitas pelanggan</p>
@@ -306,9 +312,9 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                 {/* Summary Cards */}
                 {selectedCustomerId && (
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                            <p className="text-xs text-blue-600 mb-1">Total Penjualan</p>
-                            <p className="text-lg font-bold text-blue-700">{formatIDR(totals.totalSales)}</p>
+                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
+                            <p className="text-xs text-primary mb-1">Total Penjualan</p>
+                            <p className="text-lg font-bold text-primary">{formatIDR(totals.totalSales)}</p>
                         </div>
                         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                             <p className="text-xs text-green-600 mb-1">Total Dibayar</p>
@@ -379,7 +385,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                         <input
                             type="text"
                             placeholder="Cari ID transaksi, pelanggan, kasir..."
-                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm text-slate-700"
+                            className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
@@ -407,6 +413,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                             <tr>
                                 <th className="p-4 font-medium">Tanggal</th>
                                 <th className="p-4 font-medium">ID Transaksi</th>
+                                <th className="p-4 font-medium">Faktur</th>
                                 <th className="p-4 font-medium">Pelanggan</th>
                                 <th className="p-4 font-medium">Total</th>
                                 <th className="p-4 font-medium">Dibayar</th>
@@ -421,7 +428,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                         <tbody className="divide-y divide-slate-100">
                             {filteredTransactions.length === 0 && (
                                 <tr>
-                                    <td colSpan={11} className="p-8 text-center text-slate-400">Tidak ada transaksi.</td>
+                                    <td colSpan={12} className="p-8 text-center text-slate-400">Tidak ada transaksi.</td>
                                 </tr>
                             )}
                             {visibleTransactions.map(t => (
@@ -433,6 +440,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                         </div>
                                     </td>
                                     <td className="p-4 font-mono text-xs text-slate-400">#{t.id.substring(0, 6)}</td>
+                                    <td className="p-4 font-mono text-sm text-slate-700">{t.invoiceNumber || '-'}</td>
                                     <td className="p-4 font-medium text-slate-800">{t.customerName}</td>
                                     <td className="p-4 font-semibold text-slate-700">{formatIDR(t.totalAmount)}</td>
                                     <td className="p-4 text-green-600">{formatIDR(t.amountPaid)}</td>
@@ -475,7 +483,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                             ))}
                             {visibleTransactions.length < filteredTransactions.length && (
                                 <tr>
-                                    <td colSpan={11} className="p-4 text-center text-slate-400">
+                                    <td colSpan={12} className="p-4 text-center text-slate-400">
                                         <div ref={loadMoreRef}>Loading more...</div>
                                     </td>
                                 </tr>
@@ -490,7 +498,9 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                 <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 bg-black/40 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
                     <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
                         <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="font-bold text-slate-800">Detail Transaksi #{detailTransaction.id.substring(0, 8)}</h3>
+                            <h3 className="font-bold text-slate-800">
+                                Detail Transaksi {detailTransaction.invoiceNumber ? `(${detailTransaction.invoiceNumber})` : `#${detailTransaction.id.substring(0, 8)}`}
+                            </h3>
                             <button onClick={() => setDetailTransaction(null)}><X size={20} className="text-slate-400" /></button>
                         </div>
                         <div className="p-6 max-h-[70vh] overflow-y-auto">
@@ -515,9 +525,9 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                     {(() => {
                                         if (detailTransaction.bankId) {
                                             const bank = banks.find(b => b.id === detailTransaction.bankId);
-                                            if (bank) return <span className="block text-xs text-blue-600">via {bank.bankName} {bank.accountNumber}</span>;
+                                            if (bank) return <span className="block text-xs text-primary">via {bank.bankName} {bank.accountNumber}</span>;
                                         }
-                                        if (detailTransaction.bankName) return <span className="block text-xs text-blue-600">via {detailTransaction.bankName}</span>;
+                                        if (detailTransaction.bankName) return <span className="block text-xs text-primary">via {detailTransaction.bankName}</span>;
                                         return null;
                                     })()}
                                 </div>
@@ -535,11 +545,17 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                     <div key={idx} className="p-3 flex justify-between">
                                         <div>
                                             <span className="block font-medium text-slate-700">{item.name}</span>
-                                            <span className="text-xs text-slate-500">{item.qty} x {formatIDR(item.finalPrice)}</span>
+                                            <span className="text-xs text-slate-500">{item.qty} {item.unit || 'Pcs'} x {formatIDR(item.finalPrice)}</span>
                                         </div>
                                         <span className="font-medium text-slate-800">{formatIDR(item.finalPrice * item.qty)}</span>
                                     </div>
                                 ))}
+                                {(detailTransaction.discountAmount && detailTransaction.discountAmount > 0) && (
+                                    <div className="p-3 flex justify-between text-red-600 bg-slate-50">
+                                        <span>Diskon</span>
+                                        <span>-{formatIDR(detailTransaction.discountAmount)}</span>
+                                    </div>
+                                )}
                                 <div className="bg-slate-50 p-3 flex justify-between font-bold text-slate-900">
                                     <span>Total</span>
                                     <span>{formatIDR(detailTransaction.totalAmount)}</span>
@@ -583,12 +599,12 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                             {detailTransaction.type === TransactionType.RETURN && detailTransaction.originalTransactionId && (
                                 <div className="mt-6">
                                     <h4 className="font-bold text-sm text-slate-800 mb-2">Info Transaksi Induk</h4>
-                                    <div className="bg-blue-50 rounded-lg p-3 text-sm border border-blue-100">
+                                    <div className="bg-primary/5 rounded-lg p-3 text-sm border border-primary/10">
                                         {(() => {
                                             const originalTx = transactions.find(t => t.id === detailTransaction.originalTransactionId);
                                             if (originalTx) {
                                                 return (
-                                                    <div className="flex justify-between items-center cursor-pointer hover:bg-blue-100 p-2 rounded transition-colors" onClick={() => setDetailTransaction(originalTx)}>
+                                                    <div className="flex justify-between items-center cursor-pointer hover:bg-primary/10 p-2 rounded transition-colors" onClick={() => setDetailTransaction(originalTx)}>
                                                         <div>
                                                             <div className="flex gap-1 text-xs text-slate-500">
                                                                 <span>{new Date(originalTx.date).toLocaleDateString('id-ID')}</span>
@@ -597,7 +613,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                                             <span className="text-xs text-slate-600">Total: {formatIDR(originalTx.totalAmount)}</span>
                                                         </div>
                                                         <div className="text-right">
-                                                            <span className="text-xs bg-white border border-blue-200 px-2 py-1 rounded text-blue-600 flex items-center gap-1">
+                                                            <span className="text-xs bg-white border border-primary/20 px-2 py-1 rounded text-primary flex items-center gap-1">
                                                                 <Eye size={10} /> Lihat
                                                             </span>
                                                         </div>
@@ -624,9 +640,9 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                                             {(() => {
                                                 if (ph.bankId) {
                                                     const bank = banks.find(b => b.id === ph.bankId);
-                                                    if (bank) return <span className="text-[10px] text-blue-600 italic">via {bank.bankName} {bank.accountNumber}</span>;
+                                                    if (bank) return <span className="text-[10px] text-primary italic">via {bank.bankName} {bank.accountNumber}</span>;
                                                 }
-                                                if (ph.bankName) return <span className="text-[10px] text-blue-600 italic">via {ph.bankName}</span>;
+                                                if (ph.bankName) return <span className="text-[10px] text-primary italic">via {ph.bankName}</span>;
                                                 return null;
                                             })()}
                                         </div>
@@ -668,7 +684,7 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                             <button onClick={() => printTransactionDetail(detailTransaction)} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-slate-50">
                                 <Printer size={16} /> Cetak Detail
                             </button>
-                            <button onClick={() => setDetailTransaction(null)} className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold">Tutup</button>
+                            <button onClick={() => setDetailTransaction(null)} className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold">Tutup</button>
                         </div>
                     </div>
                 </div>,

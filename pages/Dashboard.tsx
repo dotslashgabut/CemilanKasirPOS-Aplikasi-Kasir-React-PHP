@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend, AreaChart, Area } from 'recharts';
-import { Brain, TrendingUp, AlertCircle, Wallet, RefreshCw, Calendar, Package, User as UserIcon, LayoutDashboard } from 'lucide-react';
+import { Brain, TrendingUp, AlertCircle, Wallet, RefreshCw, Calendar, Package, User as UserIcon, LayoutDashboard, Printer } from 'lucide-react';
 import { StorageService } from '../services/storage';
 import { getBusinessInsights } from '../services/geminiService';
 import { formatIDR } from '../utils';
+import { generatePrintDashboard } from '../utils/printHelpers';
 import { Transaction, Product, CartItem, User, TransactionType } from '../types';
 import { useData } from '../hooks/useData';
 
@@ -312,7 +313,7 @@ export const Dashboard: React.FC = () => {
     });
   }, [filteredTxs]);
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6366f1'];
 
   const handleGenerateInsight = async () => {
     setLoadingAI(true);
@@ -321,45 +322,125 @@ export const Dashboard: React.FC = () => {
     setLoadingAI(false);
   };
 
+
   const timeLabel = timeFilter === 'daily' ? 'Hari Ini' : (timeFilter === 'weekly' ? 'Minggu Ini' : (timeFilter === 'monthly' ? 'Bulan Ini' : 'Tahun Ini'));
+
+  const handlePrint = async () => {
+    const storeSettings = await StorageService.getStoreSettings();
+    if (!storeSettings) return;
+
+    // Generate specific period details string
+    let periodDetails = '';
+    if (timeFilter === 'daily') {
+      periodDetails = selectedDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    } else if (timeFilter === 'weekly') {
+      const end = new Date(selectedWeekStart);
+      end.setDate(end.getDate() + 6);
+      periodDetails = `${selectedWeekStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    } else if (timeFilter === 'monthly') {
+      periodDetails = new Date(selectedYear, selectedMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    } else {
+      periodDetails = `Tahun ${selectedYear}`;
+    }
+
+    const dashboardData = {
+      totalRevenue,
+      totalTransactions,
+      totalReceivables,
+      totalItemsSold,
+      lowStockItems,
+      revenueTrend: revenueTrendData,
+      itemsSoldTrend: itemsSoldTrendData,
+      topProducts: topProductsData,
+      topCategories: topCategoriesData,
+      categoryPerformance: categoryPerformanceData,
+      monthlyRevenue: timeFilter === 'yearly' ? monthlyRevenueData : undefined,
+      timeLabel,
+      periodDetails
+    };
+
+    const themeHue = localStorage.getItem('theme_hue') || '348';
+    const themeSaturation = localStorage.getItem('theme_saturation') || '90%';
+    const themeLightness = '56%'; // Standard lightness
+
+    const printHtml = generatePrintDashboard(
+      dashboardData,
+      storeSettings,
+      formatIDR,
+      { h: themeHue, s: themeSaturation, l: themeLightness }
+    );
+
+    // Create iframe to print
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(printHtml);
+      doc.close();
+    }
+
+    // The printHelpers script handles the printing and closing, 
+    // but since we are using an iframe approach here (cleaner for SPA), 
+    // we might need to adjust or rely on the script inside `generatePrintDashboard` which does window.print()
+    // However, the `generatePrintDashboard` returns a full HTML string with <script>window.print()</script>.
+    // Writing it to an iframe works well.
+    // Note: The helper's script attempts to close the window. Inside an iframe `window.close()` does nothing, which is fine.
+    // We should remove the iframe after printing, but since we don't know when it finishes, we can leave it or set a timeout.
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 5000);
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-            <LayoutDashboard className="text-blue-600" />
+            <LayoutDashboard className="text-primary" />
             Dashboard
           </h2>
           <p className="text-slate-500 mt-1">Ringkasan performa bisnis Anda.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="bg-slate-100 p-1 rounded-lg flex gap-1">
+          <div className="bg-slate-100 p-1 rounded-lg flex gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto">
             <button
               onClick={() => setTimeFilter('daily')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'daily' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'daily' ? 'bg-primary shadow text-white' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Hari Ini
             </button>
             <button
               onClick={() => setTimeFilter('weekly')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'weekly' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'weekly' ? 'bg-primary shadow text-white' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Minggu Ini
             </button>
             <button
               onClick={() => setTimeFilter('monthly')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'monthly' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'monthly' ? 'bg-primary shadow text-white' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Bulan Ini
             </button>
             <button
               onClick={() => setTimeFilter('yearly')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'yearly' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'yearly' ? 'bg-primary shadow text-white' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Tahun Ini
             </button>
           </div>
+
+          {/* Print Button */}
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:text-primary transition-colors shadow-sm ml-2"
+            title="Cetak Laporan Dashboard"
+          >
+            <Printer size={18} />
+            <span className="hidden sm:inline text-sm font-medium">Print</span>
+          </button>
           <div className="flex items-center gap-2">
             {/* Year selector removed from here */}
           </div>
@@ -370,15 +451,15 @@ export const Dashboard: React.FC = () => {
                   {currentUser.image ? (
                     <img src={currentUser.image} alt={currentUser.name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                    <div className="w-full h-full flex items-center justify-center bg-primary text-white">
                       <UserIcon size={20} />
                     </div>
                   )}
                 </div>
                 {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                   {currentUser.name}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-primary"></div>
                 </div>
               </div>
               <div className="hidden sm:block">
@@ -391,16 +472,16 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
+            <div className="p-3 bg-primary/10 text-primary rounded-lg">
               <TrendingUp size={24} />
             </div>
-            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">{timeLabel}</span>
+            <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">{timeLabel}</span>
           </div>
           <p className="text-sm text-slate-500">Omzet</p>
-          <h3 className="text-2xl font-bold text-slate-800">{formatIDR(totalRevenue)}</h3>
+          <h3 className="text-xl font-bold text-slate-800">{formatIDR(totalRevenue)}</h3>
           <p className="text-xs text-slate-400 mt-1">{totalTransactions} Transaksi</p>
         </div>
 
@@ -412,7 +493,7 @@ export const Dashboard: React.FC = () => {
             <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full">Global</span>
           </div>
           <p className="text-sm text-slate-500">Total Piutang</p>
-          <h3 className="text-2xl font-bold text-slate-800">{formatIDR(totalReceivables)}</h3>
+          <h3 className="text-xl font-bold text-slate-800">{formatIDR(totalReceivables)}</h3>
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -423,7 +504,7 @@ export const Dashboard: React.FC = () => {
             <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">{timeLabel}</span>
           </div>
           <p className="text-sm text-slate-500">Item Terjual</p>
-          <h3 className="text-2xl font-bold text-slate-800">{totalItemsSold} <span className="text-sm font-normal text-slate-400">Item</span></h3>
+          <h3 className="text-xl font-bold text-slate-800">{totalItemsSold} <span className="text-sm font-normal text-slate-400">Item</span></h3>
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -433,25 +514,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <p className="text-sm text-slate-500">Stok Menipis</p>
-          <h3 className="text-2xl font-bold text-slate-800">{lowStockItems} <span className="text-sm font-normal text-slate-400">Item</span></h3>
-        </div>
-
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Brain size={20} className="text-yellow-300" />
-              <span className="font-semibold text-yellow-300">AI Assistant</span>
-            </div>
-            <p className="text-sm text-indigo-100 mb-4">Dapatkan analisa bisnis {timeLabel.toLowerCase()}.</p>
-            <button
-              onClick={handleGenerateInsight}
-              disabled={loadingAI}
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-            >
-              {loadingAI ? <RefreshCw className="animate-spin" size={16} /> : 'Analisa Sekarang'}
-            </button>
-          </div>
-          <Brain size={120} className="absolute -bottom-4 -right-4 text-white/10" />
+          <h3 className="text-xl font-bold text-slate-800">{lowStockItems} <span className="text-sm font-normal text-slate-400">Item</span></h3>
         </div>
       </div>
 
@@ -470,9 +533,10 @@ export const Dashboard: React.FC = () => {
                   </span>
                   <input
                     type="date"
-                    value={selectedDate.toISOString().split('T')[0]}
+                    value={selectedDate.toLocaleDateString('en-CA')}
                     onChange={(e) => {
-                      const date = new Date(e.target.value);
+                      const parts = e.target.value.split('-');
+                      const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));																				  
                       if (!isNaN(date.getTime())) setSelectedDate(date);
                     }}
                     className="absolute inset-0 opacity-0 w-full h-full"
@@ -487,7 +551,7 @@ export const Dashboard: React.FC = () => {
                 <select
                   value={selectedWeekStart.toISOString()}
                   onChange={(e) => setSelectedWeekStart(new Date(e.target.value))}
-                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {/* Generate weeks for current selected month/year or just ranges */}
                   {(() => {
@@ -524,7 +588,7 @@ export const Dashboard: React.FC = () => {
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].map((m, i) => (
                     <option key={i} value={i}>{m}</option>
@@ -533,7 +597,7 @@ export const Dashboard: React.FC = () => {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
                     <option key={y} value={y}>{y}</option>
@@ -548,7 +612,7 @@ export const Dashboard: React.FC = () => {
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].map((m, i) => (
                     <option key={i} value={i}>{m}</option>
@@ -557,7 +621,7 @@ export const Dashboard: React.FC = () => {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
                     <option key={y} value={y}>{y}</option>
@@ -572,7 +636,7 @@ export const Dashboard: React.FC = () => {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(year => (
                     <option key={year} value={year}>{year}</option>
@@ -598,7 +662,15 @@ export const Dashboard: React.FC = () => {
                 formatter={(value: number) => [formatIDR(value), 'Pendapatan']}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
               />
-              <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+              <Area
+                type="monotone"
+                dataKey="total"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#colorTotal)"
+                isAnimationActive={true}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -623,44 +695,56 @@ export const Dashboard: React.FC = () => {
                 formatter={(value: number) => [value, 'Item Terjual']}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
               />
-              <Area type="monotone" dataKey="total" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorItems)" />
+              <Area
+                type="monotone"
+                dataKey="total"
+                stroke="#10b981"
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#colorItems)"
+                isAnimationActive={true}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Monthly Revenue Boxes for Yearly View */}
-      {timeFilter === 'yearly' && (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="font-bold text-lg text-slate-800 mb-4">Omzet per Bulan - Tahun {selectedYear}</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-            {monthlyRevenueData.map((item, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 hover:shadow-md transition-shadow"
-              >
-                <p className="text-xs font-medium text-slate-600 mb-1">{item.month}</p>
-                <p className="text-lg font-bold text-blue-600">{formatIDR(item.total)}</p>
-              </div>
-            ))}
+      {
+        timeFilter === 'yearly' && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h3 className="font-bold text-lg text-slate-800 mb-4">Omzet per Bulan - Tahun {selectedYear}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {monthlyRevenueData.map((item, index) => (
+                <div
+                  key={index}
+                  className="bg-gradient-to-br from-orange-50 to-amber-50 p-4 rounded-xl border border-orange-100 hover:shadow-md transition-shadow"
+                >
+                  <p className="text-xs font-medium text-slate-600 mb-1">{item.month}</p>
+                  <p className="text-lg font-bold text-primary">{formatIDR(item.total)}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* AI Insights Section */}
-      {aiInsight && (
-        <div className="bg-white border border-indigo-100 p-6 rounded-2xl shadow-sm animate-fade-in">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-indigo-100 rounded-full">
-              <Brain size={20} className="text-indigo-600" />
+      {
+        aiInsight && (
+          <div className="bg-white border border-indigo-100 p-6 rounded-2xl shadow-sm animate-fade-in">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-indigo-100 rounded-full">
+                <Brain size={20} className="text-indigo-600" />
+              </div>
+              <h3 className="font-bold text-lg text-slate-800">Analisis Cerdas Gemini</h3>
             </div>
-            <h3 className="font-bold text-lg text-slate-800">Analisis Cerdas Gemini</h3>
+            <div className="prose prose-slate max-w-none whitespace-pre-line text-slate-600 bg-slate-50 p-4 rounded-xl">
+              {aiInsight}
+            </div>
           </div>
-          <div className="prose prose-slate max-w-none whitespace-pre-line text-slate-600 bg-slate-50 p-4 rounded-xl">
-            {aiInsight}
-          </div>
-        </div>
-      )}
+        )
+      }
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart: Top Products */}
@@ -675,7 +759,7 @@ export const Dashboard: React.FC = () => {
                 cursor={{ fill: '#f8fafc' }}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
               />
-              <Bar dataKey="qty" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={30} name="Terjual" />
+              <Bar dataKey="qty" fill="#ee712e" radius={[0, 4, 4, 0]} barSize={30} name="Terjual" isAnimationActive={true} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -692,7 +776,7 @@ export const Dashboard: React.FC = () => {
                 cursor={{ fill: '#f8fafc' }}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
               />
-              <Bar dataKey="qty" fill="#10b981" radius={[0, 4, 4, 0]} barSize={30} name="Terjual" />
+              <Bar dataKey="qty" fill="#10b981" radius={[0, 4, 4, 0]} barSize={30} name="Terjual" isAnimationActive={true} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -711,6 +795,7 @@ export const Dashboard: React.FC = () => {
                 fill="#8884d8"
                 paddingAngle={5}
                 dataKey="value"
+                isAnimationActive={true}
               >
                 {categoryPerformanceData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -722,6 +807,6 @@ export const Dashboard: React.FC = () => {
           </ResponsiveContainer>
         </div>
       </div>
-    </div>
+    </div >
   );
 };

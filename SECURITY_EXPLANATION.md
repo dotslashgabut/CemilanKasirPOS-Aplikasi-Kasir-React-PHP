@@ -5,7 +5,7 @@ Dokumen ini memberikan penjelasan mendalam mengenai dua temuan keamanan spesifik
 ## 1. Legacy Password Support (Dukungan Password Lama) - **RESOLVED**
 
 ### Status
-**Sudah Dihapus**. Berdasarkan pengecekan pada database `cemilankasirpos_php.sql`, semua user sudah menggunakan password yang di-hash dengan Bcrypt. Oleh karena itu, logika fallback plaintext di `login.php` telah dihapus untuk keamanan maksimal.
+**Sudah Dihapus**. Berdasarkan pengecekan pada database `cemilankasirpos_php_v02.sql`, semua user sudah menggunakan password yang di-hash dengan Bcrypt. Oleh karena itu, logika fallback plaintext di `login.php` telah dihapus untuk keamanan maksimal.
 
 ### Deskripsi (Arsip)
 Sebelumnya, `php_server/login.php` memiliki logika "fallback" yang mengizinkan pengguna untuk login menggunakan password *plain-text*.
