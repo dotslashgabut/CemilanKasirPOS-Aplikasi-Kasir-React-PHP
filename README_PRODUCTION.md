@@ -88,7 +88,8 @@ Metode ini paling mudah dan murah, cocok untuk shared hosting standar.
 1.  **Upload Backend**:
     *   Upload isi folder `php_server` ke folder publik di hosting Anda (misal `public_html/api`).
 2.  **Konfigurasi Database**:
-    *   Edit `config.php` dengan kredensial database hosting.
+    *   Buat file `.env` di folder server Anda (salin dari `.env.example`).
+    *   Edit `.env` dengan kredensial database hosting.
 3.  **Frontend**:
     *   Build frontend (`npm run build`).
     *   Upload folder `dist` ke hosting (misal ke `public_html`).
@@ -115,7 +116,7 @@ Jika Anda menggunakan VPS atau server lain untuk PHP:
 
 1.  Buat database MySQL baru di server produksi.
 2.  Import file `cemilankasirpos_php_v02.sql` atau `cemilankasirpos_big_dummy_data.sql`.
-3.  Pastikan kredensial database di `php_server/config.php` sudah benar.
+3.  Pastikan kredensial database di file `.env` sudah benar.
 4.  Verifikasi koneksi database dengan menjalankan backend dan cek log.
 
 ---
@@ -125,10 +126,10 @@ Jika Anda menggunakan VPS atau server lain untuk PHP:
 Before launching, pastikan:
 
 ### Backend (PHP)
-- [ ] File `config.php` sudah dikonfigurasi dengan benar.
-- [ ] `JWT_SECRET` di `auth.php` menggunakan string random yang kuat (via Environment Variable atau edit file).
-- [ ] CORS hanya mengizinkan domain produksi Anda.
-- [ ] `SHOW_DEBUG_ERRORS` diset ke `false`.
+- [ ] File `.env` sudah dibuat dan dikonfigurasi (DB_HOST, DB_USER, dll).
+- [ ] `JWT_SECRET` di `.env` menggunakan string random yang kuat (Ganti default valuenya!).
+- [ ] CORS (`ALLOWED_ORIGINS` di `.env`) hanya mengizinkan domain produksi Anda.
+- [ ] `SHOW_DEBUG_ERRORS=false` di file `.env`.
 - [ ] File log dan json sensitif dilindungi dari akses publik.
 
 ### Frontend
@@ -165,14 +166,14 @@ Before launching, pastikan:
 ### Backend Tidak Bisa Diakses
 - Cek log error PHP (biasanya `error_log` di folder yang sama atau log server).
 - **Note**: Jika `php_error.log` tidak bisa dibuka di browser (403 Forbidden), itu normal (fitur keamanan). Cek via File Manager/FTP.
-- Verifikasi konfigurasi database di `config.php`.
+- Verifikasi konfigurasi database di `.env` (pastikan file `.env` ada).
 
 ### CORS Error
-- Pastikan domain frontend sudah ditambahkan di `config.php`.
+- Pastikan domain frontend sudah ditambahkan di variable `ALLOWED_ORIGINS` pada file `.env`.
 - Cek apakah HTTPS/HTTP konsisten (jangan mix).
 
 ### Database Connection Error
-- Verifikasi kredensial di `config.php`.
+- Verifikasi kredensial di `.env`.
 - Cek apakah MySQL service berjalan.
 - Pastikan user database punya privilege yang cukup.
 

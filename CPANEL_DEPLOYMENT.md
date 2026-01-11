@@ -72,16 +72,20 @@ mysql -u username_cemilan_admin -p username_cemilan_pos < cemilankasirpos_php_v0
 3. Buat folder baru: `php_server`
 4. Masuk ke folder `php_server/`
 5. Klik **Upload**
-6. Upload **SEMUA FILE** dari folder `php_server/` project Anda:
+6. Upload **SEMUA FILE** dari folder `php_server/` project Anda, **KECUALI** file `.env` lokal Anda.
+   > **Alasan**: Konfigurasi lokal (seperti DB_HOST=localhost dari XAMPP) berbeda dengan hosting. Kita akan membuat file `.env` baru yang sesuai dengan cPanel di langkah selanjutnya.
+
+   Files yang diupload:
    - `index.php`
    - `config.php`
-   - `logic.php`
    - `auth.php`
+   - `logic.php`
+   - `login.php`
    - `validator.php`
    - `rate_limit.php`
-   - `login.php`
-   - `.htaccess`
-   - Dan file lainnya
+   - `.htaccess` (Penting! Pastikan opsi "Show Hidden Files" aktif di cPanel)
+   - `.env.example` (Template konfigurasi)
+   - Dan file `.php` lainnya
 
 **Via FTP (Alternative):**
 ```
@@ -110,6 +114,12 @@ DB_PASS=your_strong_password
 # API Configuration
 API_BASE_URL=https://yourdomain.com/php_server
 SHOW_DEBUG_ERRORS=false
+
+# Security (Required)
+# Ganti dengan random string yang panjang
+JWT_SECRET=rahasia_aman_12345
+# Domain Frontend yang diizinkan (CORS)
+ALLOWED_ORIGINS=https://yourdomain.com
 ```
 
 **⚠️ PENTING:**
@@ -391,7 +401,7 @@ Access blocked by CORS policy
 
 **Solutions:**
 
-1. Already handled in `php_server/config.php`
+1. Check `ALLOWED_ORIGINS` in `php_server/.env`
 2. But verify headers:
    ```php
    header('Access-Control-Allow-Origin: *');
@@ -399,10 +409,12 @@ Access blocked by CORS policy
    header('Access-Control-Allow-Headers: Content-Type, Authorization');
    ```
 
-3. If using subdomain for API, update headers:
-   ```php
-   header('Access-Control-Allow-Origin: https://yourdomain.com');
+3. Update `.env` file:
+   ```ini
+   ALLOWED_ORIGINS=https://yourdomain.com
    ```
+   *  Pastikan domain frontend Anda (misal `https://yourdomain.com`) terdaftar di sini.
+   *  Jika ada banyak domain (misal subdomain admin), pisahkan dengan koma: `https://yourdomain.com,https://admin.yourdomain.com`
 
 ### ❌ Blank Page
 
