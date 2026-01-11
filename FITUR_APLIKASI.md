@@ -72,13 +72,15 @@ Aplikasi mendukung 3 level pengguna dengan akses berbeda:
 - **Tidak dapat** mengubah harga atau stok produk
 - Hanya dapat melihat transaksi, pembelian, dan arus kas yang dibuat sendiri (Data Isolation)
 
-### 3. Fitur Keamanan Tambahan
+### 3. Fitur Keamanan Tambahan (Updated Security Audit 2026)
 
-- **Rate Limiting**: Proteksi brute-force pada endpoint login
-- **CORS Protection**: Pembatasan akses API dari domain terpercaya
-- **Data Sanitization**: Otomatis menghapus data sensitif dari response API
-- **Production Error Handling**: Pesan error detail disembunyikan di production
-- **Secure Headers**: Implementasi security headers untuk mencegah XSS dan CSRF
+- **Advanced Rate Limiting**: Proteksi brute-force menggunakan mekanisme **File Locking** untuk mencegah race condition.
+- **CORS Strict Mode**: Konfigurasi Cross-Origin Resource Sharing yang lebih ketat dengan validasi Origin.
+- **HttpOnly Cookies**: Opsi penyimpanan token di cookie HttpOnly untuk mitigasi XSS penuh.
+- **HSTS (HTTP Strict Transport Security)**: Otomatis memaksa koneksi HTTPS saat terdeteksi untuk mencegah downgrade attacks.
+- **Content Security Policy (CSP)**: Header CSP ketat untuk mengontrol sumber resource yang diizinkan.
+- **Input Sanitization Layer**: Validasi input berlapis (Strip Tags, Parameter Binding, Schema Filter).
+- **Secure Headers**: Implementasi standard security headers (X-Frame-Options, X-Content-Type-Options).
 
 ### 4. Default User
 

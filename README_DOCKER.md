@@ -204,6 +204,6 @@ docker-compose logs -f php-backend
 ```
 
 ## 🔒 Catatan Keamanan
-
+*   **Wajib HTTPS**: Di lingkungan production, Anda **HARUS** menjalankan container ini di belakang Reverse Proxy (seperti Nginx host, Traefik, atau Cloudflare) yang melayani HTTPS. Tanpa HTTPS, browser akan menolak cookie login.
 *   Pastikan password database diubah di `docker-compose.yml` untuk production.
 *   Gunakan `NODE_ENV=production` saat build frontend (sudah default di Dockerfile).

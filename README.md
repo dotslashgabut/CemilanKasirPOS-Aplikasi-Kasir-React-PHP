@@ -308,20 +308,15 @@ See [README_DEVELOPMENT.md](./README_DEVELOPMENT.md) for detailed setup instruct
 - **OWNER**: Can manage products, view reports, and change store settings.
 - **CASHIER**: Can perform sales transactions and view products but cannot modify stock or view sensitive financial data (like HPP).
 
-### 🔒 Security Features (New)
+## 🔒 Security Features (Diperbarui 2026)
 
-- **Authentication**: Secure login using **JWT (JSON Web Tokens)**.
-- **Password Hashing**: Passwords are encrypted using **Bcrypt** (never stored in plain text).
-- **Role-Based Access Control (RBAC)**:
-  - **Superadmin**: Full access, including user management and deleting data.
-  - **Owner**: Full access except user management and critical system resets.
-  - **Cashier**: Restricted to POS and basic sales operations.
-- **Rate Limiting**: Brute-force protection on login endpoints.
-- **CORS Protection**: Restricted API access to trusted domains.
-- **Production Error Handling**: Detailed error messages are hidden in production to prevent information leakage.
-- **Data Sanitization**: Sensitive data (like password hashes) is automatically stripped from API responses.
+- **Advanced Authentication**: Dual-mode auth support with **HttpOnly Cookies** (Browser) and Bearer Tokens (API).
+- **HSTS Enforcement**: Automatic HTTP Strict Transport Security when HTTPS is detected to prevent downgrade attacks.
+- **Strict CORS**: Dynamic origin validation with credential support for secure cross-origin requests.
+- **Rate Limiting**: File-locking mechanism to prevent race conditions during brute-force attacks.
+- **Data Isolation**: Strictly enforced at the backend level ensuring Cashiers only see their own transactions.
 
-> For a detailed security report, see **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)**.
+> For a detailed security audit report, see **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)**.
 
 ### Default Login Credentials
 
@@ -379,20 +374,15 @@ Cemilan KasirPOS adalah aplikasi Point of Sale (POS) modern yang kaya fitur, dir
 - **Laporan Barang Terjual**: Laporan khusus untuk melacak barang terjual dengan fitur ekspor dan cetak.
 - **Manajemen Retur**: Proses retur penjualan dan retur pembelian dengan penyesuaian stok otomatis.
 
-### 🔒 Fitur Keamanan (Baru)
+### 🔒 Fitur Keamanan (Diperbarui 2026)
 
-- **Autentikasi**: Login aman menggunakan **JWT (JSON Web Tokens)**.
-- **Enkripsi Password**: Password dienkripsi menggunakan **Bcrypt** (tidak disimpan sebagai teks biasa).
-- **Kontrol Akses Berbasis Peran (RBAC)**:
-  - **Superadmin**: Akses penuh, termasuk manajemen user dan hapus data.
-  - **Owner**: Akses penuh kecuali manajemen user dan reset sistem kritis.
-  - **Cashier**: Terbatas pada POS dan operasi penjualan dasar.
-- **Rate Limiting**: Perlindungan brute-force pada login.
-- **Proteksi CORS**: Akses API dibatasi hanya untuk domain terpercaya.
-- **Penanganan Error Produksi**: Pesan error detail disembunyikan di mode produksi untuk mencegah kebocoran informasi.
-- **Sanitasi Data**: Data sensitif (seperti hash password) otomatis dihapus dari respon API.
+- **Autentikasi Canggih**: Mendukung dual-mode dengan **HttpOnly Cookies** (Browser) dan Bearer Token (API) untuk keamanan maksimal.
+- **Penerapan HSTS**: Otomatis mendeteksi HTTPS dan mengaktifkan proteksi Strict Transport Security.
+- **CORS Ketat**: Validasi origin dinamis dengan dukungan kredensial untuk request lintas domain yang aman.
+- **Rate Limiting**: Mekanisme penguncian file (file locking) di backend untuk mencegah race condition saat serangan brute-force.
+- **Isolasi Data**: Pembatasan akses backend yang ketat, memastikan Kasir hanya bisa melihat transaksi mereka sendiri.
 
-> Untuk laporan keamanan detail, lihat **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)**.
+> Untuk laporan audit keamanan lengkap, lihat **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)**.
 
 ### Manajemen Pengguna & Orang
 

@@ -10,6 +10,7 @@ Pastikan komputer Anda sudah terinstall:
 2.  **PHP** (Versi 7.4 atau 8.x) - [Download PHP](https://www.php.net/)
 3.  **MySQL / MariaDB** - Biasanya sudah termasuk dalam paket XAMPP/Laragon.
 4.  **Git** (Opsional, untuk clone repository).
+5.  **Browser Modern**: Pastikan browser Anda mengizinkan **Third-party Cookies** atau setidaknya cookies untuk Localhost, karena sistem login menggunakan **HttpOnly Cookies**.
 
 ---
 

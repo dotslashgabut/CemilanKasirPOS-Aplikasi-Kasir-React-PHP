@@ -34,8 +34,23 @@ Buka file `auth.php` dan ganti `JWT_SECRET` dengan string acak yang aman untuk p
 
 ```php
 // auth.php
-$jwt_secret = getenv('JWT_SECRET') ?: 'ganti_dengan_string_rahasia_yang_panjang_dan_acak';
+// PRIORITAS: Environment Variable (Aman)
+$jwt_secret = getenv('JWT_SECRET');
+
+// FALLBACK: Hanya untuk Development (Tidak Aman untuk Production)
+if (!$jwt_secret) {
+    if ($showDebug) {
+        $jwt_secret = 'dev_secret_key_123';
+    } else {
+        // Production tanpa Secret = FATAL ERROR
+        error_log("CRITICAL: JWT_SECRET environment variable is not set!");
+        http_response_code(500);
+        exit(json_encode(['error' => 'Server configuration error']));
+    }
+}
 ```
+
+**Penting**: Di production, Anda **WAJIB** men-set environment variable `JWT_SECRET`. Jangan mengandalkan fallback di kode.
 
 ## ▶️ Menjalankan Server
 
@@ -104,9 +119,11 @@ Backend menangani logika bisnis krusial untuk menjaga integritas data:
 *   **RBAC (Role-Based Access Control)**:
     *   `SUPERADMIN`: Akses penuh.
     *   `OWNER`: Akses manajemen tapi tidak bisa hapus user critical.
-    *   `CASHIER` & `GUDANG`: Restricted access. Hanya bisa lihat data transaksi mereka sendiri (Data Isolation) dan tidak bisa ubah master data.
+    *   **HSTS (Automatic)**: `config.php` otomatis mendeteksi HTTPS dan mengaktifkan header *Strict-Transport-Security* untuk mencegah downgrade attacks.
+*   **Secure Cookies**: Token autentikasi disimpan dalam cookie dengan flag `HttpOnly`, `Secure` (jika HTTPS), dan `SameSite=Lax`.
+*   **Data Isolation**: User dengan role `CASHIER` hanya dapat mengakses data transaksi yang mereka buat sendiri.
 *   **Rate Limiting**: `rate_limit.php` menggunakan mekanisme *file locking* (`flock`) pada `login_attempts.json` untuk mencegah brute-force login tanpa race condition.
-*   **Input Validation**: Semua input JSON dibersihkan (`strip_tags`), divalidasi tipe datanya, dan dicocokkan dengan Schema putih (`filterDataBySchema`).
+*   **Input Validation**: Semua input JSON dibersihkan (`strip_tags`) dan divalidasi dengan whitelist schema.
 
 ## 🛠 Troubleshooting
 

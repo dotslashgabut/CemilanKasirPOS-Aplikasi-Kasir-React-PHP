@@ -25,10 +25,16 @@ Secara default, aplikasi dikonfigurasi untuk menerima request dari `http://local
 // php_server/config.php
 
 // Izinkan domain tertentu
-header("Access-Control-Allow-Origin: https://toko-saya.com");
+$allowed_origins = ['https://toko-saya.com'];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+if (in_array($origin, $allowed_origins)) {
+    header("Access-Control-Allow-Origin: $origin");
+}
+header("Access-Control-Allow-Credentials: true"); // Wajib true untuk Cookie Auth
 ```
 
-> **Penting:** Jangan gunakan wildcard `*` di produksi karena kurang aman. Spesifikasikan domain Anda secara eksplisit.
+> **Penting:** Jangan gunakan wildcard `*` di produksi. Anda **WAJIB** menspesifikasikan domain secara eksplisit agar `Access-Control-Allow-Credentials: true` berfungsi dengan aman.
 
 ---
 
@@ -143,7 +149,8 @@ Before launching, pastikan:
 - [ ] Build production sudah dijalankan (`npm run build`).
 
 ### Server & Database
-- [ ] Gunakan **HTTPS** (SSL/TLS) untuk semua koneksi.
+- [ ] **Wajib HTTPS**: Gunakan SSL/TLS yang valid. Tanpa HTTPS, Cookies aman tidak akan dikirim oleh browser dan aplikasi **tidak akan bisa login**.
+- [ ] HSTS akan otomatis aktif jika HTTPS terdeteksi.
 - [ ] Firewall dikonfigurasi dengan benar (hanya port yang diperlukan terbuka).
 - [ ] Database backup otomatis sudah disetup.
 - [ ] Monitoring dan logging sudah aktif (Cek error logs server).

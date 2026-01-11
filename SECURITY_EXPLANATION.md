@@ -27,33 +27,31 @@ Sekarang sistem hanya menerima password yang terverifikasi via `password_verify(
 
 ---
 
-## 2. HTTPS & HSTS Configuration
+## 2. HTTPS & HSTS Configuration - **RESOLVED**
 
 ### Deskripsi
-HTTP Strict Transport Security (HSTS) adalah mekanisme kebijakan keamanan web yang memaksa browser web untuk berinteraksi dengan situs web hanya menggunakan koneksi HTTPS yang aman, dan tidak pernah melalui protokol HTTP yang tidak aman.
+HTTP Strict Transport Security (HSTS) adalah mekanisme kebijakan keamanan web yang memaksa browser web untuk berinteraksi dengan situs web hanya menggunakan koneksi HTTPS yang aman.
 
-### Analisis Kode
-Pada `php_server/config.php` (baris 88), header HSTS saat ini dinonaktifkan (dikomentari):
+### Status Terbaru (2026-01-11)
+**Sudah Diimplementasikan**. Logika HSTS telah ditambahkan ke `php_server/config.php` dengan pengecekan otomatis.
+
+### Implementasi Saat Ini
+Kode berikut telah aktif di `config.php`:
 
 ```php
-// header("Strict-Transport-Security: max-age=31536000; includeSubDomains"); // Enable if using HTTPS
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+}
 ```
 
-### Mengapa Ini Penting?
-- **Mencegah Downgrade Attacks**: Tanpa HSTS, penyerang di jaringan yang sama (Man-in-the-Middle) bisa memaksa browser pengguna untuk turun ke koneksi HTTP biasa dan mencuri data (seperti token login).
-- **Kepercayaan Browser**: HSTS memberi tahu browser untuk mengingat bahwa situs ini "hanya boleh HTTPS" selama periode waktu tertentu (`max-age`).
+### Cara Kerja
+- Sistem secara otomatis mendeteksi apakah request menggunakan HTTPS (`$_SERVER['HTTPS'] === 'on'`).
+- Jika ya, header `Strict-Transport-Security` akan dikirimkan.
+- Jika tidak (misal di localhost tanpa SSL), header tidak dikirim untuk mencegah error akses.
 
-### Risiko Saat Ini
-- Jika server production tidak memaksa HTTPS, pengguna bisa tidak sengaja mengakses versi HTTP yang tidak aman.
-- Cookie dan Token JWT bisa disadap jika dikirim lewat HTTP.
-
-### Rekomendasi & Tindakan
-1.  **Prasyarat**: Pastikan server production (cPanel/Apache/Nginx) sudah terpasang **Sertifikat SSL** yang valid.
-2.  **Aktivasi**: Buka `php_server/config.php` dan **hilangkan komentar (`//`)** pada baris tersebut:
-    ```php
-    header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
-    ```
-3.  **Verifikasi**: Pastikan website tidak bisa diakses via `http://` (harus auto-redirect ke `https://`).
+### Rekomendasi
+- Pastikan server production Anda (Hosting/VPS) sudah terinstall SSL (HTTPS).
+- Tidak perlu konfigurasi manual lagi di `config.php` karena sudah otomatis.
 
 ---
 **Catatan**: Jangan aktifkan HSTS jika Anda belum memiliki SSL yang valid, karena akan menyebabkan website tidak bisa diakses sama sekali oleh pengguna.

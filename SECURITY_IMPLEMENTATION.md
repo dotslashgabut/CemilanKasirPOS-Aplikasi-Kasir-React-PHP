@@ -206,8 +206,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 2.  **Kepercayaan**: Meningkatkan kepercayaan pengguna dan mesin pencari (SEO).
 3.  **Kepatuhan**: Memenuhi standar keamanan modern.
 
-### Cara Mengaktifkan HSTS
-Di file `php_server/config.php`, cari bagian Security Headers dan aktifkan (uncomment) baris berikut:
+### Implementasi HSTS (Automatic)
+Di file `php_server/config.php`, HSTS sekarang dikonfigurasi secara otomatis:
 
 ```php
 // Security Headers
@@ -216,11 +216,14 @@ if (isset($_SERVER['REQUEST_METHOD'])) {
     header("X-Content-Type-Options: nosniff");
     header("X-XSS-Protection: 1; mode=block");
     
-    // AKTIFKAN BARIS INI (Hapus tanda // di depannya)
-    header("Strict-Transport-Security: max-age=31536000; includeSubDomains"); 
+    // HSTS Logic: Only enabled if HTTPS is detected
+    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+        header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+    }
 }
 ```
 
 **PENTING:**
-*   **Pastikan SSL Aktif**: Jangan aktifkan HSTS jika server Anda belum memiliki sertifikat SSL (HTTPS) yang valid. Jika Anda mengaktifkannya tanpa SSL, situs Anda **tidak akan bisa diakses** sama sekali.
-*   **Max-Age**: Nilai `31536000` detik setara dengan 1 tahun. Ini memberitahu browser untuk mengingat aturan ini selama satu tahun.
+*   **Prasyarat**: Fitur ini hanya akan aktif jika server mendeteksi koneksi secure (`HTTPS`).
+*   **Max-Age**: Nilai `31536000` detik setara dengan 1 tahun.
+*   **Production**: Pastikan SSL certificate terinstall dengan benar di server production Anda.

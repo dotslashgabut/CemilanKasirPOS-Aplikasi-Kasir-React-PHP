@@ -8,7 +8,7 @@ Panduan ini menjelaskan cara meng-hosting aplikasi Cemilan KasirPOS menggunakan 
 
 1.  Akses ke cPanel hosting.
 2.  Hosting mendukung **PHP 7.4** atau **PHP 8.x**.
-3.  Domain atau subdomain yang aktif (misal: `tokocemilan.com`).
+3.  Domain atau subdomain yang aktif **Wajib HTTPS/SSL** (misal: `https://tokocemilan.com`). Tanpa HTTPS, fitur login tidak akan berfungsi karena browser menolak cookie aman.
 4.  Database MySQL yang sudah dibuat di cPanel.
 
 ## 🏗️ Langkah 1: Persiapan Database

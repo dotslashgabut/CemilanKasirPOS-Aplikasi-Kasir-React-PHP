@@ -270,6 +270,8 @@ Aplikasi ini memiliki fitur keamanan yang bergantung pada konfigurasi environmen
 
 *   **Backend (PHP)**: Gunakan `SHOW_DEBUG_ERRORS=false` di `config.php` atau environment variable untuk menyembunyikan error detail di production.
 *   **Frontend (React)**: `NODE_ENV=production` (otomatis saat build) akan mengoptimalkan bundle dan menghapus warning development.
+*   **Auto-HSTS**: Backend otomatis mendeteksi HTTPS. Jika Anda menggunakan VSCode Live Share atau Tunneling dengan HTTPS, HSTS akan aktif. Pastikan Anda tidak mengakses via HTTP setelahnya, atau browser akan memblokirnya.
+*   **HttpOnly Cookies**: Token login sekarang disimpan di Cookie yang aman. Pastikan browser Anda mengizinkan cookies untuk localhost.
 
 > Pastikan Anda membaca **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)** untuk memahami audit keamanan dan praktik terbaik sebelum melakukan deployment.
 

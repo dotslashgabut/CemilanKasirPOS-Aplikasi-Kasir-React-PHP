@@ -230,9 +230,9 @@ Buat/edit file `.htaccess` di `public_html/`:
     RewriteEngine On
     RewriteBase /
     
-    # Force HTTPS (optional, uncomment if SSL active)
-    # RewriteCond %{HTTPS} off
-    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    # Force HTTPS (Required for HttpOnly Cookies)
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
     
     # Don't rewrite existing files/directories
     RewriteCond %{REQUEST_FILENAME} -f [OR]
