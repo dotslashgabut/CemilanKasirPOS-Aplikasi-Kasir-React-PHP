@@ -31,7 +31,7 @@ export const About: React.FC = () => {
 
                     <div className="flex flex-wrap justify-center gap-4">
                         <a
-                            href="https://github.com/dotslashgabut/cemilan-kasirpos"
+                            href="https://github.com/dotslashgabut/CemilanKasirPOS-Aplikasi-Kasir-React-PHP"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex flex-col items-center p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 group"
