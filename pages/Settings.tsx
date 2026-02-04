@@ -387,7 +387,7 @@ export const Settings: React.FC = () => {
         <div className="space-y-6 animate-fade-in">
             <div className="mb-8">
                 <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                    <SettingsIcon className="text-slate-600" />
+                    <SettingsIcon className="text-primary" />
                     Pengaturan
                 </h2>
                 <p className="text-slate-500 text-sm mt-1">Kelola profil toko, metode pembayaran, dan akses pengguna.</p>

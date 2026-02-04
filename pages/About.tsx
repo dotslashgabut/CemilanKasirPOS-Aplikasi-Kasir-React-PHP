@@ -8,7 +8,7 @@ export const About: React.FC = () => {
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                        <Info className="text-blue-600" />
+                        <Info className="text-primary" />
                         Tentang Aplikasi
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">Informasi mengenai aplikasi dan pengembang</p>
