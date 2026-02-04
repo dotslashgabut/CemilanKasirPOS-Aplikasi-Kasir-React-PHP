@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 22, 2026 at 02:55 AM
+-- Generation Time: Feb 05, 2026 at 12:50 AM
 -- Server version: 8.0.40
--- PHP Version: 8.3.29
+-- PHP Version: 8.3.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -92,6 +92,15 @@ CREATE TABLE `cashflows` (
   `updatedAt` datetime NOT NULL,
   `referenceId` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `cashflows`
+--
+
+INSERT INTO `cashflows` (`id`, `date`, `type`, `amount`, `category`, `description`, `paymentMethod`, `bankId`, `bankName`, `userId`, `userName`, `createdAt`, `updatedAt`, `referenceId`) VALUES
+('17702520574104', '2026-02-05 07:40:57', 'MASUK', 65000, 'Penjualan', 'Penjualan ke Pelanggan Umum (INV26-0000000001)', 'CASH', '', NULL, 'admin_id', 'Administrator', '2026-02-05 00:40:57', '2026-02-05 00:40:57', 'd9c4cfb9-b34e-4849-9d6c-3813dd079f4c'),
+('17702520857570', '2026-02-05 07:41:25', 'MASUK', 314500, 'Penjualan', 'Penjualan ke Warung \"Pak Karso\" (INV26-0000000002) (via Dana - 0812-3456-7890)', 'TRANSFER', 'b17', 'Dana', 'admin_id', 'Administrator', '2026-02-05 00:41:25', '2026-02-05 00:41:25', '311162e4-5bac-4134-9188-115d4494db41'),
+('17702521361121', '2026-02-05 07:42:16', 'MASUK', 58000, 'Penjualan', 'Penjualan ke Agen Snack \"Fortuna\" (INV26-0000000003) (via BCA - 8820123456)', 'TRANSFER', 'b1', 'BCA', 'admin_id', 'Administrator', '2026-02-05 00:42:16', '2026-02-05 00:42:16', 'ea5799b4-2a80-48a7-950b-d588f9b2e8dc');
 
 -- --------------------------------------------------------
 
@@ -273,13 +282,13 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `name`, `sku`, `categoryId`, `categoryName`, `stock`, `hpp`, `priceRetail`, `priceGeneral`, `priceWholesale`, `pricePromo`, `image`, `unit`, `createdAt`, `updatedAt`) VALUES
-('p1', 'Keripik Singkong Balado \"Pedas Nampol\"', 'SNK-001', 'c1', 'Keripik & Kerupuk', 150, 8000, 15000, 13500, 12000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-25 11:38:22'),
-('p10', 'Kacang Umpet \"Manis Karamel\"', 'SNK-010', 'c4', 'Kacang & Polong', 68, 15000, 25000, 23000, 21000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-25 11:37:08'),
-('p100', 'Paket Hampers Lebaran A', 'SNK-100', 'c8', 'Paket Hampers', 25, 150000, 250000, 230000, 210000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
+('p1', 'Keripik Singkong Balado \"Pedas Nampol\"', 'SNK-001', 'c1', 'Keripik & Kerupuk', 149, 8000, 15000, 13500, 12000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-25 11:38:22'),
+('p10', 'Kacang Umpet \"Manis Karamel\"', 'SNK-010', 'c4', 'Kacang & Polong', 66, 15000, 25000, 23000, 21000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-25 11:37:08'),
+('p100', 'Paket Hampers Lebaran A', 'SNK-100', 'c8', 'Paket Hampers', 24, 150000, 250000, 230000, 210000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p101', 'Paket Hampers Lebaran B', 'SNK-101', 'c8', 'Paket Hampers', 18, 200000, 320000, 300000, 280000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p102', 'Paket Snack Arisan', 'SNK-102', 'c8', 'Paket Hampers', 35, 100000, 165000, 155000, 145000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p103', 'Paket Snack Kantor', 'SNK-103', 'c8', 'Paket Hampers', 42, 120000, 190000, 175000, 165000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
-('p104', 'Rempeyek Kacang \"Renyah\"', 'SNK-104', 'c1', 'Keripik & Kerupuk', 98, 8500, 16000, 14500, 13000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-24 19:58:00'),
+('p104', 'Rempeyek Kacang \"Renyah\"', 'SNK-104', 'c1', 'Keripik & Kerupuk', 97, 8500, 16000, 14500, 13000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-24 19:58:00'),
 ('p105', 'Rempeyek Teri \"Super Kriuk\"', 'SNK-105', 'c1', 'Keripik & Kerupuk', 75, 11000, 19000, 17500, 16000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p106', 'Opak Ketan \"Original\"', 'SNK-106', 'c1', 'Keripik & Kerupuk', 62, 7500, 14500, 13000, 11500, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p107', 'Keripik Pare \"Pedas Manis\"', 'SNK-107', 'c1', 'Keripik & Kerupuk', 42, 14000, 24000, 22000, 20000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
@@ -287,12 +296,12 @@ INSERT INTO `products` (`id`, `name`, `sku`, `categoryId`, `categoryName`, `stoc
 ('p109', 'Kripik Pisang Gepeng', 'SNK-109', 'c1', 'Keripik & Kerupuk', 88, 9500, 17500, 16000, 14500, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p11', 'Kacang Atom \"Garuda KW Super\"', 'SNK-011', 'c4', 'Kacang & Polong', 100, 8000, 14000, 13000, 12000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p110', 'Sale Pisang \"Kering Manis\"', 'SNK-110', 'c1', 'Keripik & Kerupuk', 52, 16000, 26000, 24000, 22000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
-('p111', 'Stick Balado \"Super Pedas\"', 'SNK-111', 'c3', 'Makaroni & Mie Lidi', 215, 4500, 9000, 8000, 7000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
+('p111', 'Stick Balado \"Super Pedas\"', 'SNK-111', 'c3', 'Makaroni & Mie Lidi', 205, 4500, 9000, 8000, 7000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p112', 'Combro Krispi \"Isi Oncom\"', 'SNK-112', 'c2', 'Basreng & Seblak', 68, 12500, 21000, 19500, 18000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
-('p113', 'Pisang Molen \"Mini\"', 'SNK-113', 'c5', 'Kue Kering & Sus', 92, 15000, 25000, 23000, 21000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
+('p113', 'Pisang Molen \"Mini\"', 'SNK-113', 'c5', 'Kue Kering & Sus', 90, 15000, 25000, 23000, 21000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p114', 'Brownies Kukus \"Premium\"', 'SNK-114', 'c5', 'Kue Kering & Sus', 45, 28000, 45000, 42000, 39000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
-('p115', 'Donat Mini \"Mix Topping\"', 'SNK-115', 'c5', 'Kue Kering & Sus', 105, 18000, 30000, 28000, 26000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
-('p116', 'Mochi \"Mix Flavor\"', 'SNK-116', 'c6', 'Coklat & Permen', 138, 16000, 26000, 24000, 22000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-24 19:32:46'),
+('p115', 'Donat Mini \"Mix Topping\"', 'SNK-115', 'c5', 'Kue Kering & Sus', 99, 18000, 30000, 28000, 26000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
+('p116', 'Mochi \"Mix Flavor\"', 'SNK-116', 'c6', 'Coklat & Permen', 131, 16000, 26000, 24000, 22000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-24 19:32:46'),
 ('p117', 'Arumanis \"Kacang Mete\"', 'SNK-117', 'c6', 'Coklat & Permen', 85, 24000, 38000, 36000, 33000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p118', 'Dodol Garut \"Premium\"', 'SNK-118', 'c6', 'Coklat & Permen', 58, 20000, 32000, 30000, 28000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-21 03:21:02'),
 ('p119', 'Jenang Kudus \"Mix\"', 'SNK-119', 'c6', 'Coklat & Permen', 38, 22000, 35000, 33000, 30000, NULL, NULL, 'Pcs', '2025-11-21 03:21:02', '2025-11-24 20:13:54'),
@@ -966,6 +975,15 @@ CREATE TABLE `transactions` (
   `discountType` varchar(20) DEFAULT 'FIXED',
   `discountAmount` float DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `transactions`
+--
+
+INSERT INTO `transactions` (`id`, `type`, `originalTransactionId`, `date`, `items`, `totalAmount`, `amountPaid`, `change`, `paymentStatus`, `paymentMethod`, `paymentNote`, `bankId`, `bankName`, `customerId`, `customerName`, `cashierId`, `cashierName`, `paymentHistory`, `isReturned`, `returnNote`, `createdAt`, `updatedAt`, `invoiceNumber`, `discount`, `discountType`, `discountAmount`) VALUES
+('311162e4-5bac-4134-9188-115d4494db41', 'SALE', NULL, '2026-02-05 07:41:25', '[{\"id\": \"p100\", \"hpp\": 150000, \"qty\": 1, \"sku\": \"SNK-100\", \"name\": \"Paket Hampers Lebaran A\", \"unit\": \"Pcs\", \"image\": null, \"stock\": 25, \"createdAt\": \"2025-11-21 03:21:02\", \"updatedAt\": \"2025-11-21 03:21:02\", \"categoryId\": \"c8\", \"finalPrice\": 230000, \"priceRetail\": 250000, \"categoryName\": \"Paket Hampers\", \"priceGeneral\": 230000, \"priceWholesale\": 210000, \"selectedPriceType\": \"UMUM\"}, {\"id\": \"p104\", \"hpp\": 8500, \"qty\": 1, \"sku\": \"SNK-104\", \"name\": \"Rempeyek Kacang \\\"Renyah\\\"\", \"unit\": \"Pcs\", \"image\": null, \"stock\": 98, \"createdAt\": \"2025-11-21 03:21:02\", \"updatedAt\": \"2025-11-24 19:58:00\", \"categoryId\": \"c1\", \"finalPrice\": 14500, \"priceRetail\": 16000, \"categoryName\": \"Keripik & Kerupuk\", \"priceGeneral\": 14500, \"priceWholesale\": 13000, \"selectedPriceType\": \"UMUM\"}, {\"id\": \"p113\", \"hpp\": 15000, \"qty\": 2, \"sku\": \"SNK-113\", \"name\": \"Pisang Molen \\\"Mini\\\"\", \"unit\": \"Pcs\", \"image\": null, \"stock\": 92, \"createdAt\": \"2025-11-21 03:21:02\", \"updatedAt\": \"2025-11-21 03:21:02\", \"categoryId\": \"c5\", \"finalPrice\": 23000, \"priceRetail\": 25000, \"categoryName\": \"Kue Kering & Sus\", \"priceGeneral\": 23000, \"priceWholesale\": 21000, \"selectedPriceType\": \"UMUM\"}, {\"id\": \"p116\", \"hpp\": 16000, \"qty\": 1, \"sku\": \"SNK-116\", \"name\": \"Mochi \\\"Mix Flavor\\\"\", \"unit\": \"Pcs\", \"image\": null, \"stock\": 138, \"createdAt\": \"2025-11-21 03:21:02\", \"updatedAt\": \"2025-11-24 19:32:46\", \"categoryId\": \"c6\", \"finalPrice\": 24000, \"priceRetail\": 26000, \"categoryName\": \"Coklat & Permen\", \"priceGeneral\": 24000, \"priceWholesale\": 22000, \"selectedPriceType\": \"UMUM\"}]', 314500, 314500, 0, 'LUNAS', 'TRANSFER', '', 'b17', 'Dana', 'cust80', 'Warung \"Pak Karso\"', 'admin_id', 'Administrator', '[{\"date\": \"2026-02-05 07:41:25\", \"note\": \"Pembayaran Awal\", \"amount\": 314500, \"bankId\": \"b17\", \"method\": \"TRANSFER\", \"bankName\": \"Dana\"}]', 0, NULL, '2026-02-05 00:41:25', '2026-02-05 00:41:25', 'INV26-0000000002', NULL, NULL, NULL),
+('d9c4cfb9-b34e-4849-9d6c-3813dd079f4c', 'SALE', NULL, '2026-02-05 07:40:57', '[{\"id\": \"p1\", \"hpp\": 8000, \"qty\": 1, \"sku\": \"SNK-001\", \"name\": \"Keripik Singkong Balado \\\"Pedas Nampol\\\"\", \"unit\": \"Pcs\", \"image\": null, \"stock\": 150, \"createdAt\": \"2025-11-21 03:21:02\", \"updatedAt\": \"2025-11-25 11:38:22\", \"categoryId\": \"c1\", \"finalPrice\": 15000, \"priceRetail\": 15000, \"categoryName\": \"Keripik & Kerupuk\", \"priceGeneral\": 13500, \"priceWholesale\": 12000, \"selectedPriceType\": \"ECERAN\"}, {\"id\": \"p10\", \"hpp\": 15000, \"qty\": 2, \"sku\": \"SNK-010\", \"name\": \"Kacang Umpet \\\"Manis Karamel\\\"\", \"unit\": \"Pcs\", \"image\": null, \"stock\": 68, \"createdAt\": \"2025-11-21 03:21:02\", \"updatedAt\": \"2025-11-25 11:37:08\", \"categoryId\": \"c4\", \"finalPrice\": 25000, \"priceRetail\": 25000, \"categoryName\": \"Kacang & Polong\", \"priceGeneral\": 23000, \"priceWholesale\": 21000, \"selectedPriceType\": \"ECERAN\"}]', 65000, 65000, 0, 'LUNAS', 'CASH', '', '', NULL, NULL, 'Pelanggan Umum', 'admin_id', 'Administrator', '[{\"date\": \"2026-02-05 07:40:57\", \"note\": \"Pembayaran Awal\", \"amount\": 65000, \"bankId\": \"\", \"method\": \"CASH\"}]', 0, NULL, '2026-02-05 00:40:57', '2026-02-05 00:40:57', 'INV26-0000000001', NULL, NULL, NULL),
+('ea5799b4-2a80-48a7-950b-d588f9b2e8dc', 'SALE', NULL, '2026-02-05 07:42:16', '[{\"id\": \"p111\", \"hpp\": 4500, \"qty\": 10, \"sku\": \"SNK-111\", \"name\": \"Stick Balado \\\"Super Pedas\\\"\", \"unit\": \"Pcs\", \"image\": null, \"stock\": 215, \"createdAt\": \"2025-11-21 03:21:02\", \"updatedAt\": \"2025-11-21 03:21:02\", \"categoryId\": \"c3\", \"finalPrice\": 7000, \"priceRetail\": 9000, \"categoryName\": \"Makaroni & Mie Lidi\", \"priceGeneral\": 8000, \"priceWholesale\": 7000, \"selectedPriceType\": \"GROSIR\"}, {\"id\": \"p116\", \"hpp\": 16000, \"qty\": 6, \"sku\": \"SNK-116\", \"name\": \"Mochi \\\"Mix Flavor\\\"\", \"unit\": \"Pcs\", \"image\": null, \"stock\": 137, \"createdAt\": \"2025-11-21 03:21:02\", \"updatedAt\": \"2025-11-24 19:32:46\", \"categoryId\": \"c6\", \"finalPrice\": 22000, \"priceRetail\": 26000, \"categoryName\": \"Coklat & Permen\", \"priceGeneral\": 24000, \"priceWholesale\": 22000, \"selectedPriceType\": \"GROSIR\"}, {\"id\": \"p115\", \"hpp\": 18000, \"qty\": 6, \"sku\": \"SNK-115\", \"name\": \"Donat Mini \\\"Mix Topping\\\"\", \"unit\": \"Pcs\", \"image\": null, \"stock\": 105, \"createdAt\": \"2025-11-21 03:21:02\", \"updatedAt\": \"2025-11-21 03:21:02\", \"categoryId\": \"c5\", \"finalPrice\": 26000, \"priceRetail\": 30000, \"categoryName\": \"Kue Kering & Sus\", \"priceGeneral\": 28000, \"priceWholesale\": 26000, \"selectedPriceType\": \"GROSIR\"}]', 358000, 58000, -300000, 'SEBAGIAN', 'TEMPO', 'TEST', 'b1', 'BCA', 'cust34', 'Agen Snack \"Fortuna\"', 'admin_id', 'Administrator', '[{\"date\": \"2026-02-05 07:42:16\", \"note\": \"TEST\", \"amount\": 58000, \"bankId\": \"b1\", \"method\": \"TEMPO\", \"bankName\": \"BCA\"}]', 0, NULL, '2026-02-05 00:42:16', '2026-02-05 00:42:16', 'INV26-0000000003', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 

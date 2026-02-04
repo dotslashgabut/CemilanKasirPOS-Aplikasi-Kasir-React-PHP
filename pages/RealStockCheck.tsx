@@ -279,9 +279,11 @@ export const RealStockCheck: React.FC<RealStockCheckProps> = ({ currentUser }) =
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Product Selection (Searchable) */}
                     <div className="relative">
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Pilih Produk (Ketik untuk mencari)</label>
+                        <label htmlFor="productSearchInput" className="block text-sm font-medium text-slate-700 mb-2">Pilih Produk (Ketik untuk mencari)</label>
                         <div className="relative">
                             <input
+                                id="productSearchInput"
+                                name="productSearchInput"
                                 type="text"
                                 className="w-full px-4 py-3 pl-11 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                                 placeholder="Ketik nama produk..."
@@ -442,8 +444,10 @@ export const RealStockCheck: React.FC<RealStockCheckProps> = ({ currentUser }) =
                                         </div>
 
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Jumlah (Qty)</label>
+                                            <label htmlFor="manualQty" className="block text-xs font-semibold text-slate-500 uppercase mb-1">Jumlah (Qty)</label>
                                             <input
+                                                id="manualQty"
+                                                name="manualQty"
                                                 type="number"
                                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary outline-none font-bold"
                                                 placeholder="0"
@@ -460,10 +464,12 @@ export const RealStockCheck: React.FC<RealStockCheckProps> = ({ currentUser }) =
                                 ) : (
                                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Stok Akhir Fisik</label>
+                                            <label htmlFor="finalStock" className="block text-xs font-semibold text-slate-500 uppercase mb-1">Stok Akhir Fisik</label>
                                             <input
+                                                id="finalStock"
+                                                name="finalStock"
                                                 type="number"
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary outline-none font-bold text-lg"
+                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-primary outline-none font-bold text-lg"
                                                 placeholder={selectedProduct.stock.toString()}
                                                 min="0"
                                                 value={finalStockInput}
@@ -513,8 +519,10 @@ export const RealStockCheck: React.FC<RealStockCheckProps> = ({ currentUser }) =
                                     </div>
                                 )}
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Alasan</label>
+                                    <label htmlFor="stockReason" className="block text-xs font-semibold text-slate-500 uppercase mb-1">Alasan</label>
                                     <select
+                                        id="stockReason"
+                                        name="stockReason"
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary outline-none"
                                         value={reason}
                                         onChange={(e) => setReason(e.target.value)}
@@ -526,20 +534,27 @@ export const RealStockCheck: React.FC<RealStockCheckProps> = ({ currentUser }) =
                                         ))}
                                     </select>
                                     {reason === 'Lain-lain' && (
-                                        <input
-                                            type="text"
-                                            className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                                            placeholder="Tulis alasan spesifik..."
-                                            value={customReason}
-                                            onChange={e => setCustomReason(e.target.value)}
-                                            required
-                                        />
+                                        <>
+                                            <label htmlFor="customReason" className="sr-only">Alasan Lain</label>
+                                            <input
+                                                id="customReason"
+                                                name="customReason"
+                                                type="text"
+                                                className="mt-2 w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                                                placeholder="Tulis alasan spesifik..."
+                                                value={customReason}
+                                                onChange={e => setCustomReason(e.target.value)}
+                                                required
+                                            />
+                                        </>
                                     )}
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Catatan (Opsional)</label>
+                                    <label htmlFor="stockNote" className="block text-xs font-semibold text-slate-500 uppercase mb-1">Catatan (Opsional)</label>
                                     <textarea
+                                        id="stockNote"
+                                        name="stockNote"
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary outline-none h-[42px] min-h-[42px] resize-none"
                                         placeholder="Keterangan tambahan..."
                                         value={note}
@@ -571,14 +586,20 @@ export const RealStockCheck: React.FC<RealStockCheckProps> = ({ currentUser }) =
                     {/* Filters */}
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="relative flex items-center bg-white border border-slate-300 rounded-lg px-2 py-1.5">
+                            <label htmlFor="filterStartDate" className="sr-only">Tanggal Mulai</label>
                             <input
+                                id="filterStartDate"
+                                name="filterStartDate"
                                 type="date"
                                 className="text-sm outline-none text-slate-600"
                                 value={startDate}
                                 onChange={e => setStartDate(e.target.value)}
                             />
                             <span className="mx-2 text-slate-400">-</span>
+                            <label htmlFor="filterEndDate" className="sr-only">Tanggal Akhir</label>
                             <input
+                                id="filterEndDate"
+                                name="filterEndDate"
                                 type="date"
                                 className="text-sm outline-none text-slate-600"
                                 value={endDate}
@@ -587,7 +608,10 @@ export const RealStockCheck: React.FC<RealStockCheckProps> = ({ currentUser }) =
                         </div>
                         <div className="relative">
                             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <label htmlFor="searchHistory" className="sr-only">Cari Riwayat</label>
                             <input
+                                id="searchHistory"
+                                name="searchHistory"
                                 type="text"
                                 placeholder="Cari..."
                                 className="pl-9 pr-8 py-1.5 border border-slate-300 rounded-lg text-sm focus:border-primary outline-none"

@@ -245,10 +245,13 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                         <Filter size={16} className="text-slate-400" />
                         <span className="text-sm font-medium text-slate-600">Filter Tanggal:</span>
                         <div className="relative flex items-center bg-white border border-slate-300 rounded px-2 py-1">
+                            <label htmlFor="startDate" className="sr-only">Tanggal Mulai</label>
                             <span className="text-sm text-slate-700 pr-6">
                                 {startDate ? new Date(startDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'dd/mm/yyyy'}
                             </span>
                             <input
+                                id="startDate"
+                                name="startDate"
                                 type="date"
                                 className="absolute inset-0 opacity-0 w-full h-full"
                                 value={startDate}
@@ -258,10 +261,13 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                         </div>
                         <span className="text-slate-400">-</span>
                         <div className="relative flex items-center bg-white border border-slate-300 rounded px-2 py-1">
+                            <label htmlFor="endDate" className="sr-only">Tanggal Akhir</label>
                             <span className="text-sm text-slate-700 pr-6">
                                 {endDate ? new Date(endDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'dd/mm/yyyy'}
                             </span>
                             <input
+                                id="endDate"
+                                name="endDate"
                                 type="date"
                                 className="absolute inset-0 opacity-0 w-full h-full"
                                 value={endDate}
@@ -280,8 +286,11 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
 
                     {/* Search Input */}
                     <div className="relative w-full max-w-md">
+                        <label htmlFor="searchReturn" className="sr-only">Cari Retur</label>
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
+                            id="searchReturn"
+                            name="searchReturn"
                             type="text"
                             placeholder={activeTab === 'sales' ? "Cari ID, Faktur, Pelanggan, Barang, Catatan..." : "Cari ID, Faktur, Supplier, Barang, Catatan..."}
                             className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700"

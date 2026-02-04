@@ -305,7 +305,10 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                 {/* Filters */}
                 <div className="flex flex-wrap items-center gap-4">
                     {/* Supplier Selector */}
+                    <label htmlFor="supplierFilter" className="sr-only">Filter Supplier</label>
                     <select
+                        id="supplierFilter"
+                        name="supplierFilter"
                         className="px-4 py-2 border border-slate-300 rounded-lg text-sm min-w-[200px]"
                         value={selectedSupplierId}
                         onChange={e => setSelectedSupplierId(e.target.value)}
@@ -321,10 +324,13 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                         <Filter size={16} className="text-slate-400" />
                         <span className="text-sm font-medium text-slate-600">Filter Tanggal:</span>
                         <div className="relative flex items-center bg-white border border-slate-300 rounded px-2 py-1">
+                            <label htmlFor="startDate" className="sr-only">Tanggal Mulai</label>
                             <span className="text-sm text-slate-700 pr-6">
                                 {startDate ? new Date(startDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'dd/mm/yyyy'}
                             </span>
                             <input
+                                id="startDate"
+                                name="startDate"
                                 type="date"
                                 className="absolute inset-0 opacity-0 w-full h-full"
                                 value={startDate}
@@ -334,10 +340,13 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
                         </div>
                         <span className="text-slate-400">-</span>
                         <div className="relative flex items-center bg-white border border-slate-300 rounded px-2 py-1">
+                            <label htmlFor="endDate" className="sr-only">Tanggal Akhir</label>
                             <span className="text-sm text-slate-700 pr-6">
                                 {endDate ? new Date(endDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'dd/mm/yyyy'}
                             </span>
                             <input
+                                id="endDate"
+                                name="endDate"
                                 type="date"
                                 className="absolute inset-0 opacity-0 w-full h-full"
                                 value={endDate}
@@ -356,8 +365,11 @@ export const SupplierHistory: React.FC<SupplierHistoryProps> = ({ currentUser })
 
                     {/* Search Input */}
                     <div className="relative w-full max-w-md">
+                        <label htmlFor="searchPurchase" className="sr-only">Cari Pembelian</label>
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
+                            id="searchPurchase"
+                            name="searchPurchase"
                             type="text"
                             placeholder="Cari ID, faktur, supplier, deskripsi..."
                             className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700"

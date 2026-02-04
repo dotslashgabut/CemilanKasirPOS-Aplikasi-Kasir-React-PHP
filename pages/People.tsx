@@ -415,7 +415,10 @@ export const People: React.FC = () => {
                 <div className="flex gap-2 flex-wrap">
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <label htmlFor="peopleSearch" className="sr-only">Cari Kontak</label>
                         <input
+                            id="peopleSearch"
+                            name="peopleSearch"
                             type="text"
                             placeholder="Cari nama / HP / Email / Alamat..."
                             className="pl-10 pr-10 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-primary bg-white w-full"
@@ -435,7 +438,10 @@ export const People: React.FC = () => {
 
                     <div className="relative">
                         <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                        <label htmlFor="peopleSort" className="sr-only">Urutkan</label>
                         <select
+                            id="peopleSort"
+                            name="peopleSort"
                             value={sortOrder}
                             onChange={(e) => setSortOrder(e.target.value as any)}
                             className="pl-10 pr-8 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-primary bg-white text-slate-700 appearance-none cursor-pointer hover:bg-slate-50 h-[42px]"
@@ -448,7 +454,7 @@ export const People: React.FC = () => {
                     {['CASHIER', 'ADMIN'].indexOf((JSON.parse(localStorage.getItem('pos_current_user') || '{}') as any).role) === -1 && (
                         <label className="bg-white border border-slate-300 text-slate-700 px-3 py-2 rounded-xl flex items-center gap-2 hover:bg-slate-50 cursor-pointer">
                             <Upload size={18} /> <span className="hidden md:inline">CSV</span>
-                            <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
+                            <input id="csvImport" name="csvImport" type="file" accept=".csv" className="hidden" onChange={handleImport} />
                         </label>
                     )}
                     <button onClick={handleExportExcel} className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-xl flex items-center gap-2 hover:bg-green-100">
@@ -546,7 +552,7 @@ export const People: React.FC = () => {
                                     ) : (
                                         <Upload className="text-slate-400 group-hover:text-primary" />
                                     )}
-                                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                    <input id="imageUpload" name="imageUpload" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                                     <div className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity text-white text-xs ${formData.image ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'}`}>
                                         Ubah Foto
                                     </div>
@@ -563,8 +569,10 @@ export const People: React.FC = () => {
                                 )}
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                                <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
                                 <input
+                                    id="name"
+                                    name="name"
                                     type="text"
                                     className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                     value={formData.name}
@@ -573,8 +581,10 @@ export const People: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">No. Telepon / HP</label>
+                                <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1">No. Telepon / HP</label>
                                 <input
+                                    id="phone"
+                                    name="phone"
                                     type="text"
                                     className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                     value={formData.phone}
@@ -586,8 +596,10 @@ export const People: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                                <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                                 <input
+                                    id="email"
+                                    name="email"
                                     type="email"
                                     className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                     value={formData.email}
@@ -596,8 +608,10 @@ export const People: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Alamat</label>
+                                <label htmlFor="address" className="block text-sm font-medium text-slate-700 mb-1">Alamat</label>
                                 <textarea
+                                    id="address"
+                                    name="address"
                                     className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                     rows={2}
                                     value={formData.address}
@@ -607,8 +621,10 @@ export const People: React.FC = () => {
 
                             {activeTab === 'customers' && (
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Kategori Harga Default</label>
+                                    <label htmlFor="priceType" className="block text-sm font-medium text-slate-700 mb-1">Kategori Harga Default</label>
                                     <select
+                                        id="priceType"
+                                        name="priceType"
                                         className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white"
                                         value={formData.defaultPriceType}
                                         onChange={e => setFormData({ ...formData, defaultPriceType: e.target.value as PriceType })}

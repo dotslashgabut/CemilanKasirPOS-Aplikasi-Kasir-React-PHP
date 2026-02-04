@@ -1993,10 +1993,13 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                     <Filter size={16} className="text-slate-400" />
                     <span className="text-sm font-medium text-slate-600">Filter Tanggal:</span>
                     <div className="relative flex items-center bg-white border border-slate-300 rounded px-2 py-1">
+                        <label htmlFor="startDate" className="sr-only">Tanggal Mulai</label>
                         <span className="text-sm text-slate-700 pr-6">
                             {startDate ? new Date(startDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'dd/mm/yyyy'}
                         </span>
                         <input
+                            id="startDate"
+                            name="startDate"
                             type="date"
                             className="absolute inset-0 opacity-0 w-full h-full"
                             value={startDate}
@@ -2006,10 +2009,13 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                     </div>
                     <span className="text-slate-400">-</span>
                     <div className="relative flex items-center bg-white border border-slate-300 rounded px-2 py-1">
+                        <label htmlFor="endDate" className="sr-only">Tanggal Akhir</label>
                         <span className="text-sm text-slate-700 pr-6">
                             {endDate ? new Date(endDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'dd/mm/yyyy'}
                         </span>
                         <input
+                            id="endDate"
+                            name="endDate"
                             type="date"
                             className="absolute inset-0 opacity-0 w-full h-full"
                             value={endDate}
@@ -2033,7 +2039,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                 {activeTab === 'cashflow' && (
                     <div className="flex flex-wrap items-center gap-3 w-full">
                         <div className="relative w-[180px] flex-shrink-0">
+                            <label htmlFor="categoryFilter" className="sr-only">Filter Kategori</label>
                             <select
+                                id="categoryFilter"
+                                name="categoryFilter"
                                 className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700 pr-10 appearance-none cursor-pointer"
                                 value={categoryFilter}
                                 onChange={e => setCategoryFilter(e.target.value)}
@@ -2051,7 +2060,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                         </div>
 
                         <div className="relative w-[180px] flex-shrink-0">
+                            <label htmlFor="paymentMethodFilter" className="sr-only">Filter Metode Pembayaran</label>
                             <select
+                                id="paymentMethodFilter"
+                                name="paymentMethodFilter"
                                 className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700 pr-10 appearance-none cursor-pointer"
                                 value={paymentMethodFilter}
                                 onChange={e => setPaymentMethodFilter(e.target.value)}
@@ -2069,7 +2081,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
 
                         {(currentUser?.role === UserRole.OWNER || currentUser?.role === UserRole.SUPERADMIN || currentUser?.role === UserRole.ADMIN) && (
                             <div className="relative w-[180px] flex-shrink-0">
+                                <label htmlFor="userFilter" className="sr-only">Filter User</label>
                                 <select
+                                    id="userFilter"
+                                    name="userFilter"
                                     className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700 pr-10 appearance-none cursor-pointer"
                                     value={userFilter}
                                     onChange={e => setUserFilter(e.target.value)}
@@ -2088,8 +2103,11 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                         )}
 
                         <div className="relative flex-1 min-w-[200px]">
+                            <label htmlFor="searchCashflow" className="sr-only">Cari Arus Kas</label>
                             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
+                                id="searchCashflow"
+                                name="searchCashflow"
                                 type="text"
                                 placeholder="Cari kategori atau keterangan..."
                                 className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700"
@@ -2115,7 +2133,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                         {/* Category Dropdown for Manual Cash Report */}
                         {activeTab === 'manual_cash_report' && (
                             <div className="relative min-w-[200px]">
+                                <label htmlFor="categoryFilterManual" className="sr-only">Filter Kategori Manual</label>
                                 <select
+                                    id="categoryFilterManual"
+                                    name="categoryFilterManual"
                                     className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700 pr-10 appearance-none cursor-pointer"
                                     value={categoryFilter}
                                     onChange={e => setCategoryFilter(e.target.value)}
@@ -2138,8 +2159,11 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                         )}
 
                         <div className="relative w-full max-w-md">
+                            <label htmlFor="searchGeneric" className="sr-only">Cari Data</label>
                             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
+                                id="searchGeneric"
+                                name="searchGeneric"
                                 type="text"
                                 placeholder={
                                     activeTab === 'history' ? 'Cari ID, pelanggan, kasir...' :
@@ -2163,7 +2187,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                         </div>
                         {(currentUser?.role === UserRole.OWNER || currentUser?.role === UserRole.SUPERADMIN || currentUser?.role === UserRole.ADMIN) && (
                             <div className="relative min-w-[200px]">
+                                <label htmlFor="userFilterGeneric" className="sr-only">Filter User</label>
                                 <select
+                                    id="userFilterGeneric"
+                                    name="userFilterGeneric"
                                     className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700 pr-10 appearance-none cursor-pointer"
                                     value={userFilter}
                                     onChange={e => setUserFilter(e.target.value)}
@@ -2184,7 +2211,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                         {/* Status Filter for Transaction & Purchase History (Moved here) */}
                         {(activeTab === 'history' || activeTab === 'purchase_history') && (
                             <div className="relative min-w-[180px] w-auto">
+                                <label htmlFor="statusFilter" className="sr-only">Filter Status</label>
                                 <select
+                                    id="statusFilter"
+                                    name="statusFilter"
                                     className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm text-slate-700 pr-10 appearance-none cursor-pointer"
                                     value={statusFilter}
                                     onChange={e => setStatusFilter(e.target.value)}
@@ -2552,8 +2582,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     )}
 
                                     <div>
-                                        <label className="text-sm font-medium text-slate-700">Jumlah Bayar</label>
+                                        <label htmlFor="repaymentAmount" className="text-sm font-medium text-slate-700">Jumlah Bayar</label>
                                         <input
+                                            id="repaymentAmount"
+                                            name="repaymentAmount"
                                             type="text"
                                             className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                             value={repaymentAmount}
@@ -2561,8 +2593,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm font-medium text-slate-700">Metode Bayar</label>
+                                        <label htmlFor="repaymentMethod" className="text-sm font-medium text-slate-700">Metode Bayar</label>
                                         <select
+                                            id="repaymentMethod"
+                                            name="repaymentMethod"
                                             className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-lg"
                                             value={repaymentMethod}
                                             onChange={e => {
@@ -2576,8 +2610,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     </div>
                                     {repaymentMethod === PaymentMethod.TRANSFER && (
                                         <div>
-                                            <label className="text-sm font-medium text-slate-700">Ke Rekening</label>
+                                            <label htmlFor="repaymentBankId" className="text-sm font-medium text-slate-700">Ke Rekening</label>
                                             <select
+                                                id="repaymentBankId"
+                                                name="repaymentBankId"
                                                 className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-lg text-sm"
                                                 value={repaymentBankId}
                                                 onChange={e => setRepaymentBankId(e.target.value)}
@@ -2590,8 +2626,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                         </div>
                                     )}
                                     <div>
-                                        <label className="text-sm font-medium text-slate-700">Catatan (Opsional)</label>
+                                        <label htmlFor="repaymentNote" className="text-sm font-medium text-slate-700">Catatan (Opsional)</label>
                                         <input
+                                            id="repaymentNote"
+                                            name="repaymentNote"
                                             type="text"
                                             className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                             value={repaymentNote}
@@ -2786,8 +2824,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     )}
 
                                     <div>
-                                        <label className="text-sm font-medium text-slate-700">Jumlah Bayar</label>
+                                        <label htmlFor="payableRepaymentAmount" className="text-sm font-medium text-slate-700">Jumlah Bayar</label>
                                         <input
+                                            id="payableRepaymentAmount"
+                                            name="payableRepaymentAmount"
                                             type="text"
                                             className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                             value={payableRepaymentAmount}
@@ -2795,8 +2835,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm font-medium text-slate-700">Metode Bayar</label>
+                                        <label htmlFor="payableRepaymentMethod" className="text-sm font-medium text-slate-700">Metode Bayar</label>
                                         <select
+                                            id="payableRepaymentMethod"
+                                            name="payableRepaymentMethod"
                                             className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-lg"
                                             value={payableRepaymentMethod}
                                             onChange={e => {
@@ -2810,8 +2852,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     </div>
                                     {payableRepaymentMethod === PaymentMethod.TRANSFER && (
                                         <div>
-                                            <label className="text-sm font-medium text-slate-700">Dari Rekening</label>
+                                            <label htmlFor="payableBankId" className="text-sm font-medium text-slate-700">Dari Rekening</label>
                                             <select
+                                                id="payableBankId"
+                                                name="payableBankId"
                                                 className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-lg text-sm"
                                                 value={payableBankId}
                                                 onChange={e => setPayableBankId(e.target.value)}
@@ -2824,8 +2868,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                         </div>
                                     )}
                                     <div>
-                                        <label className="text-sm font-medium text-slate-700">Catatan</label>
+                                        <label htmlFor="payableNote" className="text-sm font-medium text-slate-700">Catatan</label>
                                         <input
+                                            id="payableNote"
+                                            name="payableNote"
                                             type="text"
                                             className="w-full mt-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                             value={payableNote}
@@ -2977,7 +3023,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     <button onClick={() => setCfType(CashFlowType.OUT)} className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${cfType === CashFlowType.OUT ? 'bg-white shadow text-red-600' : 'text-slate-500'}`}>Uang Keluar</button>
                                     <button onClick={() => setCfType(CashFlowType.IN)} className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${cfType === CashFlowType.IN ? 'bg-white shadow text-green-600' : 'text-slate-500'}`}>Uang Masuk</button>
                                 </div>
+                                <label htmlFor="cfAmount" className="sr-only">Jumlah</label>
                                 <input
+                                    id="cfAmount"
+                                    name="cfAmount"
                                     type="text"
                                     placeholder="Jumlah (Rp)"
                                     className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500"
@@ -2986,7 +3035,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                 />
 
                                 {/* Category Selection */}
+                                <label htmlFor="cfCategory" className="sr-only">Kategori</label>
                                 <select
+                                    id="cfCategory"
+                                    name="cfCategory"
                                     className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-sm"
                                     value={cfCategory}
                                     onChange={e => setCfCategory(e.target.value)}
@@ -3011,7 +3063,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     )}
                                 </select>
 
+                                <label htmlFor="cfDesc" className="sr-only">Keterangan</label>
                                 <textarea
+                                    id="cfDesc"
+                                    name="cfDesc"
                                     placeholder="Keterangan (misal: Beli plastik, Bayar listrik)"
                                     className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-sm"
                                     rows={3}
@@ -3019,7 +3074,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     onChange={e => setCfDesc(e.target.value)}
                                 ></textarea>
                                 <div className="grid grid-cols-2 gap-2">
+                                    <label htmlFor="cfPaymentMethod" className="sr-only">Metode Pembayaran</label>
                                     <select
+                                        id="cfPaymentMethod"
+                                        name="cfPaymentMethod"
                                         className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-sm"
                                         value={cfPaymentMethod}
                                         onChange={e => {
@@ -3031,16 +3089,21 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                         <option value={PaymentMethod.TRANSFER}>Transfer</option>
                                     </select>
                                     {cfPaymentMethod === PaymentMethod.TRANSFER && (
-                                        <select
-                                            className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-sm"
-                                            value={cfBankId}
-                                            onChange={e => setCfBankId(e.target.value)}
-                                        >
-                                            <option value="">-- Bank --</option>
-                                            {banks.sort((a, b) => a.bankName.localeCompare(b.bankName)).map(b => (
-                                                <option key={b.id} value={b.id}>{b.bankName} - {b.accountNumber}</option>
-                                            ))}
-                                        </select>
+                                        <>
+                                            <label htmlFor="cfBankId" className="sr-only">Bank</label>
+                                            <select
+                                                id="cfBankId"
+                                                name="cfBankId"
+                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 text-sm"
+                                                value={cfBankId}
+                                                onChange={e => setCfBankId(e.target.value)}
+                                            >
+                                                <option value="">-- Bank --</option>
+                                                {banks.sort((a, b) => a.bankName.localeCompare(b.bankName)).map(b => (
+                                                    <option key={b.id} value={b.id}>{b.bankName} - {b.accountNumber}</option>
+                                                ))}
+                                            </select>
+                                        </>
                                     )}
                                 </div>
                                 <button
@@ -3556,6 +3619,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
                                         <select
+                                            id="purchaseSupplier"
+                                            name="purchaseSupplier"
                                             className="w-full border border-slate-300 p-2 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
                                             value={purchaseForm.supplierId}
                                             onChange={e => setPurchaseForm({ ...purchaseForm, supplierId: e.target.value })}
@@ -3589,6 +3654,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                             <div className="relative">
                                                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
+                                                    id="purchaseProductSearch"
+                                                    name="purchaseProductSearch"
                                                     type="text"
                                                     placeholder="Cari barang untuk dibeli..."
                                                     className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
@@ -3638,6 +3705,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                                                     className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border-r border-slate-300"
                                                                 >-</button>
                                                                 <input
+                                                                    id={`purchaseItemQty-${idx}`}
+                                                                    name={`purchaseItemQty-${idx}`}
                                                                     type="text"
                                                                     className="w-12 text-center outline-none"
                                                                     value={item.qty}
@@ -3659,6 +3728,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                                             </div>
                                                             <span className="text-slate-400">x</span>
                                                             <input
+                                                                id={`purchaseItemPrice-${idx}`}
+                                                                name={`purchaseItemPrice-${idx}`}
                                                                 type="text"
                                                                 className="flex-1 border border-slate-300 rounded px-2 py-1 outline-none focus:border-blue-500"
                                                                 placeholder="Harga Beli (HPP)"
@@ -3686,6 +3757,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                             <div className="mt-4">
                                                 <label className="block text-sm font-medium text-slate-700 mb-1">Catatan / Keterangan</label>
                                                 <input
+                                                    id="purchaseDescriptionItems"
+                                                    name="purchaseDescriptionItems"
                                                     type="text"
                                                     className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                                     placeholder="Contoh: Stok tambahan, kiriman pagi..."
@@ -3706,6 +3779,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                             <div>
                                                 <label className="block text-sm font-medium text-slate-700 mb-1">Keterangan Barang</label>
                                                 <input
+                                                    id="purchaseDescriptionManual"
+                                                    name="purchaseDescriptionManual"
                                                     type="text"
                                                     className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                                     placeholder="Misal: 10 Bal Keripik Singkong"
@@ -3716,6 +3791,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                             <div>
                                                 <label className="block text-sm font-medium text-slate-700 mb-1">Total Belanja (Rp)</label>
                                                 <input
+                                                    id="purchaseAmountManual"
+                                                    name="purchaseAmountManual"
                                                     type="text"
                                                     className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                                     value={purchaseForm.amount}
@@ -3728,6 +3805,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     <div className="border-t border-slate-200 pt-4 mt-4">
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Dibayar (Rp)</label>
                                         <input
+                                            id="purchasePaid"
+                                            name="purchasePaid"
                                             type="text"
                                             className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                             placeholder="0 jika tempo"
@@ -3755,6 +3834,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Metode Pembayaran</label>
                                         <select
+                                            id="purchasePaymentMethod"
+                                            name="purchasePaymentMethod"
                                             className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                             value={purchaseForm.paymentMethod}
                                             onChange={e => setPurchaseForm({ ...purchaseForm, paymentMethod: e.target.value as PaymentMethod, bankId: '' })}
@@ -3767,6 +3848,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 mb-1">Rekening Sumber</label>
                                             <select
+                                                id="purchaseBankId"
+                                                name="purchaseBankId"
                                                 className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                                 value={purchaseForm.bankId}
                                                 onChange={e => setPurchaseForm({ ...purchaseForm, bankId: e.target.value })}
@@ -3833,8 +3916,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     ))}
                                 </div>
                                 <div className="mt-4">
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Catatan Retur (Kondisi Fisik, Alasan, dll)</label>
+                                    <label htmlFor="returnTxNote" className="block text-sm font-medium text-slate-700 mb-1">Catatan Retur (Kondisi Fisik, Alasan, dll)</label>
                                     <textarea
+                                        id="returnTxNote"
+                                        name="returnTxNote"
                                         className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                                         rows={2}
                                         placeholder="Contoh: Barang rusak, kemasan penyok..."
@@ -3847,7 +3932,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     <label className="block text-sm font-medium text-slate-700 mb-2">Metode Pengembalian Dana</label>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
+                                            <label htmlFor="returnTxMethod" className="sr-only">Metode Pengembalian Dana</label>
                                             <select
+                                                id="returnTxMethod"
+                                                name="returnTxMethod"
                                                 className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                                                 value={returnTxMethod}
                                                 onChange={e => {
@@ -3861,7 +3949,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                         </div>
                                         {returnTxMethod === PaymentMethod.TRANSFER && (
                                             <div>
+                                                <label htmlFor="returnTxBankId" className="sr-only">Bank</label>
                                                 <select
+                                                    id="returnTxBankId"
+                                                    name="returnTxBankId"
                                                     className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                                                     value={returnTxBankId}
                                                     onChange={e => setReturnTxBankId(e.target.value)}
@@ -3958,8 +4049,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                 ) : (
                                     <div className="space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1">Nominal Refund (Rp)</label>
+                                            <label htmlFor="returnPurchaseManualAmount" className="block text-sm font-medium text-slate-700 mb-1">Nominal Refund (Rp)</label>
                                             <input
+                                                id="returnPurchaseManualAmount"
+                                                name="returnPurchaseManualAmount"
                                                 type="text"
                                                 className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg font-bold"
                                                 value={returnPurchaseManualAmount}
@@ -3972,8 +4065,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                 )}
 
                                 <div className="mt-4">
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Catatan Retur (Kondisi Fisik, Alasan, dll)</label>
+                                    <label htmlFor="returnPurchaseNote" className="block text-sm font-medium text-slate-700 mb-1">Catatan Retur (Kondisi Fisik, Alasan, dll)</label>
                                     <textarea
+                                        id="returnPurchaseNote"
+                                        name="returnPurchaseNote"
                                         className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm"
                                         rows={2}
                                         placeholder="Contoh: Barang rusak, kemasan penyok..."
@@ -3987,7 +4082,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     <label className="block text-sm font-medium text-slate-700 mb-2">Metode Pengembalian Dana</label>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
+                                            <label htmlFor="returnPurchaseMethod" className="sr-only">Metode Pengembalian Dana</label>
                                             <select
+                                                id="returnPurchaseMethod"
+                                                name="returnPurchaseMethod"
                                                 className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm"
                                                 value={returnPurchaseMethod}
                                                 onChange={e => {
@@ -4001,7 +4099,10 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                         </div>
                                         {returnPurchaseMethod === PaymentMethod.TRANSFER && (
                                             <div>
+                                                <label htmlFor="returnPurchaseBankId" className="sr-only">Bank</label>
                                                 <select
+                                                    id="returnPurchaseBankId"
+                                                    name="returnPurchaseBankId"
                                                     className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm"
                                                     value={returnPurchaseBankId}
                                                     onChange={e => setReturnPurchaseBankId(e.target.value)}

@@ -519,27 +519,30 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Main Trend Chart */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[400px]">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[400px] flex flex-col">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
           <h3 className="font-bold text-lg text-slate-800">Tren Pendapatan ({timeLabel})</h3>
 
           <div className="flex flex-wrap items-center gap-2">
             {timeFilter === 'daily' && (
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
-                <span className="text-sm font-medium text-slate-500">Tanggal:</span>
+                <label htmlFor="dateFilter" className="text-sm font-medium text-slate-500">Tanggal:</label>
                 <div className="relative flex items-center">
                   <span className="text-sm font-medium text-slate-700 pr-6">
                     {selectedDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('/')}
                   </span>
                   <input
+                    id="dateFilter"
+                    name="dateFilter"
                     type="date"
+                    aria-label="Filter Tanggal"
                     value={selectedDate.toLocaleDateString('en-CA')}
                     onChange={(e) => {
                       const parts = e.target.value.split('-');
-                      const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));																				  
+                      const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
                       if (!isNaN(date.getTime())) setSelectedDate(date);
                     }}
-                    className="absolute inset-0 opacity-0 w-full h-full"
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                   />
                   <Calendar size={16} className="absolute right-0 text-slate-400 pointer-events-none" />
                 </div>
@@ -548,7 +551,11 @@ export const Dashboard: React.FC = () => {
 
             {timeFilter === 'weekly' && (
               <div className="flex flex-wrap item-center gap-2">
+                <label htmlFor="weekSelect" className="sr-only">Pilih Minggu</label>
                 <select
+                  id="weekSelect"
+                  name="weekSelect"
+                  aria-label="Pilih Minggu"
                   value={selectedWeekStart.toISOString()}
                   onChange={(e) => setSelectedWeekStart(new Date(e.target.value))}
                   className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -585,7 +592,11 @@ export const Dashboard: React.FC = () => {
                     return weeks;
                   })()}
                 </select>
+                <label htmlFor="monthSelectWeekly" className="sr-only">Pilih Bulan</label>
                 <select
+                  id="monthSelectWeekly"
+                  name="monthSelectWeekly"
+                  aria-label="Pilih Bulan"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
                   className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -594,7 +605,11 @@ export const Dashboard: React.FC = () => {
                     <option key={i} value={i}>{m}</option>
                   ))}
                 </select>
+                <label htmlFor="yearSelectWeekly" className="sr-only">Pilih Tahun</label>
                 <select
+                  id="yearSelectWeekly"
+                  name="yearSelectWeekly"
+                  aria-label="Pilih Tahun"
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -608,8 +623,11 @@ export const Dashboard: React.FC = () => {
 
             {timeFilter === 'monthly' && (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-500">Bulan:</span>
+                <label htmlFor="monthSelectMonthly" className="text-sm font-medium text-slate-500">Bulan:</label>
                 <select
+                  id="monthSelectMonthly"
+                  name="monthSelectMonthly"
+                  aria-label="Bulan"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
                   className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -618,7 +636,11 @@ export const Dashboard: React.FC = () => {
                     <option key={i} value={i}>{m}</option>
                   ))}
                 </select>
+                <label htmlFor="yearSelectMonthly" className="sr-only">Pilih Tahun</label>
                 <select
+                  id="yearSelectMonthly"
+                  name="yearSelectMonthly"
+                  aria-label="Pilih Tahun"
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -632,8 +654,11 @@ export const Dashboard: React.FC = () => {
 
             {timeFilter === 'yearly' && (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-500">Tahun:</span>
+                <label htmlFor="yearSelectYearly" className="text-sm font-medium text-slate-500">Tahun:</label>
                 <select
+                  id="yearSelectYearly"
+                  name="yearSelectYearly"
+                  aria-label="Tahun"
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -646,7 +671,7 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="h-full w-full pb-6">
+        <div className="flex-1 w-full min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={revenueTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
@@ -677,9 +702,9 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Items Sold Trend Chart */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[350px]">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[350px] flex flex-col">
         <h3 className="font-bold text-lg text-slate-800 mb-2">Total Item Terjual ({timeLabel})</h3>
-        <div className="h-full w-full pb-6">
+        <div className="flex-1 w-full min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={itemsSoldTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
@@ -748,63 +773,69 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart: Top Products */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[400px]">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[400px] flex flex-col">
           <h3 className="font-bold text-lg text-slate-800 mb-6">5 Produk Terlaris ({timeLabel})</h3>
-          <ResponsiveContainer width="100%" height="85%">
-            <BarChart data={topProductsData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-              <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" width={120} tick={{ fill: '#475569', fontSize: 12 }} />
-              <Tooltip
-                cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-              />
-              <Bar dataKey="qty" fill="#ee712e" radius={[0, 4, 4, 0]} barSize={30} name="Terjual" isAnimationActive={true} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="flex-1 w-full min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topProductsData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" width={120} tick={{ fill: '#475569', fontSize: 12 }} />
+                <Tooltip
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="qty" fill="#ee712e" radius={[0, 4, 4, 0]} barSize={30} name="Terjual" isAnimationActive={true} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Chart: Top Categories */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[400px]">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[400px] flex flex-col">
           <h3 className="font-bold text-lg text-slate-800 mb-6">5 Kategori Terlaris ({timeLabel})</h3>
-          <ResponsiveContainer width="100%" height="85%">
-            <BarChart data={topCategoriesData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-              <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" width={120} tick={{ fill: '#475569', fontSize: 12 }} />
-              <Tooltip
-                cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-              />
-              <Bar dataKey="qty" fill="#10b981" radius={[0, 4, 4, 0]} barSize={30} name="Terjual" isAnimationActive={true} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="flex-1 w-full min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topCategoriesData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" width={120} tick={{ fill: '#475569', fontSize: 12 }} />
+                <Tooltip
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="qty" fill="#10b981" radius={[0, 4, 4, 0]} barSize={30} name="Terjual" isAnimationActive={true} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Chart: Categories Revenue */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[400px]">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-[400px] flex flex-col">
           <h3 className="font-bold text-lg text-slate-800 mb-6">Pendapatan per Kategori ({timeLabel})</h3>
-          <ResponsiveContainer width="100%" height="85%">
-            <PieChart>
-              <Pie
-                data={categoryPerformanceData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={80}
-                fill="#8884d8"
-                paddingAngle={5}
-                dataKey="value"
-                isAnimationActive={true}
-              >
-                {categoryPerformanceData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number) => formatIDR(value)} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-              <Legend verticalAlign="bottom" height={36} iconType="circle" />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="flex-1 w-full min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={categoryPerformanceData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  paddingAngle={5}
+                  dataKey="value"
+                  isAnimationActive={true}
+                >
+                  {categoryPerformanceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number) => formatIDR(value)} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div >

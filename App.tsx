@@ -192,6 +192,8 @@ const App: React.FC = () => {
             {/* Background Controls */}
             <div className="absolute top-4 right-4 flex gap-2">
                <input
+                  id="bgUpload"
+                  name="bgUpload"
                   type="file"
                   ref={fileInputRef}
                   className="hidden"
@@ -225,11 +227,14 @@ const App: React.FC = () => {
 
                <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                     <label className="block text-xs font-semibold text-slate-600 uppercase mb-1 ml-1">Username</label>
+                     <label htmlFor="username" className="block text-xs font-semibold text-slate-600 uppercase mb-1 ml-1">Username</label>
                      <div className="relative">
                         <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
+                           id="username"
+                           name="username"
                            type="text"
+                           autoComplete="username"
                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-800 font-medium"
                            placeholder="Username"
                            value={username}
@@ -240,11 +245,14 @@ const App: React.FC = () => {
                   </div>
 
                   <div>
-                     <label className="block text-xs font-semibold text-slate-600 uppercase mb-1 ml-1">Password</label>
+                     <label htmlFor="password" className="block text-xs font-semibold text-slate-600 uppercase mb-1 ml-1">Password</label>
                      <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
+                           id="password"
+                           name="password"
                            type={showPassword ? "text" : "password"}
+                           autoComplete="current-password"
                            className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-slate-800 font-medium"
                            placeholder="••••••••"
                            value={password}

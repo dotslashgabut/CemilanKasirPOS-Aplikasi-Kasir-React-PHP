@@ -442,32 +442,34 @@ export const Settings: React.FC = () => {
                         </div>
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                             <div className="col-span-2">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Nama Toko</label>
-                                <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.name} onChange={e => setStoreSettings({ ...storeSettings, name: e.target.value })} placeholder="Contoh: Toko Maju Jaya" />
+                                <label htmlFor="storeName" className="block text-sm font-medium text-slate-700 mb-1">Nama Toko</label>
+                                <input id="storeName" name="storeName" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.name} onChange={e => setStoreSettings({ ...storeSettings, name: e.target.value })} placeholder="Contoh: Toko Maju Jaya" />
                             </div>
                             <div className="col-span-2">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Jargon / Slogan</label>
-                                <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.jargon} onChange={e => setStoreSettings({ ...storeSettings, jargon: e.target.value })} placeholder="Murah, Lengkap, Berkualitas" />
+                                <label htmlFor="storeJargon" className="block text-sm font-medium text-slate-700 mb-1">Jargon / Slogan</label>
+                                <input id="storeJargon" name="storeJargon" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.jargon} onChange={e => setStoreSettings({ ...storeSettings, jargon: e.target.value })} placeholder="Murah, Lengkap, Berkualitas" />
                             </div>
                             <div className="col-span-2">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Alamat Lengkap</label>
-                                <textarea rows={2} className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.address} onChange={e => setStoreSettings({ ...storeSettings, address: e.target.value })}></textarea>
+                                <label htmlFor="storeAddress" className="block text-sm font-medium text-slate-700 mb-1">Alamat Lengkap</label>
+                                <textarea id="storeAddress" name="storeAddress" rows={2} className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.address} onChange={e => setStoreSettings({ ...storeSettings, address: e.target.value })}></textarea>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">No. Telepon</label>
-                                <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.phone} onChange={e => setStoreSettings({ ...storeSettings, phone: e.target.value })} />
+                                <label htmlFor="storePhone" className="block text-sm font-medium text-slate-700 mb-1">No. Telepon</label>
+                                <input id="storePhone" name="storePhone" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.phone} onChange={e => setStoreSettings({ ...storeSettings, phone: e.target.value })} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Info Bank Utama (Di Struk)</label>
-                                <textarea rows={3} className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.bankAccount} onChange={e => setStoreSettings({ ...storeSettings, bankAccount: e.target.value })} placeholder="BCA 123xxx an Budi&#10;Mandiri 456xxx an Budi" />
+                                <label htmlFor="storeBankInfo" className="block text-sm font-medium text-slate-700 mb-1">Info Bank Utama (Di Struk)</label>
+                                <textarea id="storeBankInfo" name="storeBankInfo" rows={3} className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.bankAccount} onChange={e => setStoreSettings({ ...storeSettings, bankAccount: e.target.value })} placeholder="BCA 123xxx an Budi&#10;Mandiri 456xxx an Budi" />
                             </div>
                             <div className="col-span-2">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Pesan Footer (Struk)</label>
-                                <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.footerMessage} onChange={e => setStoreSettings({ ...storeSettings, footerMessage: e.target.value })} />
+                                <label htmlFor="storeFooter" className="block text-sm font-medium text-slate-700 mb-1">Pesan Footer (Struk)</label>
+                                <input id="storeFooter" name="storeFooter" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={storeSettings.footerMessage} onChange={e => setStoreSettings({ ...storeSettings, footerMessage: e.target.value })} />
                             </div>
                             <div className="col-span-2">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Catatan Tambahan</label>
+                                <label htmlFor="storeNotes" className="block text-sm font-medium text-slate-700 mb-1">Catatan Tambahan</label>
                                 <textarea
+                                    id="storeNotes"
+                                    name="storeNotes"
                                     rows={3}
                                     className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                     value={storeSettings.notes || ''}
@@ -480,7 +482,7 @@ export const Settings: React.FC = () => {
                                 <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2"><Printer size={16} /> Pengaturan Cetak Nota</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-2">Jenis Printer / Ukuran Kertas</label>
+                                        <p className="block text-sm font-medium text-slate-700 mb-2">Jenis Printer / Ukuran Kertas</p>
                                         <div className="grid grid-cols-3 gap-2">
                                             <button
                                                 onClick={() => setStoreSettings({ ...storeSettings, printerType: '58mm' })}
@@ -504,17 +506,17 @@ export const Settings: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="flex gap-6 mt-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={storeSettings.showAddress} onChange={e => setStoreSettings({ ...storeSettings, showAddress: e.target.checked })} className="w-4 h-4 text-primary rounded" />
+                                    <label htmlFor="showAddress" className="flex items-center gap-2 cursor-pointer">
+                                        <input id="showAddress" name="showAddress" type="checkbox" checked={storeSettings.showAddress} onChange={e => setStoreSettings({ ...storeSettings, showAddress: e.target.checked })} className="w-4 h-4 text-primary rounded" />
                                         <span className="text-sm text-slate-700">Tampilkan Alamat</span>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={storeSettings.showJargon} onChange={e => setStoreSettings({ ...storeSettings, showJargon: e.target.checked })} className="w-4 h-4 text-primary rounded" />
+                                    <label htmlFor="showJargon" className="flex items-center gap-2 cursor-pointer">
+                                        <input id="showJargon" name="showJargon" type="checkbox" checked={storeSettings.showJargon} onChange={e => setStoreSettings({ ...storeSettings, showJargon: e.target.checked })} className="w-4 h-4 text-primary rounded" />
                                         <span className="text-sm text-slate-700">Tampilkan Jargon</span>
                                     </label>
 
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={storeSettings.showBank} onChange={e => setStoreSettings({ ...storeSettings, showBank: e.target.checked })} className="w-4 h-4 text-primary rounded" />
+                                    <label htmlFor="showBank" className="flex items-center gap-2 cursor-pointer">
+                                        <input id="showBank" name="showBank" type="checkbox" checked={storeSettings.showBank} onChange={e => setStoreSettings({ ...storeSettings, showBank: e.target.checked })} className="w-4 h-4 text-primary rounded" />
                                         <span className="text-sm text-slate-700">Tampilkan Info Bank</span>
                                     </label>
                                 </div>
@@ -584,16 +586,16 @@ export const Settings: React.FC = () => {
                                 </div>
                                 <div className="p-6 space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Nama Bank / E-Wallet</label>
-                                        <input type="text" placeholder="Contoh: BCA, GoPay, Dana" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={bankForm.bankName} onChange={e => setBankForm({ ...bankForm, bankName: e.target.value })} />
+                                        <label htmlFor="bankName" className="block text-sm font-medium text-slate-700 mb-1">Nama Bank / E-Wallet</label>
+                                        <input id="bankName" name="bankName" type="text" placeholder="Contoh: BCA, GoPay, Dana" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={bankForm.bankName} onChange={e => setBankForm({ ...bankForm, bankName: e.target.value })} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Rekening / HP</label>
-                                        <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={bankForm.accountNumber} onChange={e => setBankForm({ ...bankForm, accountNumber: e.target.value })} />
+                                        <label htmlFor="accountNumber" className="block text-sm font-medium text-slate-700 mb-1">Nomor Rekening / HP</label>
+                                        <input id="accountNumber" name="accountNumber" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={bankForm.accountNumber} onChange={e => setBankForm({ ...bankForm, accountNumber: e.target.value })} />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Atas Nama</label>
-                                        <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={bankForm.holderName} onChange={e => setBankForm({ ...bankForm, holderName: e.target.value })} />
+                                        <label htmlFor="holderName" className="block text-sm font-medium text-slate-700 mb-1">Atas Nama</label>
+                                        <input id="holderName" name="holderName" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={bankForm.holderName} onChange={e => setBankForm({ ...bankForm, holderName: e.target.value })} />
                                     </div>
                                     <div className="pt-4 flex gap-3">
                                         <button onClick={() => setIsBankModalOpen(false)} className="flex-1 text-slate-500 py-2 text-sm hover:bg-slate-50 rounded-lg">Batal</button>
@@ -677,10 +679,12 @@ export const Settings: React.FC = () => {
                                 <div className="space-y-6">
                                     <div>
                                         <div className="flex justify-between mb-2">
-                                            <label className="text-sm font-medium text-slate-700">Warna (Hue)</label>
+                                            <label htmlFor="themeHue" className="text-sm font-medium text-slate-700">Warna (Hue)</label>
                                             <span className="text-xs font-mono text-slate-500">{hue}°</span>
                                         </div>
                                         <input
+                                            id="themeHue"
+                                            name="themeHue"
                                             type="range"
                                             min="0"
                                             max="360"
@@ -693,10 +697,12 @@ export const Settings: React.FC = () => {
 
                                     <div>
                                         <div className="flex justify-between mb-2">
-                                            <label className="text-sm font-medium text-slate-700">Kepekatan (Saturation)</label>
+                                            <label htmlFor="themeSaturation" className="text-sm font-medium text-slate-700">Kepekatan (Saturation)</label>
                                             <span className="text-xs font-mono text-slate-500">{saturation}%</span>
                                         </div>
                                         <input
+                                            id="themeSaturation"
+                                            name="themeSaturation"
                                             type="range"
                                             min="0"
                                             max="100"
@@ -985,13 +991,13 @@ export const Settings: React.FC = () => {
                             </div>
                             <div className="p-6 space-y-4">
                                 <div className="flex justify-center mb-4 relative">
-                                    <label className="relative w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-blue-500 overflow-hidden group">
+                                    <label htmlFor="userImage" className="relative w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-blue-500 overflow-hidden group">
                                         {userForm.image ? (
                                             <img src={userForm.image} className="w-full h-full object-cover" alt="Preview" />
                                         ) : (
                                             <Upload className="text-slate-400 group-hover:text-blue-500" />
                                         )}
-                                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                        <input id="userImage" name="userImage" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} aria-label="Upload Foto Pengguna" />
                                         <div className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity text-white text-xs ${userForm.image ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'}`}>
                                             Ubah Foto
                                         </div>
@@ -1008,20 +1014,20 @@ export const Settings: React.FC = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
-                                    <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.name} onChange={e => setUserForm({ ...userForm, name: e.target.value })} />
+                                    <label htmlFor="userName" className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                                    <input id="userName" name="userName" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.name} onChange={e => setUserForm({ ...userForm, name: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                                    <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.username} onChange={e => setUserForm({ ...userForm, username: e.target.value })} />
+                                    <label htmlFor="userUsername" className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                                    <input id="userUsername" name="userUsername" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.username} onChange={e => setUserForm({ ...userForm, username: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                                    <input type="password" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} placeholder={editingId ? "Kosongkan jika tidak ingin mengubah password" : ""} />
+                                    <label htmlFor="userPassword" className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                                    <input id="userPassword" name="userPassword" type="password" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} placeholder={editingId ? "Kosongkan jika tidak ingin mengubah password" : ""} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Level Akses</label>
-                                    <select className="w-full border border-slate-300 p-2 rounded-lg bg-white outline-none" value={userForm.role} onChange={e => setUserForm({ ...userForm, role: e.target.value as UserRole })}>
+                                    <label htmlFor="userRole" className="block text-sm font-medium text-slate-700 mb-1">Level Akses</label>
+                                    <select id="userRole" name="userRole" className="w-full border border-slate-300 p-2 rounded-lg bg-white outline-none" value={userForm.role} onChange={e => setUserForm({ ...userForm, role: e.target.value as UserRole })}>
                                         <option value={UserRole.CASHIER}>Kasir (POS Only)</option>
                                         <option value={UserRole.WAREHOUSE}>Gudang (Stok Only)</option>
                                         <option value={UserRole.ADMIN}>Admin (Manage/No POS)</option>

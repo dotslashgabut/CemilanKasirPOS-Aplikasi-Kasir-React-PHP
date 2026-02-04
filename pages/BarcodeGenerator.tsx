@@ -142,7 +142,10 @@ export const BarcodeGenerator: React.FC = () => {
                 <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <div className="relative mb-4">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <label htmlFor="productSearch" className="sr-only">Cari produk...</label>
                         <input
+                            id="productSearch"
+                            name="productSearch"
                             type="text"
                             placeholder="Cari produk..."
                             className="w-full pl-10 pr-10 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"

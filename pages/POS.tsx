@@ -309,7 +309,10 @@ export const POS: React.FC = () => {
         <div className="p-4 border-b border-slate-100 flex gap-4 bg-white z-10">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <label htmlFor="posSearch" className="sr-only">Cari Produk</label>
             <input
+              id="posSearch"
+              name="posSearch"
               ref={searchInputRef}
               type="text"
               placeholder="Scan Barcode atau Cari Nama..."
@@ -332,7 +335,10 @@ export const POS: React.FC = () => {
             )}
             <ScanLine className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           </div>
+          <label htmlFor="priceTypeSelect" className="sr-only">Pilih Tipe Harga</label>
           <select
+            id="priceTypeSelect"
+            name="priceTypeSelect"
             className="hidden sm:block px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600"
             value={defaultPriceType}
             onChange={(e) => setDefaultPriceType(e.target.value as PriceType)}
@@ -346,7 +352,10 @@ export const POS: React.FC = () => {
 
         {/* Mobile Price Type Selector (Visible only on small screens) */}
         <div className="sm:hidden px-4 pb-4 border-b border-slate-100 bg-white">
+          <label htmlFor="priceTypeSelectMobile" className="sr-only">Pilih Tipe Harga</label>
           <select
+            id="priceTypeSelectMobile"
+            name="priceTypeSelectMobile"
             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600"
             value={defaultPriceType}
             onChange={(e) => setDefaultPriceType(e.target.value as PriceType)}
@@ -433,7 +442,10 @@ export const POS: React.FC = () => {
 
           <div className="mb-3">
             <div className="relative mb-2">
+              <label htmlFor="customerSearch" className="sr-only">Cari Pelanggan</label>
               <input
+                id="customerSearch"
+                name="customerSearch"
                 type="text"
                 placeholder="Cari nama pelanggan..."
                 className="w-full px-3 pr-8 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -452,7 +464,10 @@ export const POS: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <User size={18} className="text-slate-400" />
+              <label htmlFor="customerSelect" className="sr-only">Pilih Pelanggan</label>
               <select
+                id="customerSelect"
+                name="customerSelect"
                 className="bg-transparent font-medium text-slate-700 focus:outline-none border-b border-dashed border-slate-300 w-full focus:border-primary transition-colors"
                 value={selectedCustomerId}
                 onChange={(e) => setSelectedCustomerId(e.target.value)}
@@ -491,7 +506,10 @@ export const POS: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-1 w-24">
+                <label htmlFor="discountInput" className="sr-only">Diskon</label>
                 <input
+                  id="discountInput"
+                  name="discountInput"
                   type="text"
                   className={`w-full text-right bg-transparent border-b border-dashed outline-none font-medium pb-0.5 ${(discountType === 'PERCENTAGE' && discount > 100) || (discountType === 'FIXED' && discount > subtotal)
                     ? 'border-red-500 text-red-600'
@@ -562,7 +580,10 @@ export const POS: React.FC = () => {
                 <div className="flex-1">
                   <h5 className="font-medium text-slate-800 text-sm">{item.name} <span className="text-xs text-slate-400 font-normal">({item.unit || 'Pcs'})</span></h5>
                   <div className="flex items-center gap-2 mt-1">
+                    <label htmlFor={`priceType-${idx}`} className="sr-only">Price Type</label>
                     <select
+                      id={`priceType-${idx}`}
+                      name={`priceType-${idx}`}
                       className="text-xs bg-slate-100 border-none rounded px-1 py-0.5 text-slate-600"
                       value={item.selectedPriceType}
                       onChange={(e) => updateCartItem(idx, { selectedPriceType: e.target.value as PriceType })}
@@ -578,7 +599,10 @@ export const POS: React.FC = () => {
                 <div className="flex flex-col items-end gap-2">
                   <div className="flex items-center gap-2 bg-slate-50 rounded-lg border border-slate-200">
                     <button onClick={() => item.qty > 1 ? updateCartItem(idx, { qty: item.qty - 1 }) : removeFromCart(idx)} className="p-1 hover:bg-slate-200 rounded text-slate-500"><Minus size={14} /></button>
+                    <label htmlFor={`qty-${idx}`} className="sr-only">Quantity</label>
                     <input
+                      id={`qty-${idx}`}
+                      name={`qty-${idx}`}
                       type="text"
                       className="text-sm font-bold w-12 text-center bg-transparent outline-none p-0"
                       value={item.qty === 0 ? '' : item.qty}
@@ -715,10 +739,12 @@ export const POS: React.FC = () => {
                 {/* Bank Selector for Transfer or Tempo (Partial Transfer) */}
                 {(paymentMethod === PaymentMethod.TRANSFER || paymentMethod === PaymentMethod.TEMPO) && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                    <label htmlFor="bankSelect" className="block text-sm font-medium text-slate-600 mb-1">
                       {paymentMethod === PaymentMethod.TRANSFER ? 'Pilih Rekening Tujuan' : 'Rekening Tujuan (Jika DP Transfer)'}
                     </label>
                     <select
+                      id="bankSelect"
+                      name="bankSelect"
                       className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white"
                       value={selectedBankId}
                       onChange={e => setSelectedBankId(e.target.value)}
@@ -733,7 +759,7 @@ export const POS: React.FC = () => {
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-slate-600">Jumlah Diterima</label>
+                    <label htmlFor="amountPaid" className="block text-sm font-medium text-slate-600">Jumlah Diterima</label>
                     {paymentMethod === PaymentMethod.CASH && (
                       <button
                         onClick={() => setAmountPaid(totalAmount.toString())}
@@ -746,6 +772,8 @@ export const POS: React.FC = () => {
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rp</span>
                     <input
+                      id="amountPaid"
+                      name="amountPaid"
                       type="text"
                       className="w-full pl-12 pr-4 py-3 text-xl font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none"
                       value={amountPaid}
@@ -769,10 +797,12 @@ export const POS: React.FC = () => {
 
                 {/* Notes */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-1">Catatan (Opsional)</label>
+                  <label htmlFor="paymentNote" className="block text-sm font-medium text-slate-600 mb-1">Catatan (Opsional)</label>
                   <div className="relative">
                     <StickyNote size={16} className="absolute left-3 top-3 text-slate-400" />
                     <textarea
+                      id="paymentNote"
+                      name="paymentNote"
                       className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none text-sm"
                       rows={2}
                       placeholder="Catatan tambahan..."

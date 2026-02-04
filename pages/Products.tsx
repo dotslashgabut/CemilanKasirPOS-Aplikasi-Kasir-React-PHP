@@ -501,7 +501,7 @@ export const Products: React.FC = () => {
           {['CASHIER', 'GUDANG', 'ADMIN'].indexOf((JSON.parse(localStorage.getItem('pos_current_user') || '{}') as any).role) === -1 && (
             <label className="bg-white border border-slate-300 text-slate-700 px-3 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-50 cursor-pointer text-sm font-medium">
               <Upload size={16} /> Import CSV
-              <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
+              <input id="csvProductImport" name="csvProductImport" type="file" accept=".csv" className="hidden" onChange={handleImport} />
             </label>
           )}
           <button onClick={handleExportExcel} className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-lg flex items-center gap-2 hover:bg-green-100 text-sm font-medium">
@@ -562,7 +562,10 @@ export const Products: React.FC = () => {
       {/* Search Input */}
       <div className="relative max-w-md">
         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <label htmlFor="productSearchMain" className="sr-only">Cari produk...</label>
         <input
+          id="productSearchMain"
+          name="productSearchMain"
           type="text"
           placeholder="Cari nama produk, SKU, atau kategori..."
           className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary outline-none transition-all text-sm text-slate-700"
@@ -694,7 +697,7 @@ export const Products: React.FC = () => {
                       <span className="text-xs text-slate-500">Upload Gambar Produk (Auto-Crop 150px)</span>
                     </>
                   )}
-                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                  <input id="productImage" name="productImage" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
 
                   {/* Overlay for Change Image */}
                   <div className={`absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold transition-opacity ${formData.image ? 'opacity-0 group-hover:opacity-100' : 'hidden'}`}>
@@ -716,23 +719,25 @@ export const Products: React.FC = () => {
               </div>
 
               <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nama Produk</label>
-                <input type="text" className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Contoh: Keripik..." />
+                <label htmlFor="productName" className="block text-sm font-medium text-slate-700 mb-1">Nama Produk</label>
+                <input id="productName" name="productName" type="text" className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Contoh: Keripik..." />
               </div>
               <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Kode SKU / Barcode</label>
+                <label htmlFor="sku" className="block text-sm font-medium text-slate-700 mb-1">Kode SKU / Barcode</label>
                 <div className="flex gap-2">
-                  <input type="text" className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none font-mono" value={formData.sku} onChange={e => setFormData({ ...formData, sku: e.target.value })} placeholder="Scan atau ketik..." />
+                  <input id="sku" name="sku" type="text" className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none font-mono" value={formData.sku} onChange={e => setFormData({ ...formData, sku: e.target.value })} placeholder="Scan atau ketik..." />
                   <button onClick={handleGenerateCode} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg" title="Generate Code"><Barcode size={20} /></button>
                 </div>
               </div>
               <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Satuan</label>
-                <input type="text" className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.unit || 'Pcs'} onChange={e => setFormData({ ...formData, unit: e.target.value })} placeholder="Pcs, Kg, Box..." />
+                <label htmlFor="unit" className="block text-sm font-medium text-slate-700 mb-1">Satuan</label>
+                <input id="unit" name="unit" type="text" className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.unit || 'Pcs'} onChange={e => setFormData({ ...formData, unit: e.target.value })} placeholder="Pcs, Kg, Box..." />
               </div>
               <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
+                <label htmlFor="category" className="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
                 <select
+                  id="category"
+                  name="category"
                   className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-white"
                   value={formData.categoryId}
                   onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
@@ -742,8 +747,8 @@ export const Products: React.FC = () => {
                 </select>
               </div>
               <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Stok Awal</label>
-                <input type="text" className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.stock} onChange={e => handleNumericInput('stock', e.target.value)} />
+                <label htmlFor="stock" className="block text-sm font-medium text-slate-700 mb-1">Stok Awal</label>
+                <input id="stock" name="stock" type="text" className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.stock} onChange={e => handleNumericInput('stock', e.target.value)} />
               </div>
 
               <div className="col-span-2 my-2 p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -756,28 +761,28 @@ export const Products: React.FC = () => {
                   {/* Hide HPP for Cashier and Admin and Warehouse */}
                   {['CASHIER', 'ADMIN', 'GUDANG'].indexOf((JSON.parse(localStorage.getItem('pos_current_user') || '{}') as any).role) === -1 && (
                     <div className="col-span-2 md:col-span-4 mb-2">
-                      <label className="block text-xs font-bold text-red-500 mb-1">HPP (Harga Modal)</label>
+                      <label htmlFor="hpp" className="block text-xs font-bold text-red-500 mb-1">HPP (Harga Modal)</label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">Rp</span>
-                        <input type="text" className="w-full border border-red-200 bg-red-50/50 p-2 pl-8 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" value={formData.hpp} onChange={e => handleNumericInput('hpp', e.target.value)} />
+                        <input id="hpp" name="hpp" type="text" className="w-full border border-red-200 bg-red-50/50 p-2 pl-8 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" value={formData.hpp} onChange={e => handleNumericInput('hpp', e.target.value)} />
                       </div>
                     </div>
                   )}
                   <div className="col-span-2 md:col-span-1">
-                    <label className="block text-xs text-slate-500 mb-1">Harga Eceran</label>
-                    <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.priceRetail} onChange={e => handleNumericInput('priceRetail', e.target.value)} />
+                    <label htmlFor="priceRetail" className="block text-xs text-slate-500 mb-1">Harga Eceran</label>
+                    <input id="priceRetail" name="priceRetail" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.priceRetail} onChange={e => handleNumericInput('priceRetail', e.target.value)} />
                   </div>
                   <div className="col-span-2 md:col-span-1">
-                    <label className="block text-xs text-slate-500 mb-1">Harga Umum</label>
-                    <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.priceGeneral} onChange={e => handleNumericInput('priceGeneral', e.target.value)} />
+                    <label htmlFor="priceGeneral" className="block text-xs text-slate-500 mb-1">Harga Umum</label>
+                    <input id="priceGeneral" name="priceGeneral" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.priceGeneral} onChange={e => handleNumericInput('priceGeneral', e.target.value)} />
                   </div>
                   <div className="col-span-2 md:col-span-1">
-                    <label className="block text-xs text-slate-500 mb-1">Harga Grosir</label>
-                    <input type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.priceWholesale} onChange={e => handleNumericInput('priceWholesale', e.target.value)} />
+                    <label htmlFor="priceWholesale" className="block text-xs text-slate-500 mb-1">Harga Grosir</label>
+                    <input id="priceWholesale" name="priceWholesale" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={formData.priceWholesale} onChange={e => handleNumericInput('priceWholesale', e.target.value)} />
                   </div>
                   <div className="col-span-2 md:col-span-1">
-                    <label className="block text-xs text-red-500 font-bold mb-1">Harga Promo</label>
-                    <input type="text" className="w-full border border-red-200 bg-red-50 p-2 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" value={formData.pricePromo || 0} onChange={e => handleNumericInput('pricePromo', e.target.value)} />
+                    <label htmlFor="pricePromo" className="block text-xs text-red-500 font-bold mb-1">Harga Promo</label>
+                    <input id="pricePromo" name="pricePromo" type="text" className="w-full border border-red-200 bg-red-50 p-2 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" value={formData.pricePromo || 0} onChange={e => handleNumericInput('pricePromo', e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -800,7 +805,10 @@ export const Products: React.FC = () => {
               <button onClick={() => setIsCategoryModalOpen(false)}><X size={20} className="text-slate-400" /></button>
             </div>
             <div className="p-4 bg-slate-50 border-b border-slate-100 flex gap-2">
+              <label htmlFor="newCategoryName" className="sr-only">Nama Kategori Baru</label>
               <input
+                id="newCategoryName"
+                name="newCategoryName"
                 type="text"
                 className="flex-1 border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary"
                 placeholder="Nama Kategori Baru"
