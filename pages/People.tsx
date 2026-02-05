@@ -574,6 +574,7 @@ export const People: React.FC = () => {
                                     id="name"
                                     name="name"
                                     type="text"
+                                    autoComplete="name"
                                     className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -586,6 +587,7 @@ export const People: React.FC = () => {
                                     id="phone"
                                     name="phone"
                                     type="text"
+                                    autoComplete="tel"
                                     className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                     value={formData.phone}
                                     onChange={e => {
@@ -601,6 +603,7 @@ export const People: React.FC = () => {
                                     id="email"
                                     name="email"
                                     type="email"
+                                    autoComplete="email"
                                     className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
@@ -612,6 +615,7 @@ export const People: React.FC = () => {
                                 <textarea
                                     id="address"
                                     name="address"
+                                    autoComplete="street-address"
                                     className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                     rows={2}
                                     value={formData.address}
