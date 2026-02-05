@@ -212,9 +212,13 @@ export const Settings: React.FC = () => {
             setIsModalOpen(false);
             setEditingId(null);
             alert('User berhasil disimpan!');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert('Gagal menyimpan user. Pastikan username belum digunakan.');
+            let errorMessage = error.message || 'Pastikan username belum digunakan.';
+            if (errorMessage.includes('Validation failed')) {
+                errorMessage += ' (Password minimal 6 karakter)';
+            }
+            alert(`Gagal menyimpan user: ${errorMessage}`);
         }
     };
 
@@ -1015,22 +1019,22 @@ export const Settings: React.FC = () => {
                                 </div>
                                 <div>
                                     <label htmlFor="userName" className="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
-                                    <input id="userName" name="userName" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.name} onChange={e => setUserForm({ ...userForm, name: e.target.value })} />
+                                    <input id="userName" name="userName" type="text" autoComplete="name" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.name} onChange={e => setUserForm({ ...userForm, name: e.target.value })} />
                                 </div>
                                 <div>
                                     <label htmlFor="userUsername" className="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                                    <input id="userUsername" name="userUsername" type="text" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.username} onChange={e => setUserForm({ ...userForm, username: e.target.value })} />
+                                    <input id="userUsername" name="userUsername" type="text" autoComplete="username" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.username} onChange={e => setUserForm({ ...userForm, username: e.target.value })} />
                                 </div>
                                 <div>
                                     <label htmlFor="userPassword" className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                                    <input id="userPassword" name="userPassword" type="password" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} placeholder={editingId ? "Kosongkan jika tidak ingin mengubah password" : ""} />
+                                    <input id="userPassword" name="userPassword" type="password" autoComplete="new-password" className="w-full border border-slate-300 p-2 rounded-lg focus:ring-2 focus:ring-primary outline-none" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} placeholder={editingId ? "Kosongkan jika tidak ingin mengubah password" : ""} />
                                 </div>
                                 <div>
                                     <label htmlFor="userRole" className="block text-sm font-medium text-slate-700 mb-1">Level Akses</label>
                                     <select id="userRole" name="userRole" className="w-full border border-slate-300 p-2 rounded-lg bg-white outline-none" value={userForm.role} onChange={e => setUserForm({ ...userForm, role: e.target.value as UserRole })}>
                                         <option value={UserRole.CASHIER}>Kasir (POS Only)</option>
                                         <option value={UserRole.WAREHOUSE}>Gudang (Stok Only)</option>
-                                        <option value={UserRole.ADMIN}>Admin (Manage/No POS)</option>
+                                        <option value={UserRole.ADMIN}>Admin (Admin + POS)</option>
                                         <option value={UserRole.OWNER}>Owner (Full Access)</option>
                                         <option value={UserRole.SUPERADMIN}>Superadmin (Unlimited)</option>
                                     </select>

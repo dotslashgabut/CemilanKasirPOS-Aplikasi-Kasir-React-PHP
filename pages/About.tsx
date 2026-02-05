@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Github, Twitter, Youtube, Coffee, Heart, Info } from 'lucide-react';
+import { Github, Twitter, Youtube, Coffee, Heart, Info, Book } from 'lucide-react';
 
 export const About: React.FC = () => {
     return (
@@ -67,6 +67,19 @@ export const About: React.FC = () => {
                             </div>
                             <span className="font-semibold text-slate-700">Tutorials</span>
                             <span className="text-xs text-slate-500 mt-1">YouTube</span>
+                        </a>
+
+                        <a
+                            href="https://trakteer.id/dotslashgabut"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex flex-col items-center p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 group"
+                        >
+                            <div className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                <Book size={24} />
+                            </div>
+                            <span className="font-semibold text-slate-700">Tutorials</span>
+                            <span className="text-xs text-slate-500 mt-1">Trakteer</span>
                         </a>
 
                         <a

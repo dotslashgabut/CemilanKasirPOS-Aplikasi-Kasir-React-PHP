@@ -25,43 +25,35 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
     const customers = useData(() => StorageService.getCustomers(), [], 'customers') || [];
     const banks = useData(() => StorageService.getBanks(), [], 'banks') || [];
     const users = useMemo(() => {
-        const uniqueUsers = new Map<string, { id: string, name: string, role?: string }>();
+        // 1. Group by ID first to merge "username" vs "FullName" for the same user ID
+        const usersById = new Map<string, string>(); // ID -> Name
 
-        // Helper to add user
-        const addUser = (id: string | number, name: string) => {
-            if (!name) return; // Must have name
-            const strId = String(id || '');
-            // Deduplicate by NAME to merge "duplicate" users with different IDs
-            if (!uniqueUsers.has(name)) {
-                uniqueUsers.set(name, { id: strId, name: name });
+        const processUser = (id: string | number | undefined, name: string | undefined) => {
+            if (!id || !name) return;
+            const strId = String(id);
+
+            if (!usersById.has(strId)) {
+                usersById.set(strId, name);
+            } else {
+                const existingName = usersById.get(strId)!;
+                // Heuristic: Prefer longer name (e.g. "Administrator" over "admin")
+                // This helps avoid showing username when proper name is available
+                if (name.length > existingName.length) {
+                    usersById.set(strId, name);
+                }
             }
         };
 
-        // Extract from Transactions
-        transactions.forEach(t => {
-            if (t.cashierName) {
-                addUser(t.cashierId, t.cashierName);
-            }
-        });
+        transactions.forEach(t => processUser(t.cashierId, t.cashierName));
+        cashFlows.forEach(cf => processUser(cf.userId, cf.userName));
+        purchases.forEach(p => processUser(p.userId, p.userName));
 
-        // Extract from CashFlows
-        cashFlows.forEach(cf => {
-            if (cf.userName) {
-                addUser(cf.userId, cf.userName);
-            }
-        });
+        // 2. Extract unique names
+        // But we want to return the ID as the key, and the Best Name as the label.
 
-        // Extract from Purchases (New: Ensure purchase recorders are listed)
-        purchases.forEach(p => {
-            if (p.userName) {
-                addUser(p.userId, p.userName);
-            }
-        });
-
-        // If current user is Superadmin/Owner, ensure they are in the list if not already
-        // (Optional, determining role from history is hard, so we just list actors)
-
-        return Array.from(uniqueUsers.values()).sort((a, b) => a.name.localeCompare(b.name));
+        return Array.from(usersById.entries())
+            .map(([id, name]) => ({ id, name }))
+            .sort((a, b) => a.name.localeCompare(b.name));
     }, [transactions, cashFlows, purchases]);
     const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
 
@@ -723,12 +715,14 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         if (!userFilter) return items;
 
         return items.filter(item => {
+            // Filter by ID now, not Name.
+            // Note: Data might have empty or string IDs. We match loosely assuming userFilter is the ID.
             if (type === 'transaction') {
-                return item.cashierName === userFilter;
+                return String(item.cashierId || '') === userFilter;
             } else if (type === 'purchase') {
-                return item.userName === userFilter;
+                return String(item.userId || '') === userFilter;
             } else if (type === 'cashflow') {
-                return item.userName === userFilter;
+                return String(item.userId || '') === userFilter;
             }
             return true;
         });
@@ -2089,9 +2083,9 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     value={userFilter}
                                     onChange={e => setUserFilter(e.target.value)}
                                 >
-                                    <option value="">Semua Kasir/User</option>
-                                    {users.filter(u => u.role !== UserRole.SUPERADMIN).map(u => (
-                                        <option key={u.name} value={u.name}>{u.name}</option>
+                                    <option value="">Semua Kasir</option>
+                                    {users.filter(u => u.name !== 'Superadmin').map(u => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
                                     ))}
                                 </select>
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -2195,9 +2189,9 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     value={userFilter}
                                     onChange={e => setUserFilter(e.target.value)}
                                 >
-                                    <option value="">Semua Kasir/User</option>
-                                    {users.filter(u => u.role !== UserRole.SUPERADMIN).map(u => (
-                                        <option key={u.name} value={u.name}>{u.name}</option>
+                                    <option value="">Semua Kasir</option>
+                                    {users.filter(u => u.name !== 'Superadmin').map(u => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
                                     ))}
                                 </select>
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -3653,6 +3647,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                             {/* Product Search */}
                                             <div className="relative">
                                                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <label htmlFor="purchaseProductSearch" className="sr-only">Cari Barang</label>
                                                 <input
                                                     id="purchaseProductSearch"
                                                     name="purchaseProductSearch"
@@ -3708,6 +3703,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                                                     id={`purchaseItemQty-${idx}`}
                                                                     name={`purchaseItemQty-${idx}`}
                                                                     type="text"
+                                                                    aria-label="Jumlah Item"
                                                                     className="w-12 text-center outline-none"
                                                                     value={item.qty}
                                                                     onChange={(e) => {
@@ -3731,6 +3727,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                                                 id={`purchaseItemPrice-${idx}`}
                                                                 name={`purchaseItemPrice-${idx}`}
                                                                 type="text"
+                                                                aria-label="Harga Beli per Satuan"
                                                                 className="flex-1 border border-slate-300 rounded px-2 py-1 outline-none focus:border-blue-500"
                                                                 placeholder="Harga Beli (HPP)"
                                                                 value={item.price}

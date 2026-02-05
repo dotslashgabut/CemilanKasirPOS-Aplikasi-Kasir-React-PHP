@@ -196,7 +196,7 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                 <div className="flex flex-wrap justify-between items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                            <Undo2 className="text-red-600" />
+                            <Undo2 className="text-primary" />
                             Riwayat Retur
                         </h1>
                         <p className="text-slate-500 text-sm mt-1">Lacak pengembalian barang penjualan dan pembelian</p>

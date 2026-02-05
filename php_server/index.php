@@ -446,6 +446,12 @@ switch ($method) {
             $stmt = $pdo->prepare($sql);
             $stmt->execute($data);
             sendJson($data, 201);
+        } catch (PDOException $e) {
+            if ($e->getCode() == 23000) {
+                 sendJson(['error' => 'Username already exists.'], 409);
+            }
+            file_put_contents('php_error.log', date('[Y-m-d H:i:s] ') . "POST Error ($tableName): " . $e->getMessage() . "\n", FILE_APPEND);
+            sendJson(['error' => (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) ? $e->getMessage() : 'Internal Server Error'], 500);
         } catch (Exception $e) {
             file_put_contents('php_error.log', date('[Y-m-d H:i:s] ') . "POST Error ($tableName): " . $e->getMessage() . "\n", FILE_APPEND);
             sendJson(['error' => (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) ? $e->getMessage() : 'Internal Server Error'], 500);
@@ -541,6 +547,11 @@ switch ($method) {
             $stmt = $pdo->prepare($sql);
             $stmt->execute($data);
             sendJson(['message' => 'Updated successfully']);
+        } catch (PDOException $e) {
+            if ($e->getCode() == 23000) {
+                 sendJson(['error' => 'Username already exists.'], 409);
+            }
+            sendJson(['error' => (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) ? $e->getMessage() : 'Internal Server Error'], 500);
         } catch (Exception $e) {
             sendJson(['error' => (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) ? $e->getMessage() : 'Internal Server Error'], 500);
         }

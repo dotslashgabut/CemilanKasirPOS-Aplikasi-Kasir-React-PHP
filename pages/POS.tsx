@@ -694,7 +694,7 @@ export const POS: React.FC = () => {
               <div className="p-6 space-y-6 overflow-y-auto">
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-600 mb-2">Metode Pembayaran</label>
+                  <span className="block text-sm font-medium text-slate-600 mb-2">Metode Pembayaran</span>
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={() => {

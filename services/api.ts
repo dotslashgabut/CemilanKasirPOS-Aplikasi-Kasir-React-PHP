@@ -585,13 +585,20 @@ export const ApiService = {
             method: 'POST',
             body: JSON.stringify(user)
         });
-        if (!res.ok) throw new Error('Failed to save user');
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Failed to save user');
+        }
     },
     updateUser: async (user: User) => {
-        await request(`/users/${user.id}`, {
+        const res = await request(`/users/${user.id}`, {
             method: 'PUT',
             body: JSON.stringify(user)
         });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Failed to update user');
+        }
     },
     deleteUser: async (id: string) => {
         const res = await request(`/users/${id}`, { method: 'DELETE' });
