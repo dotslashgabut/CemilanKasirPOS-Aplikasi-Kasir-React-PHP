@@ -367,7 +367,7 @@ export const POS: React.FC = () => {
           </select>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 content-start pb-24 lg:pb-4">
+        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 content-start pb-20 lg:pb-4">
           {visibleProducts.map(product => (
             <button
               key={product.id}
@@ -423,11 +423,11 @@ export const POS: React.FC = () => {
       {/* Cart Sidebar / Mobile Modal */}
       <div className={`
         flex flex-col bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-slate-200
-        lg:w-96 lg:static 
+        lg:w-96 lg:static lg:h-full lg:overflow-hidden
         fixed inset-0 z-[60] transition-transform duration-300 ease-in-out
         ${showMobileCart ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
       `}>
-        <div className="p-4 border-b border-slate-100 bg-slate-50 lg:rounded-t-2xl flex flex-col h-full lg:h-auto overflow-hidden">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 lg:rounded-t-2xl flex flex-col h-full lg:h-full overflow-hidden">
 
           {/* Mobile Header for Cart */}
           <div className="lg:hidden flex items-center gap-3 mb-4 pb-4 border-b border-slate-200">
@@ -596,62 +596,64 @@ export const POS: React.FC = () => {
                     <span className="text-xs text-slate-400">@{formatIDR(item.finalPrice)}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-2 bg-slate-50 rounded-lg border border-slate-200">
-                    <button onClick={() => item.qty > 1 ? updateCartItem(idx, { qty: item.qty - 1 }) : removeFromCart(idx)} className="p-1 hover:bg-slate-200 rounded text-slate-500"><Minus size={14} /></button>
-                    <label htmlFor={`qty-${idx}`} className="sr-only">Quantity</label>
-                    <input
-                      id={`qty-${idx}`}
-                      name={`qty-${idx}`}
-                      type="text"
-                      className="text-sm font-bold w-12 text-center bg-transparent outline-none p-0"
-                      value={item.qty === 0 ? '' : item.qty}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/[^0-9]/g, '');
-                        if (val === '') {
-                          updateCartItem(idx, { qty: 0 });
-                          return;
-                        }
-                        let newQty = parseInt(val);
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-sm font-semibold text-slate-700">{formatIDR(item.finalPrice * item.qty)}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 bg-slate-50 rounded-lg border border-slate-200">
+                      <button onClick={() => item.qty > 1 ? updateCartItem(idx, { qty: item.qty - 1 }) : removeFromCart(idx)} className="p-1 hover:bg-slate-200 rounded text-slate-500"><Minus size={14} /></button>
+                      <label htmlFor={`qty-${idx}`} className="sr-only">Quantity</label>
+                      <input
+                        id={`qty-${idx}`}
+                        name={`qty-${idx}`}
+                        type="text"
+                        className="text-sm font-bold w-12 text-center bg-transparent outline-none p-0"
+                        value={item.qty === 0 ? '' : item.qty}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, '');
+                          if (val === '') {
+                            updateCartItem(idx, { qty: 0 });
+                            return;
+                          }
+                          let newQty = parseInt(val);
 
-                        // Check total quantity for this product across all cart items
-                        const otherEntriesQty = cart.reduce((sum, cItem, cIdx) => (cItem.id === item.id && cIdx !== idx) ? sum + cItem.qty : sum, 0);
+                          // Check total quantity for this product across all cart items
+                          const otherEntriesQty = cart.reduce((sum, cItem, cIdx) => (cItem.id === item.id && cIdx !== idx) ? sum + cItem.qty : sum, 0);
 
-                        if (newQty + otherEntriesQty > item.stock) {
-                          alert(`Jumlah melebihi stok! Stok tersedia: ${item.stock}. (Sudah ada ${otherEntriesQty} di baris lain)`);
-                          newQty = Math.max(0, item.stock - otherEntriesQty);
-                        }
-                        updateCartItem(idx, { qty: newQty });
-                      }}
-                      onBlur={() => {
-                        if (item.qty === 0) updateCartItem(idx, { qty: 1 });
-                      }}
-                    />
+                          if (newQty + otherEntriesQty > item.stock) {
+                            alert(`Jumlah melebihi stok! Stok tersedia: ${item.stock}. (Sudah ada ${otherEntriesQty} di baris lain)`);
+                            newQty = Math.max(0, item.stock - otherEntriesQty);
+                          }
+                          updateCartItem(idx, { qty: newQty });
+                        }}
+                        onBlur={() => {
+                          if (item.qty === 0) updateCartItem(idx, { qty: 1 });
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          const totalQty = cart.filter(cItem => cItem.id === item.id).reduce((sum, cItem) => sum + cItem.qty, 0);
+                          if (totalQty < item.stock) {
+                            updateCartItem(idx, { qty: item.qty + 1 });
+                          } else {
+                            alert(`Stok habis! Maksimal ${item.stock}`);
+                          }
+                        }}
+                        className={`p-1 rounded ${cart.filter(cItem => cItem.id === item.id).reduce((sum, cItem) => sum + cItem.qty, 0) >= item.stock ? 'text-slate-300 cursor-not-allowed' : 'hover:bg-slate-200 text-slate-500'}`}
+                        disabled={cart.filter(cItem => cItem.id === item.id).reduce((sum, cItem) => sum + cItem.qty, 0) >= item.stock}
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    {/* Delete Item Button */}
                     <button
-                      onClick={() => {
-                        const totalQty = cart.filter(cItem => cItem.id === item.id).reduce((sum, cItem) => sum + cItem.qty, 0);
-                        if (totalQty < item.stock) {
-                          updateCartItem(idx, { qty: item.qty + 1 });
-                        } else {
-                          alert(`Stok habis! Maksimal ${item.stock}`);
-                        }
-                      }}
-                      className={`p-1 rounded ${cart.filter(cItem => cItem.id === item.id).reduce((sum, cItem) => sum + cItem.qty, 0) >= item.stock ? 'text-slate-300 cursor-not-allowed' : 'hover:bg-slate-200 text-slate-500'}`}
-                      disabled={cart.filter(cItem => cItem.id === item.id).reduce((sum, cItem) => sum + cItem.qty, 0) >= item.stock}
+                      onClick={() => removeFromCart(idx)}
+                      className="p-1.5 hover:bg-red-50 rounded text-red-500 hover:text-red-600 transition-colors"
+                      title="Hapus item"
                     >
-                      <Plus size={14} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
-                  {/* Delete Item Button */}
-                  <button
-                    onClick={() => removeFromCart(idx)}
-                    className="p-1.5 hover:bg-red-50 rounded text-red-500 hover:text-red-600 transition-colors"
-                    title="Hapus item"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
-                <span className="text-sm font-semibold text-slate-700">{formatIDR(item.finalPrice * item.qty)}</span>
               </div>
 
             ))}
