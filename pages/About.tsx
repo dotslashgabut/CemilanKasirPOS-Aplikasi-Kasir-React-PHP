@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Github, Twitter, Youtube, Coffee, Heart, Info, Book } from 'lucide-react';
+import { Coffee, Info, Book } from 'lucide-react';
+import { SiGithub, SiX, SiYoutube, SiKofi } from '@icons-pack/react-simple-icons';
 
 export const About: React.FC = () => {
     return (
@@ -37,7 +38,7 @@ export const About: React.FC = () => {
                             className="flex flex-col items-center p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 group"
                         >
                             <div className="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                <Github size={24} />
+                                <SiGithub size={24} />
                             </div>
                             <span className="font-semibold text-slate-700">Source Code</span>
                             <span className="text-xs text-slate-500 mt-1">GitHub</span>
@@ -50,7 +51,7 @@ export const About: React.FC = () => {
                             className="flex flex-col items-center p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 group"
                         >
                             <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                <Twitter size={24} />
+                                <SiX size={24} />
                             </div>
                             <span className="font-semibold text-slate-700">Follow Updates</span>
                             <span className="text-xs text-slate-500 mt-1">X (Twitter)</span>
@@ -63,7 +64,7 @@ export const About: React.FC = () => {
                             className="flex flex-col items-center p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 group"
                         >
                             <div className="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                <Youtube size={24} />
+                                <SiYoutube size={24} />
                             </div>
                             <span className="font-semibold text-slate-700">Tutorials</span>
                             <span className="text-xs text-slate-500 mt-1">YouTube</span>
@@ -102,7 +103,7 @@ export const About: React.FC = () => {
                             className="flex flex-col items-center p-6 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 group"
                         >
                             <div className="w-12 h-12 bg-sky-500 text-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                <Heart size={24} />
+                                <SiKofi size={24} />
                             </div>
                             <span className="font-semibold text-slate-700">Support Us</span>
                             <span className="text-xs text-slate-500 mt-1">Ko-fi</span>
