@@ -21,7 +21,7 @@ export const About: React.FC = () => {
                     <div className="mb-6">
                         <h2 className="text-3xl font-bold text-slate-800 mb-2">Cemilan KasirPOS</h2>
                         <div className="inline-block px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm font-medium mb-4">
-                            v0.1.0 React-PHP
+                            v0.2.2 React-PHP
                         </div>
                         <p className="text-slate-500 text-lg max-w-2xl mx-auto">
                             Aplikasi kasir (Point of Sales) sederhana namun powerful untuk membantu pencatatan transaksi dan manajemen stok usaha Anda.
