@@ -43,34 +43,59 @@
 
 ### 2. Role-Based Access Control (RBAC)
 
-Aplikasi mendukung 3 level pengguna dengan akses berbeda:
+Aplikasi mendukung 5 level pengguna dengan akses berbeda:
 
 #### **SUPERADMIN**
 
-- Akses penuh ke semua fitur sistem
-- Dapat mengelola user lain (tambah, edit, hapus)
-- Dapat menghapus data transaksi dan pembelian
-- Dapat mengubah pengaturan sistem kritis
-- Dapat melihat semua data keuangan termasuk HPP (Harga Pokok Penjualan)
+- Pemegang otoritas tertinggi di seluruh sistem aplikasi.
+- Memiliki akses penuh ke **Manajemen User** (Tambah/Edit/Hapus/Ubah Password user lain).
+- Dapat melakukan **Reset Database** (Membersihkan seluruh data transaksi dan master).
+- Memiliki akses ke seluruh data finansial, data master, dan pengaturan sistem.
+- Dapat melihat HPP dan laporan laba rugi di semua modul.
+- Bertanggung jawab atas konfigurasi teknis dan hak akses role lainnya.
 
 #### **OWNER**
 
-- Akses penuh kecuali manajemen user
-- Dapat melihat semua laporan keuangan
-- Dapat mengelola produk, customer, dan supplier
-- Dapat melihat HPP dan laporan laba rugi
-- Tidak dapat menghapus user atau reset sistem
+- Akses penuh ke operasional bisnis dan laporan keuangan.
+- Dapat mengelola data master (Produk, Customer, Supplier).
+- Dapat melihat laporan lengkap (Laba Rugi, Arus Kas, Histori Transaksi).
+- Dapat melihat HPP (Harga Pokok Penjualan) pada detail produk.
+- Dapat menghapus data transaksi, pembelian, dan arus kas (Data Safety).
+- Dapat mengakses modul Kasir (POS).
+- **Tidak dapat** mengelola user (Manajemen User) atau melakukan Reset Database.
+
+#### **ADMIN**
+
+- Akses manajemen operasional toko tingkat menengah.
+- Dapat mengelola produk (Tambah/Edit), customer, dan supplier.
+- Dapat melakukan pencatatan transaksi pembelian ke supplier.
+- Dapat mengakses modul Kasir (POS) untuk membantu operasional.
+- Dapat melihat riwayat transaksi dan operasional dasar.
+- **Tidak dapat** melihat HPP dan laporan Keuangan strategis (Laba Rugi).
+- **Tidak dapat** mengelola user dan pengaturan sistem.
+- **Tidak dapat** menghapus data transaksi/keuangan (Hanya Owner/Superadmin).
 
 #### **CASHIER**
 
-- Akses terbatas untuk operasional harian
-- Dapat melakukan transaksi penjualan
-- Dapat melihat produk dan stok
-- **Tidak dapat** melihat HPP
-- **Tidak dapat** melihat data keuangan dari kasir lain
-- **Tidak dapat** mengubah harga atau stok produk
-- **Tidak dapat** mengubah harga atau stok produk
-- Hanya dapat melihat transaksi, pembelian, dan arus kas yang dibuat sendiri (Data Isolation)
+- Akses terbatas untuk operasional kasir harian.
+- Dapat melakukan transaksi penjualan (POS).
+- Dapat melihat daftar produk dan stok.
+- **Tidak dapat** melihat HPP.
+- **Data Isolation**: Hanya dapat melihat transaksi, pembelian, dan arus kas yang dibuat oleh dirinya sendiri.
+- **Tidak dapat** mengelola data master (Hanya Lihat).
+- **Tidak dapat** menghapus data apapun.
+- **Tidak dapat** melihat laporan keuangan atau laba rugi.
+
+#### **GUDANG**
+
+- Akses khusus inventaris dan manajemen stok fisik.
+- Dapat melihat daftar produk dan stok.
+- Dapat melakukan **Stock Opname** (Penyesuaian Stok Real) dengan riwayat alasan.
+- **Terbatas**: Hanya bisa melihat menu Produk dan modul Pengecekan Stok.
+- **Tidak dapat** menambah, mengubah, atau menghapus data Produk (Hanya stok opname).
+- **Tidak dapat** melakukan transaksi penjualan (POS).
+- **Tidak dapat** melihat modul Keuangan, Kontak, atau Pengaturan.
+- **Tidak dapat** melihat HPP.
 
 ### 3. Fitur Keamanan Tambahan (Updated Security Audit 2026)
 
@@ -87,60 +112,60 @@ Aplikasi mendukung 3 level pengguna dengan akses berbeda:
 Default user untuk `cemilankasirpos_php_v02.sql`
 
 ```
-SUPERADMIN:
+Super Admin
 - Username: superadmin
 - Password: password
 - Role: SUPERADMIN
 
-OWNER:
+Administrator
 - Username: admin
 - Password: admin
 - Role: OWNER
 
-OWNER:
+Owner Cemilan
 - Username: owner
 - Password: owner
 - Role: OWNER
 
-CASHIER:
+Kasir 1
 - Username: kasir1
 - Password: kasir1
 - Role: CASHIER
 
-CASHIER:
+Kasir 2
 - Username: kasir2
 - Password: kasir2
 - Role: CASHIER
 
-CASHIER:
+Kasir 3
 - Username: kasir3
 - Password: kasir3
 - Role: CASHIER
 
-OWNER:
+Manager Toko
 - Username: manager
 - Password: manager
 - Role: OWNER
 
-CASHIER:
+Kasir Pagi
 - Username: kasir_pagi
 - Password: kasir_pagi
 - Role: CASHIER
 
-CASHIER:
+Kasir Siang
 - Username: kasir_siang
 - Password: kasir_siang
 - Role: CASHIER
 
-CASHIER:
+Kasir Malam
 - Username: kasir_malam
 - Password: kasir_malam
 - Role: CASHIER
 
-OWNER:
+Admin Gudang
 - Username: admin_gudang
 - Password: admin_gudang
-- Role: CASHIER
+- Role: GUDANG
 ```
 
 ---

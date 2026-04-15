@@ -230,7 +230,7 @@ export const Products: React.FC = () => {
     if (!printWindow) return;
 
     const currentUser = JSON.parse(localStorage.getItem('pos_current_user') || '{}');
-    const showHPP = currentUser.role !== UserRole.CASHIER && currentUser.role !== UserRole.ADMIN && currentUser.role !== UserRole.WAREHOUSE && currentUser.role !== UserRole.OWNER;
+    const showHPP = currentUser.role !== UserRole.CASHIER && currentUser.role !== UserRole.ADMIN && currentUser.role !== UserRole.WAREHOUSE;
 
     const rows = filteredProducts.map(p => `
       <tr>
@@ -603,9 +603,8 @@ export const Products: React.FC = () => {
               <th className="p-4 text-center cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('stock')}>
                 Stok <SortIcon column="stock" />
               </th>
-              {/* Hide HPP for Cashier */}
-              {/* Hide HPP for Cashier, Admin, Warehouse, Owner */}
-              {['CASHIER', 'ADMIN', 'GUDANG', 'OWNER'].indexOf((JSON.parse(localStorage.getItem('pos_current_user') || '{}') as any).role) === -1 && (
+              {/* Hide HPP for Cashier, Admin, Warehouse */}
+              {['CASHIER', 'ADMIN', 'GUDANG'].indexOf((JSON.parse(localStorage.getItem('pos_current_user') || '{}') as any).role) === -1 && (
                 <th className="p-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('hpp')}>
                   HPP (Modal) <SortIcon column="hpp" />
                 </th>

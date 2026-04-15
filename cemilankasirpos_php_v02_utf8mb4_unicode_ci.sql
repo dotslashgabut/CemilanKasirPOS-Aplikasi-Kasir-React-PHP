@@ -1017,7 +1017,7 @@ INSERT INTO `users` (`id`, `name`, `username`, `password`, `role`, `image`, `cre
 ('u6', 'Kasir Pagi', 'kasir_pagi', '$2b$10$0bXTDmflLgEspfgRBRTMw.NKtWjLIcVbF.UUbRy6FCL.uk6uN5nB2', 'CASHIER', NULL, '2025-11-21 04:25:30', '2025-11-25 11:33:45'),
 ('u7', 'Kasir Siang', 'kasir_siang', '$2b$10$Gk2cX87xmG4qXzhVecgIc.5tOu8/K66d1Jht5GRp9fRT3WzcMlmPC', 'CASHIER', NULL, '2025-11-21 04:30:35', '2025-11-25 11:33:52'),
 ('u8', 'Kasir Malam', 'kasir_malam', '$2b$10$rYG4ahh6.9mwmhx8kU3.C.O9K7rnK7QtazCyXco/L93/cyqKBo4i6', 'CASHIER', NULL, '2025-11-21 04:35:40', '2025-11-25 11:33:59'),
-('u9', 'Admin Gudang', 'admin_gudang', '$2b$10$VtQsjF/RCt/fJ3yiIfcBRuUchPStEDALdxbaHcCU/NLula4VWiHOa', 'OWNER', NULL, '2025-11-21 04:40:45', '2025-11-25 11:34:07');
+('u9', 'Admin Gudang', 'admin_gudang', '$2b$10$VtQsjF/RCt/fJ3yiIfcBRuUchPStEDALdxbaHcCU/NLula4VWiHOa', 'GUDANG', NULL, '2025-11-21 04:40:45', '2025-11-25 11:34:07');
 
 --
 -- Indexes for dumped tables
