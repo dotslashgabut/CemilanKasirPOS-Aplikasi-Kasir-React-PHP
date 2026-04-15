@@ -1173,7 +1173,7 @@ export const generatePrintDashboard = (
         .hb-item { display: flex; align-items: center; gap: 8px; font-size: 9px; }
         .hb-label { width: 80px; text-align: right; color: #475569; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .hb-track { flex: 1; height: 14px; background: #f1f5f9; border-radius: 3px; overflow: hidden; position: relative; }
-        .hb-fill { height: 100%; background: ${primaryColor}; display: flex; align-items: center; padding-left: 6px; font-size: 8px; color: #fff; font-weight: 600; }
+        .hb-fill { height: 100%; background: ${primaryColor}; display: flex; align-items: center; padding-left: 6px; font-size: 8px; color: #334155; font-weight: 600; }
         .hb-fill.cat { background: #10b981; }
         
         /* Pie Chart Simulation */
