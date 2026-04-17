@@ -34,7 +34,7 @@ CREATE TABLE `bankaccounts` (
   `holderName` varchar(255) DEFAULT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `bankaccounts`
@@ -91,7 +91,7 @@ CREATE TABLE `cashflows` (
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   `referenceId` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `cashflows`
@@ -113,7 +113,7 @@ CREATE TABLE `categories` (
   `name` varchar(255) NOT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `categories`
@@ -145,7 +145,7 @@ CREATE TABLE `customers` (
   `defaultPriceType` varchar(255) DEFAULT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `customers`
@@ -275,7 +275,7 @@ CREATE TABLE `products` (
   `unit` varchar(50) DEFAULT 'Pcs',
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `products`
@@ -813,7 +813,7 @@ CREATE TABLE `purchases` (
   `userId` varchar(255) DEFAULT NULL,
   `userName` varchar(255) DEFAULT NULL,
   `invoiceNumber` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -836,7 +836,7 @@ CREATE TABLE `stock_adjustments` (
   `userName` varchar(255) DEFAULT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -859,7 +859,7 @@ CREATE TABLE `storesettings` (
   `printerType` varchar(255) DEFAULT NULL,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `storesettings`
@@ -883,7 +883,7 @@ CREATE TABLE `suppliers` (
   `image` longtext,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `suppliers`
@@ -974,7 +974,7 @@ CREATE TABLE `transactions` (
   `discount` float DEFAULT '0',
   `discountType` varchar(20) DEFAULT 'FIXED',
   `discountAmount` float DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `transactions`
@@ -1000,7 +1000,7 @@ CREATE TABLE `users` (
   `image` longtext,
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
@@ -1008,6 +1008,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `name`, `username`, `password`, `role`, `image`, `createdAt`, `updatedAt`) VALUES
 ('admin_id', 'Administrator', 'admin', '$2b$10$/G1LVJ0rrpGXYlII4afPVuWGyRFU/l7/j6xih.PHyjGWxz4tDti/y', 'OWNER', NULL, '2025-11-25 10:47:56', '2025-11-25 11:34:40'),
+('b7863125-5f8a-4c95-b967-653109eec648', 'Admin Kasir', 'adminkasir', '$2y$10$LH8AcW6n98Q5H7C0C8bEi.kBKQQzGCtSriW5Ym0Rlq9LmplXVS3S6', 'ADMIN', '', '2026-04-15 08:45:51', '2026-04-15 08:45:51'),
 ('u0', 'Super Admin', 'superadmin', '$2b$10$UB90LOpqEIwAyvBtAeF52evLO/5Yt4/poy6fhH7KdIvR0ys4YhkRK', 'SUPERADMIN', NULL, '2025-11-21 03:21:02', '2025-11-25 11:33:14'),
 ('u1', 'Owner Cemilan', 'owner', '$2b$10$4sYmZyehNKuN1n8dzDKHz.cmSco8GgEWQqrloKetJ3c77/h7kWkMO', 'OWNER', NULL, '2025-11-21 03:24:32', '2025-11-25 11:32:07'),
 ('u2', 'Kasir 1', 'kasir1', '$2b$10$6H2N0HLdQvj0mdRyXJJGguTDbQ0ajPjXecRGSdLjtMHSPxlDqzoEi', 'CASHIER', NULL, '2025-11-21 03:21:52', '2025-11-25 11:32:49'),
