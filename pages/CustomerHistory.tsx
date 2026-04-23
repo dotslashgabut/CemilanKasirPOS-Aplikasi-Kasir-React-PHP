@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
 import { Transaction, PaymentStatus, Customer, UserRole, User, PaymentMethod, StoreSettings, TransactionType } from '../types';
-import { formatIDR, formatDate, exportToCSV } from '../utils';
+import { formatIDR, formatDate, exportToCSV , getSyncedTodayDateString} from '../utils';
 import { generatePrintTransactionDetail } from '../utils/printHelpers';
 import { Download, Search, Filter, RotateCcw, X, Eye, FileText, Printer, FileSpreadsheet, UserCheck, Calendar } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -386,6 +386,17 @@ export const CustomerHistory: React.FC<CustomerHistoryProps> = ({ currentUser })
                         >
                             <RotateCcw size={14} />
                         </button>
+                    <button
+                        onClick={() => {
+                            const today = getSyncedTodayDateString();
+                            setStartDate(today);
+                            setEndDate(today);
+                        }}
+                        className="p-1.5 px-3 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors whitespace-nowrap ml-2"
+                        title="Set ke Hari Ini"
+                    >
+                        Hari Ini
+                    </button>
                     </div>
 
                     {/* Search Input */}

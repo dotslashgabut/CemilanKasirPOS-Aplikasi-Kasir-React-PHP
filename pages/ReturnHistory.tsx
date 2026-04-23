@@ -3,7 +3,7 @@ import { ApiService } from '../services/api';
 import { Transaction, Purchase, User, TransactionType, PurchaseType } from '../types';
 import { Loading } from '../components/Loading';
 import { Undo2, Search, Calendar, Package, ShoppingCart, Printer, FileSpreadsheet, Download, Filter, RotateCcw, X } from 'lucide-react';
-import { formatIDR, formatDate, exportToCSV } from '../utils';
+import { formatIDR, formatDate, exportToCSV , getSyncedTodayDateString} from '../utils';
 import * as XLSX from 'xlsx';
 
 interface ReturnHistoryProps {
@@ -282,6 +282,17 @@ export const ReturnHistory: React.FC<ReturnHistoryProps> = ({ currentUser }) => 
                         >
                             <RotateCcw size={14} />
                         </button>
+                    <button
+                        onClick={() => {
+                            const today = getSyncedTodayDateString();
+                            setStartDate(today);
+                            setEndDate(today);
+                        }}
+                        className="p-1.5 px-3 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors whitespace-nowrap ml-2"
+                        title="Set ke Hari Ini"
+                    >
+                        Hari Ini
+                    </button>
                     </div>
 
                     {/* Search Input */}

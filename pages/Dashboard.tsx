@@ -422,25 +422,44 @@ export const Dashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="bg-slate-100 p-1 rounded-lg flex gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto">
             <button
-              onClick={() => setTimeFilter('daily')}
+              onClick={() => {
+                setTimeFilter('daily');
+                setSelectedDate(getCurrentDate());
+              }}
               className={`whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'daily' ? 'bg-primary shadow text-white' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Hari Ini
             </button>
             <button
-              onClick={() => setTimeFilter('weekly')}
+              onClick={() => {
+                setTimeFilter('weekly');
+                const now = getCurrentDate();
+                const day = now.getDay();
+                const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                const start = new Date(now);
+                start.setDate(diff);
+                start.setHours(0, 0, 0, 0);
+                setSelectedWeekStart(start);
+              }}
               className={`whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'weekly' ? 'bg-primary shadow text-white' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Minggu Ini
             </button>
             <button
-              onClick={() => setTimeFilter('monthly')}
+              onClick={() => {
+                setTimeFilter('monthly');
+                setSelectedMonth(getCurrentDate().getMonth());
+                setSelectedYear(getCurrentDate().getFullYear());
+              }}
               className={`whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'monthly' ? 'bg-primary shadow text-white' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Bulan Ini
             </button>
             <button
-              onClick={() => setTimeFilter('yearly')}
+              onClick={() => {
+                setTimeFilter('yearly');
+                setSelectedYear(getCurrentDate().getFullYear());
+              }}
               className={`whitespace-nowrap px-4 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'yearly' ? 'bg-primary shadow text-white' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Tahun Ini
@@ -540,27 +559,36 @@ export const Dashboard: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2">
             {timeFilter === 'daily' && (
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
-                <label htmlFor="dateFilter" className="text-sm font-medium text-slate-500">Tanggal:</label>
-                <div className="relative flex items-center">
-                  <span className="text-sm font-medium text-slate-700 pr-6">
-                    {selectedDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('/')}
-                  </span>
-                  <input
-                    id="dateFilter"
-                    name="dateFilter"
-                    type="date"
-                    aria-label="Filter Tanggal"
-                    value={selectedDate.toLocaleDateString('en-CA')}
-                    onChange={(e) => {
-                      const parts = e.target.value.split('-');
-                      const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                      if (!isNaN(date.getTime())) setSelectedDate(date);
-                    }}
-                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                  />
-                  <Calendar size={16} className="absolute right-0 text-slate-400 pointer-events-none" />
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
+                  <label htmlFor="dateFilter" className="text-sm font-medium text-slate-500">Tanggal:</label>
+                  <div className="relative flex items-center">
+                    <span className="text-sm font-medium text-slate-700 pr-6">
+                      {selectedDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).split('/').join('/')}
+                    </span>
+                    <input
+                      id="dateFilter"
+                      name="dateFilter"
+                      type="date"
+                      aria-label="Filter Tanggal"
+                      value={selectedDate.toLocaleDateString('en-CA')}
+                      onChange={(e) => {
+                        const parts = e.target.value.split('-');
+                        const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                        if (!isNaN(date.getTime())) setSelectedDate(date);
+                      }}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                    />
+                    <Calendar size={16} className="absolute right-0 text-slate-400 pointer-events-none" />
+                  </div>
                 </div>
+                <button
+                    onClick={() => setSelectedDate(getCurrentDate())}
+                    className="p-1.5 px-3 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors whitespace-nowrap"
+                    title="Set ke Hari Ini"
+                >
+                    Hari Ini
+                </button>
               </div>
             )}
 

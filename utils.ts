@@ -31,6 +31,22 @@ export const getCurrentDate = (): Date => {
   return new Date(Date.now() + timeOffset);
 };
 
+export const getSyncedTodayDateString = (): string => {
+   const now = getCurrentDate();
+   // Format ke YYYY-MM-DD memaksa zona waktu Asia/Jakarta (WIB)
+   const formatter = new Intl.DateTimeFormat('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+   });
+   const parts = formatter.formatToParts(now);
+   const d = parts.find(p => p.type === 'day')?.value;
+   const m = parts.find(p => p.type === 'month')?.value;
+   const y = parts.find(p => p.type === 'year')?.value;
+   return `${y}-${m}-${d}`;
+};
+
 export const formatDateDateOnly = (dateString: string): string => {
   return new Intl.DateTimeFormat('id-ID', {
     weekday: 'long',

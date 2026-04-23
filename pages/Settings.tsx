@@ -967,7 +967,7 @@ export const Settings: React.FC = () => {
                             </div>
 
                             {/* Delete Old Financial Data */}
-                            <div className="bg-white p-6 rounded-xl border-2 border-orange-300 hover:border-orange-500 transition-colors col-span-full md:col-span-3">
+                            <div className="bg-white p-6 rounded-xl border-2 border-orange-300 hover:border-orange-500 transition-colors col-span-full md:col-span-2">
                                 <div className="flex items-start gap-3 mb-4">
                                     <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
                                         <HistoryIcon size={24} className="text-orange-600" />

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
 import { TransactionType, UserRole, User } from '../types';
-import { formatIDR, exportToCSV } from '../utils';
+import { formatIDR, exportToCSV , getSyncedTodayDateString} from '../utils';
 import { Download, Search, Filter, RotateCcw, X, ArrowUpDown, ArrowUp, ArrowDown, FileSpreadsheet, ShoppingBag, Printer, Calendar } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -368,6 +368,17 @@ export const SoldItems: React.FC<SoldItemsProps> = ({ currentUser }) => {
                         >
                             <RotateCcw size={14} />
                         </button>
+                    <button
+                        onClick={() => {
+                            const today = getSyncedTodayDateString();
+                            setStartDate(today);
+                            setEndDate(today);
+                        }}
+                        className="p-1.5 px-3 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors whitespace-nowrap ml-2"
+                        title="Set ke Hari Ini"
+                    >
+                        Hari Ini
+                    </button>
                     </div>
 
                     {/* Search Input */}

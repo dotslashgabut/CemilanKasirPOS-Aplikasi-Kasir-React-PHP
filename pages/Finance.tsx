@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
 import { Transaction, PaymentStatus, CashFlow, CashFlowType, Purchase, Supplier, PaymentMethod, CashFlow as CashFlowTypeInterface, StoreSettings, BankAccount, User, UserRole, TransactionType, PurchaseType } from '../types';
-import { formatIDR, formatDate, exportToCSV, generateId, getCurrentDate } from '../utils';
+import { formatIDR, formatDate, exportToCSV, generateId, getCurrentDate, getSyncedTodayDateString } from '../utils';
 import { generatePrintInvoice, generatePrintGoodsNote, generatePrintSuratJalan, generatePrintTransactionDetail, generatePrintPurchaseDetail, generatePrintPurchaseNote } from '../utils/printHelpers';
 import { ArrowDownLeft, ArrowUpRight, Download, Plus, Printer, FileText, Filter, RotateCcw, X, Eye, ShoppingBag, Calendar, Clock, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, FileSpreadsheet } from 'lucide-react';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
@@ -2076,6 +2076,17 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                         title="Reset Filter"
                     >
                         <RotateCcw size={14} />
+                    </button>
+                    <button
+                        onClick={() => {
+                            const today = getSyncedTodayDateString();
+                            setStartDate(today);
+                            setEndDate(today);
+                        }}
+                        className="p-1.5 px-3 bg-primary/10 text-primary rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors whitespace-nowrap ml-2"
+                        title="Set ke Hari Ini"
+                    >
+                        Hari Ini
                     </button>
                 </div>
 
