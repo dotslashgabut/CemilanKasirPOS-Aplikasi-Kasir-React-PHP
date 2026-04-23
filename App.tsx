@@ -4,6 +4,7 @@ import { Loading } from './components/Loading';
 import { StorageService } from './services/storage';
 import { ApiService } from './services/api';
 import { useTheme } from './hooks/useTheme';
+import { setTimeOffset } from './utils';
 
 // Lazy load pages for better performance
 const Dashboard = React.lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
@@ -109,6 +110,40 @@ const App: React.FC = () => {
          // Step 1: Check if this is first time access (browser baru)
          const isMigrated = localStorage.getItem('pos_migrated_to_idb');
          const isFirstAccess = !isMigrated;
+
+         // Sync Time with Server
+         try {
+            let serverTime: number | null = null;
+            const localTime = Date.now();
+            
+            // First attempt: Get from external Time API (CORS enabled, highly accurate real-world time)
+            try {
+               const extTimeRes = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta', { cache: 'no-store' });
+               if (extTimeRes.ok) {
+                  const data = await extTimeRes.json();
+                  serverTime = new Date(data.dateTime + "+07:00").getTime();
+               }
+            } catch (e) {
+               console.log('External Time API failed, trying fallback...');
+            }
+
+            // Fallback attempt: Use server's Date header (useful for hosted apps)
+            // Skip localhost because local server will return the same wrong time as the computer
+            if (!serverTime && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+               const timeRes = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+               const serverDateStr = timeRes.headers.get('Date');
+               if (serverDateStr) {
+                  serverTime = new Date(serverDateStr).getTime();
+               }
+            }
+
+            if (serverTime) {
+               setTimeOffset(serverTime - localTime);
+               console.log(`Time synchronized. Offset: ${serverTime - localTime}ms`);
+            }
+         } catch (e) {
+            console.log('Offline mode or all time fetch attempts failed, using local time');
+         }
 
          // Step 2: If first access, try to sync from MySQL FIRST before seeding default data
          if (isFirstAccess) {

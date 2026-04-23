@@ -21,6 +21,16 @@ export const formatDate = (dateString: string): string => {
   }).format(new Date(dateString));
 };
 
+let timeOffset = 0;
+
+export const setTimeOffset = (offset: number) => {
+  timeOffset = offset;
+};
+
+export const getCurrentDate = (): Date => {
+  return new Date(Date.now() + timeOffset);
+};
+
 export const formatDateDateOnly = (dateString: string): string => {
   return new Intl.DateTimeFormat('id-ID', {
     weekday: 'long',

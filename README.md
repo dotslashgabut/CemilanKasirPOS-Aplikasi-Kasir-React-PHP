@@ -142,6 +142,7 @@ Cemilan KasirPOS is a modern, feature-rich Point of Sale (POS) application desig
 - **Profit & Loss**: View estimated profit and loss reports.
 - **Sold Items Report**: Dedicated report for tracking sold items with export and print capabilities.
 - **Returns Management**: Process sales returns and purchase returns with automatic stock adjustment.
+- **Bulk Delete & Data Pruning**: Superadmin features to delete multiple transactions at once and prune old financial data automatically.
 
 ### User & People Management
 
@@ -371,6 +372,7 @@ Cemilan KasirPOS adalah aplikasi Point of Sale (POS) modern yang kaya fitur, dir
 - **Laba Rugi**: Lihat laporan perkiraan laba dan rugi.
 - **Laporan Barang Terjual**: Laporan khusus untuk melacak barang terjual dengan fitur ekspor dan cetak.
 - **Manajemen Retur**: Proses retur penjualan dan retur pembelian dengan penyesuaian stok otomatis.
+- **Penghapusan Massal & Pembersihan Data**: Fitur superadmin untuk menghapus banyak transaksi sekaligus atau membersihkan data lama secara otomatis (Data Pruning).
 
 ### 🔒 Fitur Keamanan (Diperbarui 2026)
 

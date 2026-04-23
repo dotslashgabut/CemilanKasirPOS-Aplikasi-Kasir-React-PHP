@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
 import { Product, StockAdjustment, User } from '../types';
-import { formatDate, generateUUID, formatIDR, exportToCSV } from '../utils';
+import { formatDate, generateUUID, formatIDR, exportToCSV, getCurrentDate } from '../utils';
 import { Search, Filter, RotateCcw, Save, Package, TrendingUp, TrendingDown, FileText, Printer, Download, FileSpreadsheet, Calendar, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -120,7 +120,7 @@ export const RealStockCheck: React.FC<RealStockCheckProps> = ({ currentUser }) =
         try {
             const adjustment: StockAdjustment = {
                 id: generateUUID(),
-                date: new Date().toISOString(),
+                date: getCurrentDate().toISOString(),
                 productId: selectedProduct.id,
                 productName: selectedProduct.name,
                 type: adjustmentType,

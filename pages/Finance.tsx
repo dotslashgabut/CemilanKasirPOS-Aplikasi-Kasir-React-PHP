@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
 import { Transaction, PaymentStatus, CashFlow, CashFlowType, Purchase, Supplier, PaymentMethod, CashFlow as CashFlowTypeInterface, StoreSettings, BankAccount, User, UserRole, TransactionType, PurchaseType } from '../types';
-import { formatIDR, formatDate, exportToCSV, generateId } from '../utils';
+import { formatIDR, formatDate, exportToCSV, generateId, getCurrentDate } from '../utils';
 import { generatePrintInvoice, generatePrintGoodsNote, generatePrintSuratJalan, generatePrintTransactionDetail, generatePrintPurchaseDetail, generatePrintPurchaseNote } from '../utils/printHelpers';
 import { ArrowDownLeft, ArrowUpRight, Download, Plus, Printer, FileText, Filter, RotateCcw, X, Eye, ShoppingBag, Calendar, Clock, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, FileSpreadsheet } from 'lucide-react';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
@@ -67,6 +67,8 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         setCategoryFilter('');
         setPaymentMethodFilter('');
         setStatusFilter('');
+        setSelectedHistoryIds(new Set());
+        setSelectedPurchaseIds(new Set());
     }, [activeTab]);
 
     // Filter State
@@ -178,6 +180,57 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         onConfirm: () => { },
         type: 'default'
     });
+
+    const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(new Set());
+    const [selectedPurchaseIds, setSelectedPurchaseIds] = useState<Set<string>>(new Set());
+
+    const toggleHistorySelection = (id: string) => {
+        setSelectedHistoryIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const togglePurchaseSelection = (id: string) => {
+        setSelectedPurchaseIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const handleMassDeleteHistory = async () => {
+        if (selectedHistoryIds.size === 0) return;
+        if (!confirm(`Hapus ${selectedHistoryIds.size} riwayat transaksi terpilih? Data yang berkaitan juga akan terhapus.`)) return;
+        try {
+            for (const id of Array.from(selectedHistoryIds) as string[]) {
+                await StorageService.deleteTransaction(id);
+            }
+            setSelectedHistoryIds(new Set());
+            alert('Berhasil menghapus riwayat transaksi terpilih.');
+        } catch (error) {
+            console.error(error);
+            alert('Gagal menghapus beberapa riwayat transaksi.');
+        }
+    };
+
+    const handleMassDeletePurchase = async () => {
+        if (selectedPurchaseIds.size === 0) return;
+        if (!confirm(`Hapus ${selectedPurchaseIds.size} riwayat pembelian terpilih? Data yang berkaitan juga akan terhapus.`)) return;
+        try {
+            for (const id of Array.from(selectedPurchaseIds) as string[]) {
+                await StorageService.deletePurchase(id);
+            }
+            setSelectedPurchaseIds(new Set());
+            alert('Berhasil menghapus riwayat pembelian terpilih.');
+        } catch (error) {
+            console.error(error);
+            alert('Gagal menghapus beberapa riwayat pembelian.');
+        }
+    };
 
     useEffect(() => {
         StorageService.getStoreSettings().then(setStoreSettings);
@@ -300,7 +353,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
             const cutDebtAmount = Math.min(totalReturnValue, currentDebt);
             const cashRefundAmount = totalReturnValue - cutDebtAmount;
 
-            const now = new Date().toISOString();
+            const now = getCurrentDate().toISOString();
 
             // 3. Update Transaksi Asal
             // Always update isReturned status
@@ -438,7 +491,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
         const cutDebtAmount = Math.min(totalRefund, currentDebt);
         const cashRefundAmount = totalRefund - cutDebtAmount;
 
-        const now = new Date().toISOString();
+        const now = getCurrentDate().toISOString();
 
         // 3. Update Pembelian Asal (Potong Utang)
         let updatedOriginalPurchase = {
@@ -817,7 +870,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
 
         const newPaid = selectedDebt.amountPaid + pay;
         const newStatus = newPaid >= selectedDebt.totalAmount ? PaymentStatus.PAID : PaymentStatus.PARTIAL;
-        const now = new Date().toISOString(); // Capture exact time
+        const now = getCurrentDate().toISOString(); // Capture exact time
         const selectedBank = banks.find(b => b.id === repaymentBankId);
 
         const updatedHistory = [...(selectedDebt.paymentHistory || [])];
@@ -885,7 +938,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
 
         const newPaid = selectedPayable.amountPaid + pay;
         const newStatus = newPaid >= selectedPayable.totalAmount ? PaymentStatus.PAID : PaymentStatus.PARTIAL;
-        const now = new Date().toISOString(); // Capture exact time
+        const now = getCurrentDate().toISOString(); // Capture exact time
         const selectedBank = banks.find(b => b.id === payableBankId);
 
         const updatedHistory = [...(selectedPayable.paymentHistory || [])];
@@ -977,7 +1030,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
             return;
         }
 
-        const now = new Date().toISOString();
+        const now = getCurrentDate().toISOString();
 
         if (purchaseForm.paymentMethod === PaymentMethod.TRANSFER && !purchaseForm.bankId && paid > 0) {
             alert("Pilih rekening bank untuk pembayaran transfer.");
@@ -1052,7 +1105,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
 
         await StorageService.addCashFlow({
             id: '',
-            date: new Date().toISOString(),
+            date: getCurrentDate().toISOString(),
             type: cfType,
             amount,
             category: cfCategory, // Use selected category
@@ -2402,7 +2455,14 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                 activeTab === 'history' && (
                     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
                         <div className="p-4 bg-slate-50 border-b border-slate-100 font-semibold text-slate-700 flex justify-between">
-                            <span>Riwayat Transaksi Penjualan</span>
+                            <div className="flex items-center gap-4">
+                                <span>Riwayat Transaksi Penjualan</span>
+                                {currentUser?.role === UserRole.SUPERADMIN && selectedHistoryIds.size > 0 && (
+                                    <button onClick={handleMassDeleteHistory} className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-lg hover:bg-red-200 flex items-center gap-1">
+                                        <Trash2 size={14} /> Hapus Terpilih ({selectedHistoryIds.size})
+                                    </button>
+                                )}
+                            </div>
                             <span className="text-primary">Total: {formatIDR(filteredTransactions.reduce((s, t) => s + t.totalAmount, 0))}</span>
                         </div>
                         {searchQuery && (
@@ -2414,6 +2474,22 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
                                     <tr>
+                                        {currentUser?.role === UserRole.SUPERADMIN && (
+                                            <th className="p-4 w-10 text-center">
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20"
+                                                    checked={visibleTransactions.length > 0 && selectedHistoryIds.size === visibleTransactions.length}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedHistoryIds(new Set(visibleTransactions.map(t => t.id)));
+                                                        } else {
+                                                            setSelectedHistoryIds(new Set());
+                                                        }
+                                                    }}
+                                                />
+                                            </th>
+                                        )}
                                         <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('id')}>ID <SortIcon column="id" /></th>
                                         <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('date')}>Waktu <SortIcon column="date" /></th>
                                         <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('invoiceNumber')}>Faktur <SortIcon column="invoiceNumber" /></th>
@@ -2428,6 +2504,16 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                 <tbody className="divide-y divide-slate-100">
                                     {visibleTransactions.map(t => (
                                         <tr key={t.id} onClick={() => setDetailTransaction(t)} className="hover:bg-slate-50 cursor-pointer group">
+                                            {currentUser?.role === UserRole.SUPERADMIN && (
+                                                <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20"
+                                                        checked={selectedHistoryIds.has(t.id)}
+                                                        onChange={() => toggleHistorySelection(t.id)}
+                                                    />
+                                                </td>
+                                            )}
                                             <td className="p-4 font-mono text-xs text-slate-400">#{t.id.substring(0, 6)}</td>
                                             <td className="p-4 text-slate-600">
                                                 <div className="flex flex-col">
@@ -2483,7 +2569,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     ))}
                                     {visibleTransactions.length < filteredTransactions.length && (
                                         <tr>
-                                            <td colSpan={6} className="p-4 text-center text-slate-400">
+                                            <td colSpan={currentUser?.role === UserRole.SUPERADMIN ? 10 : 9} className="p-4 text-center text-slate-400">
                                                 <div ref={loadMoreRef}>Loading more...</div>
                                             </td>
                                         </tr>
@@ -2652,7 +2738,14 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                 activeTab === 'purchase_history' && (
                     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
                         <div className="p-4 bg-slate-50 border-b border-slate-100 font-semibold text-slate-700 flex justify-between">
-                            <span>Riwayat Pembelian Stok</span>
+                            <div className="flex items-center gap-4">
+                                <span>Riwayat Pembelian Stok</span>
+                                {currentUser?.role === UserRole.SUPERADMIN && selectedPurchaseIds.size > 0 && (
+                                    <button onClick={handleMassDeletePurchase} className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-lg hover:bg-red-200 flex items-center gap-1">
+                                        <Trash2 size={14} /> Hapus Terpilih ({selectedPurchaseIds.size})
+                                    </button>
+                                )}
+                            </div>
                             <span className="text-indigo-600">Total: {formatIDR(filteredPurchases.reduce((s, p) => s + p.totalAmount, 0))}</span>
                         </div>
                         {searchQuery && (
@@ -2664,6 +2757,22 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
                                     <tr>
+                                        {currentUser?.role === UserRole.SUPERADMIN && (
+                                            <th className="p-4 w-10 text-center">
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20"
+                                                    checked={visiblePurchases.length > 0 && selectedPurchaseIds.size === visiblePurchases.length}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedPurchaseIds(new Set(visiblePurchases.map(p => p.id)));
+                                                        } else {
+                                                            setSelectedPurchaseIds(new Set());
+                                                        }
+                                                    }}
+                                                />
+                                            </th>
+                                        )}
                                         <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('id')}>ID <SortIcon column="id" /></th>
                                         <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('date')}>Tanggal <SortIcon column="date" /></th>
                                         <th className="p-4 font-medium cursor-pointer hover:bg-slate-100" onClick={() => handleSort('invoiceNumber')}>Faktur <SortIcon column="invoiceNumber" /></th>
@@ -2678,6 +2787,16 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                 <tbody className="divide-y divide-slate-100">
                                     {visiblePurchases.map(p => (
                                         <tr key={p.id} className="hover:bg-slate-50 cursor-pointer group" onClick={() => setDetailPurchase(p)}>
+                                            {currentUser?.role === UserRole.SUPERADMIN && (
+                                                <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20"
+                                                        checked={selectedPurchaseIds.has(p.id)}
+                                                        onChange={() => togglePurchaseSelection(p.id)}
+                                                    />
+                                                </td>
+                                            )}
                                             <td className="p-4 font-mono text-xs text-slate-400">#{p.id.substring(0, 6)}</td>
                                             <td className="p-4 text-slate-600">
                                                 <div className="flex flex-col">
@@ -2724,7 +2843,7 @@ export const Finance: React.FC<FinanceProps> = ({ currentUser, defaultTab = 'his
                                     ))}
                                     {visiblePurchases.length < filteredPurchases.length && (
                                         <tr>
-                                            <td colSpan={6} className="p-4 text-center text-slate-400">
+                                            <td colSpan={currentUser?.role === UserRole.SUPERADMIN ? 10 : 9} className="p-4 text-center text-slate-400">
                                                 <div ref={loadMoreRef}>Loading more...</div>
                                             </td>
                                         </tr>

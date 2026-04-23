@@ -369,6 +369,7 @@ Fitur penghapusan transaksi yang cerdas dan aman untuk menjaga integritas data:
 *   **Stock Reversion**: Stok produk otomatis dikembalikan (ditambah kembali) saat transaksi penjualan dihapus.
 *   **Cash Flow Cleanup**: Data arus kas terkait otomatis dihapus.
 *   **Debt Restoration**: Jika menghapus transaksi retur potong utang, saldo hutang pada transaksi asli otomatis dikembalikan.
+*   **Penghapusan Massal (Bulk Delete)**: Fitur khusus Superadmin untuk menghapus banyak riwayat transaksi sekaligus beserta data terkaitnya.
 
 #### Pembayaran Cicilan
 
@@ -420,6 +421,7 @@ Fitur penghapusan pembelian yang aman:
 *   **Stock Reversion**: Stok produk otomatis dikurangi kembali saat pembelian dihapus.
 *   **Cash Flow Cleanup**: Data arus kas keluar (pembelian) atau masuk (retur) otomatis dihapus.
 *   **Debt Restoration**: Jika menghapus retur yang memotong hutang, saldo hutang pembelian asli otomatis dikembalikan.
+*   **Penghapusan Massal (Bulk Delete)**: Fitur khusus Superadmin untuk menghapus banyak riwayat pembelian sekaligus beserta data terkaitnya.
 
 ### 3. Piutang Pelanggan (Accounts Receivable)
 
@@ -908,6 +910,14 @@ Toggle show/hide untuk:
 - Transaction log
 - Action audit trail
 
+### 5. Manajemen Data (Data Pruning)
+
+**Pembersihan data transaksi lama (SUPERADMIN only)**
+
+#### Fitur Pembersihan
+- **Pembersihan Berdasarkan Umur**: Hapus data transaksi keuangan (penjualan, pembelian, arus kas, utang/piutang) yang lebih tua dari periode tertentu (1 bulan, 2 bulan, 6 bulan, dll).
+- **Keamanan Data**: Mencegah database menjadi terlalu besar dan mempertahankan performa aplikasi.
+
 ---
 
 ## Fitur Tambahan
@@ -1043,7 +1053,7 @@ Toggle show/hide untuk:
 
 ### 11. Date & Time Tracking
 
-**Pencatatan waktu lengkap**
+**Pencatatan waktu lengkap dan akurat**
 
 #### Timestamps:
 
@@ -1051,6 +1061,10 @@ Toggle show/hide untuk:
 - **updatedAt**: Waktu update terakhir
 - **Transaction date**: Tanggal transaksi (bisa custom)
 - **Payment date**: Tanggal setiap pembayaran
+
+#### Sinkronisasi Waktu Server (NTP):
+- Aplikasi otomatis tersinkronisasi dengan waktu dunia nyata (UTC+7) menggunakan API eksternal (World Time API), memastikan akurasi terlepas dari pengaturan jam di perangkat lokal pengguna.
+- Digunakan untuk pencatatan transaksi, penyesuaian stok, dan pencatatan kas.
 
 ### 12. Multi-currency Support (Planned)
 

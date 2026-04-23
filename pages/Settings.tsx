@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
 import { User, UserRole, StoreSettings, BankAccount, PrinterType } from '../types';
-import { Trash2, Plus, User as UserIcon, Shield, ShieldAlert, Edit2, Save, X, Store, Upload, CreditCard, Printer, AlertTriangle, Download, FileSpreadsheet, Settings as SettingsIcon, History as HistoryIcon, Palette } from 'lucide-react';
+import { Trash2, Plus, User as UserIcon, Shield, ShieldAlert, Edit2, Save, X, Store, Upload, CreditCard, Printer, AlertTriangle, Download, FileSpreadsheet, Settings as SettingsIcon, History as HistoryIcon, Palette, Loader2 } from 'lucide-react';
 import { exportToCSV, compressImage } from '../utils';
 import * as XLSX from 'xlsx';
 import { useTheme } from '../hooks/useTheme';
@@ -53,6 +53,8 @@ export const Settings: React.FC = () => {
     const [bankForm, setBankForm] = useState<Partial<BankAccount>>({ bankName: '', accountNumber: '', holderName: '' });
     const [isBankModalOpen, setIsBankModalOpen] = useState(false);
     const [editingBankId, setEditingBankId] = useState<string | null>(null);
+    const [oldDataRange, setOldDataRange] = useState<string>('6_months');
+    const [isDeletingOldData, setIsDeletingOldData] = useState(false);
 
     // --- STORE SETTINGS HANDLERS ---
 
@@ -321,6 +323,45 @@ export const Settings: React.FC = () => {
         if (confirmation === 'HAPUS DATA STOK') {
             await StorageService.resetStockAdjustments();
             alert('✅ Semua data penyesuaian stok berhasil dihapus!');
+        } else {
+            alert('❌ Penghapusan dibatalkan.');
+        }
+    };
+
+    const handleDeleteOldFinancial = async () => {
+        if (!isSuperAdmin) return;
+
+        const options: Record<string, { label: string, days: number }> = {
+            '6_months': { label: 'Lebih dari 6 bulan', days: 180 },
+            '2_months': { label: 'Lebih dari 2 bulan', days: 60 },
+            '1_month': { label: 'Lebih dari 1 bulan', days: 30 },
+            '5_weeks': { label: 'Lebih dari 5 minggu', days: 35 },
+            '2_weeks': { label: 'Lebih dari 2 minggu', days: 14 },
+            '1_week': { label: 'Lebih dari 1 minggu', days: 7 },
+            '3_days': { label: 'Lebih dari 3 hari', days: 3 },
+            '1_day': { label: 'Lebih dari 1 hari', days: 1 },
+        };
+
+        const selectedOption = options[oldDataRange];
+        if (!selectedOption) return;
+
+        const confirmation = prompt(`PERINGATAN: Ini akan menghapus data keuangan lama (transaksi, pembelian, arus kas) yang lebih tua dari ${selectedOption.label}!\n\nKetik "HAPUS LAMA" untuk konfirmasi:`);
+        
+        if (confirmation === 'HAPUS LAMA') {
+            const dateThreshold = new Date();
+            dateThreshold.setDate(dateThreshold.getDate() - selectedOption.days);
+
+            setIsDeletingOldData(true);
+            try {
+                await StorageService.deleteOldFinancialData(dateThreshold);
+                alert(`✅ Data keuangan lama (lebih dari ${selectedOption.label}) berhasil dihapus!`);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+                alert('Terjadi kesalahan saat menghapus data lama.');
+            } finally {
+                setIsDeletingOldData(false);
+            }
         } else {
             alert('❌ Penghapusan dibatalkan.');
         }
@@ -923,6 +964,45 @@ export const Settings: React.FC = () => {
                                     <Trash2 size={18} />
                                     RESET MASTER DATA
                                 </button>
+                            </div>
+
+                            {/* Delete Old Financial Data */}
+                            <div className="bg-white p-6 rounded-xl border-2 border-orange-300 hover:border-orange-500 transition-colors col-span-full md:col-span-3">
+                                <div className="flex items-start gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <HistoryIcon size={24} className="text-orange-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-slate-800 text-lg">Hapus Data Keuangan Lama</h4>
+                                        <p className="text-sm text-slate-600 mt-1">
+                                            Menghapus data transaksi, pembelian, dan arus kas lama berdasarkan rentang waktu tertentu.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <select
+                                        value={oldDataRange}
+                                        onChange={(e) => setOldDataRange(e.target.value)}
+                                        className="border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-primary flex-1"
+                                    >
+                                        <option value="6_months">Lebih dari 6 bulan</option>
+                                        <option value="2_months">Lebih dari 2 bulan</option>
+                                        <option value="1_month">Lebih dari 1 bulan</option>
+                                        <option value="5_weeks">Lebih dari 5 minggu</option>
+                                        <option value="2_weeks">Lebih dari 2 minggu</option>
+                                        <option value="1_week">Lebih dari 1 minggu</option>
+                                        <option value="3_days">Lebih dari 3 hari</option>
+                                        <option value="1_day">Lebih dari 1 hari</option>
+                                    </select>
+                                    <button
+                                        onClick={handleDeleteOldFinancial}
+                                        disabled={isDeletingOldData}
+                                        className={`bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors ${isDeletingOldData ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    >
+                                        {isDeletingOldData ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                                        {isDeletingOldData ? 'Menghapus...' : 'Hapus'}
+                                    </button>
+                                </div>
                             </div>
 
                             {/* NUCLEAR OPTION: Reset ALL Data */}

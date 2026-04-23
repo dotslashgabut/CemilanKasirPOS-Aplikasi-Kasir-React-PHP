@@ -4,7 +4,7 @@ import { Search, Trash2, User, Plus, Minus, ShoppingBag, Printer, CreditCard, Ba
 import { useData } from '../hooks/useData';
 import { StorageService } from '../services/storage';
 import { Product, CartItem, PriceType, PaymentStatus, Transaction, PaymentMethod, User as UserType, Customer, StoreSettings, TransactionType } from '../types';
-import { formatIDR, getPriceByType, generateId, formatDate, toMySQLDate } from '../utils';
+import { formatIDR, getPriceByType, generateId, formatDate, toMySQLDate, getCurrentDate } from '../utils';
 import { generatePrintInvoice } from '../utils/printHelpers';
 
 export const POS: React.FC = () => {
@@ -234,7 +234,7 @@ export const POS: React.FC = () => {
       // id: generateId(), // Handled by backend (F3)
       id: '', // Send empty or handle in backend logic
       type: TransactionType.SALE,
-      date: toMySQLDate(new Date()),
+      date: toMySQLDate(getCurrentDate()),
       items: cart,
       totalAmount,
       amountPaid: paid,

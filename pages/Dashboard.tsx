@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Brain, TrendingUp, AlertCircle, Wallet, RefreshCw, Calendar, Package, User as UserIcon, LayoutDashboard, Printer } from 'lucide-react';
 import { StorageService } from '../services/storage';
 import { getBusinessInsights } from '../services/geminiService';
-import { formatIDR } from '../utils';
+import { formatIDR, getCurrentDate } from '../utils';
 import { generatePrintDashboard } from '../utils/printHelpers';
 import { Transaction, Product, CartItem, User, TransactionType } from '../types';
 import { useData } from '../hooks/useData';
@@ -14,11 +14,11 @@ export const Dashboard: React.FC = () => {
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState<Date>(getCurrentDate());
+  const [selectedMonth, setSelectedMonth] = useState<number>(getCurrentDate().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(getCurrentDate().getFullYear());
   const [selectedWeekStart, setSelectedWeekStart] = useState<Date>(() => {
-    const now = new Date();
+    const now = getCurrentDate();
     const day = now.getDay();
     const diff = now.getDate() - day + (day === 0 ? -6 : 1);
     const start = new Date(now);
@@ -27,6 +27,15 @@ export const Dashboard: React.FC = () => {
     return start;
   });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  const [liveTime, setLiveTime] = useState(getCurrentDate());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveTime(getCurrentDate());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Load current user from localStorage
   useEffect(() => {
@@ -66,8 +75,8 @@ export const Dashboard: React.FC = () => {
 
 
   const filteredTxs = useMemo(() => {
-    let startTime = new Date().getTime();
-    let endTime = new Date().getTime();
+    let startTime = getCurrentDate().getTime();
+    let endTime = getCurrentDate().getTime();
 
     if (timeFilter === 'daily') {
       const start = new Date(selectedDate);
@@ -157,7 +166,7 @@ export const Dashboard: React.FC = () => {
 
       return data;
     } else if (timeFilter === 'monthly') {
-      const now = new Date();
+      const now = getCurrentDate();
       const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
       const data = Array.from({ length: daysInMonth }, (_, i) => ({
@@ -270,7 +279,7 @@ export const Dashboard: React.FC = () => {
 
       return data;
     } else if (timeFilter === 'monthly') {
-      const now = new Date();
+      const now = getCurrentDate();
       const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
       const data = Array.from({ length: daysInMonth }, (_, i) => ({
@@ -402,7 +411,13 @@ export const Dashboard: React.FC = () => {
             <LayoutDashboard className="text-primary" />
             Dashboard
           </h2>
-          <p className="text-slate-500 mt-1">Ringkasan performa bisnis Anda.</p>
+          <p className="text-slate-500 mt-1 mb-3">Ringkasan performa bisnis Anda.</p>
+          <div className="text-sm font-medium text-slate-600 flex items-center gap-2 bg-slate-100 w-fit px-3 py-1.5 rounded-lg border border-slate-200">
+             <Calendar size={16} className="text-primary" />
+             <span>{liveTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' })}</span>
+             <span className="text-slate-300">|</span>
+             <span className="font-bold text-slate-800">{liveTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' })} WIB</span>
+          </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="bg-slate-100 p-1 rounded-lg flex gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto">
@@ -614,7 +629,7 @@ export const Dashboard: React.FC = () => {
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                  {Array.from({ length: 5 }, (_, i) => getCurrentDate().getFullYear() - i).map(y => (
                     <option key={y} value={y}>{y}</option>
                   ))}
                 </select>
@@ -645,7 +660,7 @@ export const Dashboard: React.FC = () => {
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                  {Array.from({ length: 5 }, (_, i) => getCurrentDate().getFullYear() - i).map(y => (
                     <option key={y} value={y}>{y}</option>
                   ))}
                 </select>
@@ -663,7 +678,7 @@ export const Dashboard: React.FC = () => {
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="px-3 py-1.5 text-sm font-medium border border-slate-300 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                  {Array.from({ length: 10 }, (_, i) => getCurrentDate().getFullYear() - i).map(year => (
                     <option key={year} value={year}>{year}</option>
                   ))}
                 </select>

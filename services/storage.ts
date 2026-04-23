@@ -239,6 +239,14 @@ export const StorageService = {
     notifyListeners('products');
     notifyListeners('stock_adjustments');
   },
+  deleteOldFinancialData: async (dateThreshold: Date) => {
+    await ApiService.deleteOldFinancialData(dateThreshold);
+    notifyListeners('transactions');
+    notifyListeners('purchases');
+    notifyListeners('cashflow');
+    notifyListeners('products');
+    notifyListeners('stock_adjustments');
+  },
   resetMasterData: async () => {
     await ApiService.resetMasterData();
     notifyListeners('products');

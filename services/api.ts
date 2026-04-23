@@ -679,6 +679,30 @@ export const ApiService = {
         await ApiService.resetStockAdjustments();
         await ApiService.resetCashFlow();
     },
+    deleteOldFinancialData: async (dateThreshold: Date) => {
+        const thresholdTime = dateThreshold.getTime();
+        
+        const transactions = await ApiService.getTransactions();
+        for (const tx of transactions) {
+            if (new Date(tx.date).getTime() < thresholdTime) {
+                try { await ApiService.deleteTransaction(tx.id); } catch(e) { console.error(`Failed to delete old transaction ${tx.id}`, e); }
+            }
+        }
+
+        const purchases = await ApiService.getPurchases();
+        for (const purchase of purchases) {
+            if (new Date(purchase.date).getTime() < thresholdTime) {
+                try { await ApiService.deletePurchase(purchase.id); } catch(e) { console.error(`Failed to delete old purchase ${purchase.id}`, e); }
+            }
+        }
+
+        const cashflows = await ApiService.getCashFlow();
+        for (const cf of cashflows) {
+            if (new Date(cf.date).getTime() < thresholdTime) {
+                try { await request(`/cashflow/${cf.id}`, { method: 'DELETE' }); } catch(e) { console.error(`Failed to delete old cashflow ${cf.id}`, e); }
+            }
+        }
+    },
     resetMasterData: async () => {
         // Delete all master data
 
