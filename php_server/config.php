@@ -1,4 +1,13 @@
 <?php
+// Prevent direct browser access to API files and redirect to frontend
+if (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'text/html') !== false) {
+    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        // Redirect to parent directory (frontend)
+        header("Location: ../");
+        exit();
+    }
+}
+
 // Load .env file if exists
 function loadEnv($path) {
     if (!file_exists($path)) {

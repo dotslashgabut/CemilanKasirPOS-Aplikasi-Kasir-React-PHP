@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/config.php';
 // Simple Authentication Middleware for PHP API
 // This uses a simple token-based auth stored in localStorage on frontend
 

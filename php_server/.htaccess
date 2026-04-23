@@ -9,6 +9,10 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Security: Redirect access to sensitive files (.env, hidden files), logs, and json to frontend
+    # This prevents direct access but also avoids the 403 Forbidden blank page by redirecting to ../
+    RewriteRule (^\.|.*\.log$|.*\.json$) ../ [R=301,L]
+
     # Redirect Trailing Slashes
     # Remove trailing slash from URLs (except directories)
     RewriteCond %{REQUEST_FILENAME} !-d
@@ -24,13 +28,12 @@
 # Security: Prevent directory listing
 Options -Indexes
 
-# Security: Prevent access to sensitive files
+# Security Fallback: If mod_rewrite fails, ensure sensitive files are at least denied
 <FilesMatch "^\.">
     Order allow,deny
     Deny from all
 </FilesMatch>
 
-# Security: Prevent access to log and json files
 <FilesMatch "\.(log|json)$">
     Order allow,deny
     Deny from all

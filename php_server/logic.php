@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/config.php';
 
 function generateUuid() {
     return sprintf(

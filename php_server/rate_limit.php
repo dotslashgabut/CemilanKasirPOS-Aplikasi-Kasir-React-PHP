@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/config.php';
 // Simple Rate Limiter using a JSON file
 // In production, use Redis or a Database
 
