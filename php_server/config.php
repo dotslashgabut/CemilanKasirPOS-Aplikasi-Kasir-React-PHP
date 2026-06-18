@@ -72,8 +72,9 @@ if (!defined('DB_PASS')) define('DB_PASS', '');
 
 // CORS Settings
 // Allow specific origins if defined in .env, otherwise default to * (Dev only)
-$allowedOriginsEnv = getenv('ALLOWED_ORIGINS');
-$allowedOrigins = $allowedOriginsEnv ? explode(',', $allowedOriginsEnv) : [];
+// loadEnv() uses define(), not putenv() — read the constant first
+$allowedOriginsEnv = defined('ALLOWED_ORIGINS') ? ALLOWED_ORIGINS : getenv('ALLOWED_ORIGINS');
+$allowedOrigins = $allowedOriginsEnv ? array_map('trim', explode(',', $allowedOriginsEnv)) : [];
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
 if (!empty($allowedOrigins) && in_array($origin, $allowedOrigins)) {

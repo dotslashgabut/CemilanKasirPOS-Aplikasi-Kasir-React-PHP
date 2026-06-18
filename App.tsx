@@ -190,7 +190,7 @@ const App: React.FC = () => {
          setCurrentUser(user);
          localStorage.setItem('pos_current_user', JSON.stringify(user));
          // Token is now handled by HttpOnly Cookie (F1)
-         // localStorage.setItem('pos_token', token);
+         localStorage.setItem('pos_token', token);
 
          setError('');
          // Reset form
