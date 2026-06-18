@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && cp -r php_server dist/php_server",
     "preview": "vite preview"
   },
   "dependencies": {
