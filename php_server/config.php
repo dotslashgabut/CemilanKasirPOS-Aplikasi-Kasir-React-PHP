@@ -71,37 +71,32 @@ if (!defined('DB_USER')) define('DB_USER', 'root');
 if (!defined('DB_PASS')) define('DB_PASS', '');
 
 // CORS Settings
-// Allow specific origins if defined in .env, otherwise default to * (Dev only)
-// loadEnv() uses define(), not putenv() — read the constant first
+// With credentials: 'include' on the frontend, the browser REQUIRES a specific origin — never '*'.
 $allowedOriginsEnv = defined('ALLOWED_ORIGINS') ? ALLOWED_ORIGINS : getenv('ALLOWED_ORIGINS');
 $allowedOrigins = $allowedOriginsEnv ? array_map('trim', explode(',', $allowedOriginsEnv)) : [];
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowCorsCredentials = false;
 
-if (!empty($allowedOrigins) && in_array($origin, $allowedOrigins)) {
-    header("Access-Control-Allow-Origin: $origin");
-} else {
-    // Fallback logic
-    if (defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS) {
-        // Development: Allow dynamic origin for convenience
-        if ($origin) {
-            header("Access-Control-Allow-Origin: $origin");
-        } else {
-            header("Access-Control-Allow-Origin: *");
-        }
-    } else {
-        // Production: Strict Security
-        // If the origin is not in ALLOWED_ORIGINS, we return '*'
-        // Note: Browsers will BLOCK requests because we also send 'Access-Control-Allow-Credentials: true'
-        // This is the desired secure behavior (fail-safe).
-        header("Access-Control-Allow-Origin: *"); 
+if ($origin !== '') {
+    $originInList = !empty($allowedOrigins) && in_array($origin, $allowedOrigins, true);
+    $devMode = defined('SHOW_DEBUG_ERRORS') && SHOW_DEBUG_ERRORS;
+
+    if ($originInList || $devMode) {
+        header("Access-Control-Allow-Origin: $origin");
+        header("Vary: Origin");
+        $allowCorsCredentials = true;
     }
+    // Origin not allowed: omit Access-Control-Allow-Origin (browser blocks cross-origin request)
 }
 
-header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
+if ($allowCorsCredentials) {
+    header("Access-Control-Allow-Credentials: true");
+}
 
 // Handle Preflight Options Request immediately
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
